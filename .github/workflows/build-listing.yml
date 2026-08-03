@@ -1,0 +1,66 @@
+name: Build Repo Listing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/build-listing.yml"
+      - ".github/source.json"
+      - ".github/Website/**"
+  workflow_run:
+    workflows:
+      - Build Release
+    types:
+      - completed
+  release:
+    types:
+      - published
+      - edited
+      - deleted
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  LIST_PUBLISH_DIRECTORY: .github/Website
+
+jobs:
+  build-listing:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout package repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build package repository listing
+        id: listing
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./.github/scripts/build-listing.ps1
+
+      - name: Configure GitHub Pages
+        if: steps.listing.outputs.package_count != '0'
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload GitHub Pages artifact
+        if: steps.listing.outputs.package_count != '0'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ env.LIST_PUBLISH_DIRECTORY }}
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        if: steps.listing.outputs.package_count != '0'
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

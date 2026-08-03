@@ -1,0 +1,50 @@
+name: Validate VPM Package
+
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/build-vpm.ps1"
+      - ".github/scripts/build-listing.ps1"
+      - ".github/workflows/validate-vpm.yml"
+      - "HierarchyDecorator/**"
+      - "CHANGELOG.md"
+      - "LICENSE.md"
+      - "README.md"
+      - ".github/Website/**"
+      - "package.json"
+      - ".github/source.json"
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/scripts/build-vpm.ps1"
+      - ".github/scripts/build-listing.ps1"
+      - ".github/workflows/validate-vpm.yml"
+      - "HierarchyDecorator/**"
+      - "CHANGELOG.md"
+      - "LICENSE.md"
+      - "README.md"
+      - ".github/Website/**"
+      - "package.json"
+      - ".github/source.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build and validate VPM archive
+        shell: pwsh
+        run: ./.github/scripts/build-vpm.ps1
+
+      - name: Build and validate VPM repository listing
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./.github/scripts/build-listing.ps1 -OutputDirectory dist/listing

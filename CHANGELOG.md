@@ -1,3 +1,14 @@
+## v0.12.1
+
+### Distribution
+
+- Added VPM-compatible release archives and a community repository listing.
+- Added package metadata for the license, documentation, changelog, and maintained source repository.
+
+### Fixes
+
+- Added VPM legacy-folder migration for v0.11.2 `.unitypackage` installations while preserving generated settings under `Assets/HierarchyDecorator`.
+
 ## v0.12.0
 
 ### Changes

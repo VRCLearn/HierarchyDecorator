@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="VPM community repository">
+    <title>VPM Repository</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <section class="hero">
+            <p class="eyebrow">VPM community repository</p>
+            <h1 id="listing-name">Loading repository…</h1>
+            <p id="listing-description" class="description"></p>
+            <div class="actions">
+                <button id="add-to-vcc" type="button" disabled>Add to VCC</button>
+                <button id="copy-url" class="secondary" type="button" disabled>Copy repository URL</button>
+            </div>
+            <code id="repository-url">Loading…</code>
+            <p id="copy-status" class="status" aria-live="polite"></p>
+        </section>
+
+        <section class="packages" aria-labelledby="packages-heading">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Available package</p>
+                    <h2 id="packages-heading">Latest release</h2>
+                </div>
+                <a id="info-link" hidden>Source and documentation</a>
+            </div>
+
+            <div id="package-grid" class="package-grid">
+                <p class="loading">Loading packages…</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Maintained as a VPM distribution by
+        <a id="author-link"><span id="author-name">the repository owner</span></a>.
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+    "name": "VRCLearn HierarchyDecorator Repository",
+    "id": "io.github.vrclearn.hierarchydecorator",
+    "author": {
+        "name": "VRCLearn",
+        "url": "https://github.com/VRCLearn",
+        "email": ""
+    },
+    "url": "https://vrclearn.github.io/HierarchyDecorator/index.json",
+    "description": "VPM distribution of Wooshii's HierarchyDecorator for Unity.",
+    "infoLink": {
+        "text": "Source and documentation",
+        "url": "https://github.com/VRCLearn/HierarchyDecorator"
+    },
+    "githubRepos": [
+        "VRCLearn/HierarchyDecorator"
+    ]
+}
