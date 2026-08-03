@@ -11,6 +11,7 @@ namespace HierarchyDecorator
 
         public GlobalData globalData = new GlobalData ();
         public HierarchyStyleData styleData = new HierarchyStyleData ();
+        public SettingsLanguage language;
 
         [SerializeField]
         private ComponentData components = new ComponentData ();
@@ -37,6 +38,7 @@ namespace HierarchyDecorator
         /// </summary>
         internal void SetDefaults(bool isDarkMode)
         {
+            language = SettingsLocalization.GetSystemLanguage();
             components.UpdateData ();
             styleData.UpdateStyles (isDarkMode);
         }

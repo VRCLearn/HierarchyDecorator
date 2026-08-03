@@ -26,7 +26,11 @@ namespace HierarchyDecorator
         private readonly Color BACKGROUND_COLOR = new Color (0.235f, 0.360f, 0.580f);
         private readonly Color OUTLINE_COLOR = new Color (0.15f, 0.15f, 0.15f, 1f);
 
-        private readonly GUIContent[] Modes = { new GUIContent("Light Mode"), new GUIContent("Dark Mode") };
+        private readonly GUIContent[] Modes =
+        {
+            new GUIContent(SettingsLocalization.Text("Mode.Light")),
+            new GUIContent(SettingsLocalization.Text("Mode.Dark")),
+        };
         private readonly string[] SettingList = { "prefix", "noSpaceAfterPrefix", "isRegex", "name", "font", "fontSize", "fontStyle", "fontAlignment",  "textFormatting" };
 
         public StyleTab(Settings settings, SerializedObject serializedSettings) : base (settings, serializedSettings, "styleData", "Visual", "d_InputField Icon")
@@ -64,17 +68,17 @@ namespace HierarchyDecorator
             SerializedProperty darkModeBack = serializedTab.FindPropertyRelative("darkMode");
             SerializedProperty lightModeBack = serializedTab.FindPropertyRelative("lightMode");
 
-            CreateDrawableGroup("Background")
+            CreateDrawableGroup(SettingsLocalization.Text("Group.Background"))
                 .RegisterSerializedProperty(serializedTab, "twoToneBackground")
-                .RegisterSerializedGroup(darkModeBack, "Dark Mode", "colorOne", "colorTwo")
-                .RegisterSerializedGroup(lightModeBack, "Light Mode", "colorOne", "colorTwo").Space()
+                .RegisterSerializedGroup(darkModeBack, SettingsLocalization.Text("Mode.Dark"), "colorOne", "colorTwo")
+                .RegisterSerializedGroup(lightModeBack, SettingsLocalization.Text("Mode.Light"), "colorOne", "colorTwo").Space()
                 .RegisterSerializedProperty(serializedTab, "showSceneItemHighlight")
                 .RegisterSerializedGroup(serializedTab.FindPropertyRelative("sceneItemHighlight"), 
-                    "Highlight Settings",
+                    SettingsLocalization.Text("Group.Highlight"),
                     nameof(SceneItemHighlightSettings.color),
                     nameof(SceneItemHighlightSettings.lineThickness));
 
-            CreateDrawableGroup ("Styles")
+            CreateDrawableGroup (SettingsLocalization.Text("Group.Styles"))
                 .RegisterSerializedProperty(serializedTab, "displayTags", "displayLayers", "displayIcons")
                 .RegisterReorderable (styleList);
         }
@@ -92,7 +96,7 @@ namespace HierarchyDecorator
             Handles.EndGUI ();
 
             // Draw optionals
-            if (GUI.Button (rect, "Add New Style", Style.CenteredBoldLabel))
+            if (GUI.Button (rect, SettingsLocalization.Text("Style.Add"), Style.CenteredBoldLabel))
             {
                 CreateNewStyle();
             }
@@ -172,13 +176,13 @@ namespace HierarchyDecorator
 
         private void DrawNoElements(Rect rect)
         {
-            EditorGUI.LabelField (rect, "No styles to display.");
+            EditorGUI.LabelField (rect, SettingsLocalization.Text("Style.None"));
         }
 
         private void CreateNewStyle()
         {
             HierarchyStyle style = new HierarchyStyle();
-            style.name = "New Style";
+            style.name = SettingsLocalization.Text("Style.New");
             style.UpdateStyle(EditorGUIUtility.isProSkin);
 
             settings.styleData.styles.Add(style);
@@ -239,7 +243,7 @@ namespace HierarchyDecorator
                 }
 
                 rect.height = EditorGUI.GetPropertyHeight (prop);
-                EditorGUI.PropertyField (rect, prop, true);
+                SettingsLocalization.PropertyField (rect, prop, true);
                 rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
 
                 height += rect.height;
@@ -290,7 +294,11 @@ namespace HierarchyDecorator
             rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
 
             SerializedProperty prop = modeProperty.GetArrayElementAtIndex (selection);
-            EditorGUI.PropertyField (rect, prop, Modes[selection], true);
+            EditorGUI.LabelField(rect, Modes[selection], EditorStyles.boldLabel);
+            rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
+            SettingsLocalization.PropertyField(rect, prop.FindPropertyRelative("fontColour"), false);
+            rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
+            SettingsLocalization.PropertyField(rect, prop.FindPropertyRelative("backgroundColour"), false);
 
             if (EditorGUI.EndChangeCheck ())
             {

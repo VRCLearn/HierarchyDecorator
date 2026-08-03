@@ -38,7 +38,7 @@ namespace HierarchyDecorator
 
                         EditorGUI.BeginChangeCheck();
 
-                        EditorGUILayout.PropertyField(property);
+                        SettingsLocalization.PropertyField(property);
 
                         if (EditorGUI.EndChangeCheck())
                         {

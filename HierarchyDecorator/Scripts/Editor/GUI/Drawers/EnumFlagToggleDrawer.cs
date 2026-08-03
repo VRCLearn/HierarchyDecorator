@@ -10,11 +10,13 @@ namespace HierarchyDecorator
         private struct Entry
         {
             public readonly string Name;
+            public readonly string Label;
             public readonly int Value;
 
-            public Entry(string name, int value)
+            public Entry(string name, string label, int value)
             {
                 Name = name;
+                Label = label;
                 Value = value;
             }
         }
@@ -53,7 +55,7 @@ namespace HierarchyDecorator
             int i = 0;
             foreach (var val in Enum.GetValues(typeof(T)))
             {
-                entries.Add(new Entry(Target.enumDisplayNames[i], (int)val));
+                entries.Add(new Entry(Target.enumNames[i], SettingsLocalization.GetEnumLabel(Target, Target.enumNames[i]), (int)val));
                 i++;
             }
 
@@ -86,7 +88,7 @@ namespace HierarchyDecorator
             {
                 Entry entry = entries[i];
 
-                string name = entry.Name;
+                string name = entry.Label;
                 int value = entry.Value;
 
                 bool isSelected = (Target.intValue & value) != 0;

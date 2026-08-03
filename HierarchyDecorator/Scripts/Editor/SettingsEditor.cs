@@ -43,6 +43,8 @@ namespace HierarchyDecorator
 
         public override void OnInspectorGUI()
         {
+            SettingsLocalization.SetLanguage(settings.language);
+
             if (!hasInitialized)
             {
                 Initialize();
@@ -50,8 +52,11 @@ namespace HierarchyDecorator
             }
 
             EditorGUILayout.BeginVertical(Style.InspectorPadding);
-            DrawTitle();
-            DrawContent();
+            bool languageChanged = DrawTitle();
+            if (!languageChanged)
+            {
+                DrawContent();
+            }
             EditorGUILayout.EndVertical();
         }
 
@@ -73,7 +78,7 @@ namespace HierarchyDecorator
             }
         }
 
-        private void DrawTitle()
+        private bool DrawTitle()
         {
             // Draw Header
             
@@ -84,13 +89,13 @@ namespace HierarchyDecorator
 #endif
             EditorGUILayout.BeginHorizontal ();
             {
-                EditorGUILayout.LabelField ("Hierarchy Settings", Style.Title);
+                EditorGUILayout.LabelField (SettingsLocalization.Text("Settings.Title"), Style.Title);
 
                 GUILayout.FlexibleSpace ();
 
                 // Link to repo for convenience
 
-                if (GUILayout.Button ("GitHub Repository", EditorStyles.miniButtonMid))
+                if (GUILayout.Button (SettingsLocalization.Text("Settings.Repository"), EditorStyles.miniButtonMid))
                 {
                     Application.OpenURL ("https://github.com/WooshiiDev/HierarchyDecorator/");
                 }
@@ -98,6 +103,31 @@ namespace HierarchyDecorator
             EditorGUILayout.EndHorizontal ();
 
             HierarchyGUI.Space ();
+
+            EditorGUI.BeginChangeCheck();
+            SettingsLanguage language = SettingsLocalization.DrawLanguagePopup(settings.language);
+            bool languageChanged = EditorGUI.EndChangeCheck() && language != settings.language;
+            if (languageChanged)
+            {
+                Undo.RecordObject(settings, "Change Settings Language");
+                SerializedProperty languageProperty = serializedObject.FindProperty("language");
+                if (languageProperty != null)
+                {
+                    languageProperty.enumValueIndex = (int)language;
+                }
+                serializedObject.ApplyModifiedProperties();
+                settings.language = language;
+                SettingsLocalization.SetLanguage(language);
+                Initialize();
+                EditorUtility.SetDirty(settings);
+                Repaint();
+            }
+
+            if (languageChanged)
+            {
+                EditorGUILayout.EndVertical ();
+                return true;
+            }
 
             // --- Selection
 
@@ -112,6 +142,7 @@ namespace HierarchyDecorator
             }
 
             EditorGUILayout.EndVertical ();
+            return false;
         }
         
         private void Refresh()
