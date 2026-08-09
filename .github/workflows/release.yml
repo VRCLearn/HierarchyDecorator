@@ -23,6 +23,11 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/build-vpm.ps1
 
+      - name: Build and validate UnityPackage
+        id: unitypackage
+        shell: pwsh
+        run: ./.github/scripts/build-unitypackage.ps1
+
       - name: Ensure the release does not already exist
         shell: bash
         env:
@@ -45,10 +50,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
           RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          UNITYPACKAGE_PATH: ${{ steps.unitypackage.outputs.unitypackage_path }}
           ZIP_PATH: ${{ steps.package.outputs.zip_path }}
         run: |
           gh release create "$RELEASE_TAG" \
               "$ZIP_PATH#VPM package" \
+              "$UNITYPACKAGE_PATH#Unity package" \
               "package.json#Package manifest" \
               --target "$GITHUB_SHA" \
               --title "$DISPLAY_NAME $RELEASE_TAG" \
