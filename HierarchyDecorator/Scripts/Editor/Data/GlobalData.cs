@@ -28,7 +28,7 @@ namespace HierarchyDecorator
     [System.Serializable]
     public abstract class TagLayerSettingsBase
     {
-        public bool show = true;
+        public bool show;
         public TagLayerColorSettings colorSettings;
     }
 
@@ -95,7 +95,7 @@ namespace HierarchyDecorator
 
         // Breadcrumbs
 
-        public bool showBreadcrumbs = true;
+        public bool showBreadcrumbs;
 
         public BreadcrumbSettings instanceBreadcrumbs;
         public BreadcrumbSettings fullDepthBreadcrumbs = new BreadcrumbSettings()

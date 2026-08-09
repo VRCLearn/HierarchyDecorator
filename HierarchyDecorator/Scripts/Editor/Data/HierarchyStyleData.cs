@@ -103,7 +103,7 @@ namespace HierarchyDecorator
 
         // Background
         
-        public bool twoToneBackground = true;
+        public bool twoToneBackground;
         public ColorSetting lightMode = new ColorSetting(new Color(0.8f, 0.8f, 0.8f, 1f), new Color(0.765f, 0.765f, 0.765f, 1f));
         public ColorSetting darkMode = new ColorSetting(new Color(0.245f, 0.245f, 0.245f, 1f), new Color(0.225f, 0.225f, 0.225f, 1f));
 
