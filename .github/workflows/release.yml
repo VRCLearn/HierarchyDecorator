@@ -1,0 +1,61 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build and validate VPM archive
+        id: package
+        shell: pwsh
+        run: ./.github/scripts/build-vpm.ps1
+
+      - name: Build and validate UnityPackage
+        id: unitypackage
+        shell: pwsh
+        run: ./.github/scripts/build-unitypackage.ps1
+
+      - name: Ensure the release does not already exist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "::error::Release $RELEASE_TAG already exists."
+              exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "::error::Tag $RELEASE_TAG already exists."
+              exit 1
+          fi
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          UNITYPACKAGE_PATH: ${{ steps.unitypackage.outputs.unitypackage_path }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+              "$ZIP_PATH" \
+              "$UNITYPACKAGE_PATH" \
+              --target "$GITHUB_SHA" \
+              --title "$DISPLAY_NAME $RELEASE_TAG" \
+              --generate-notes

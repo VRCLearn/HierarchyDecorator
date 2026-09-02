@@ -3,15 +3,26 @@
   "displayName": "HierarchyDecorator",
   "version": "0.12.1",
   "unity": "2018.4",
-  "description": "HierarchyDecorator is an extension for the Unity Hierarchy enhancing it's utility.",
+  "description": "HierarchyDecorator is an extension for the Unity Hierarchy that enhances its utility.",
   "keywords": [
     "hierarchy",
     "editor"
   ],
   "category": "Editor",
   "dependencies": {},
-
-   "author": {
+  "vpmDependencies": {},
+  "legacyFolders": {
+    "Assets\\HierarchyDecorator\\HierarchyDecorator": "28321ee5d44647e4a89c3e801e5afbb3"
+  },
+  "license": "MIT",
+  "licensesUrl": "https://github.com/VRCLearn/HierarchyDecorator/blob/master/LICENSE.md",
+  "documentationUrl": "https://github.com/VRCLearn/HierarchyDecorator#readme",
+  "changelogUrl": "https://github.com/VRCLearn/HierarchyDecorator/blob/master/CHANGELOG.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VRCLearn/HierarchyDecorator.git"
+  },
+  "author": {
     "name": "Wooshii",
     "email": "wooshiidev@gmail.com",
     "url": "https://github.com/WooshiiDev/HierarchyDecorator"
