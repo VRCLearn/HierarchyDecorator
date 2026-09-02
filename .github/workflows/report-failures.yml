@@ -1,0 +1,126 @@
+name: Report automation failures
+
+on:
+  workflow_run:
+    workflows:
+      - Build Repo Listing
+      - Release upstream version
+      - Sync upstream master
+      - Validate VPM Package
+    types:
+      - completed
+
+permissions: {}
+
+jobs:
+  report:
+    if: github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Create, update, or close the failure issue
+        env:
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          TITLE: "[automation] ${{ github.event.workflow_run.name }} failed"
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$(gh api "repos/${GITHUB_REPOSITORY}" --jq .has_issues)" != "true" ]]; then
+            echo "::warning::Repository Issues are disabled; failure issue reporting is unavailable."
+            exit 0
+          fi
+
+          existing_number="$(
+            gh issue list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --limit 100 \
+              --json number,title \
+              | jq -r --arg title "$TITLE" \
+                  'first(.[] | select(.title == $title) | .number) // empty'
+          )"
+
+          if [[ "$CONCLUSION" == "success" ]]; then
+            if [[ -n "$existing_number" ]]; then
+              gh issue close "$existing_number" \
+                --repo "$GITHUB_REPOSITORY" \
+                --comment "Automation recovered in **${WORKFLOW_NAME}**: [open successful run](${RUN_URL}) (commit \`${HEAD_SHA}\`)."
+            fi
+            exit 0
+          fi
+
+          if [[ "$CONCLUSION" != "failure" && "$CONCLUSION" != "timed_out" ]]; then
+            echo "Conclusion $CONCLUSION does not require an issue."
+            exit 0
+          fi
+
+          upstream_value=""
+          upstream_context=""
+          next_step=""
+          if [[ "$WORKFLOW_NAME" == "Sync upstream master" || \
+                "$WORKFLOW_NAME" == "Release upstream version" ]]; then
+            upstream_repo="$(jq -r '.repository' .github/upstream-sync.json 2>/dev/null || echo 'WooshiiDev/HierarchyDecorator')"
+            upstream_branch="$(jq -r '.branch' .github/upstream-sync.json 2>/dev/null || echo 'master')"
+            if [[ "$WORKFLOW_NAME" == "Sync upstream master" ]]; then
+              upstream_value="$(gh api "repos/${upstream_repo}/commits/${upstream_branch}" --jq .sha)"
+              upstream_context="$(printf '\n- Upstream master: `%s`' "$upstream_value")"
+              next_step="$(printf '\n\nIf the run reports upstream workflow changes, open the repository Code page and choose **Sync fork → Update branch**. The resulting push retries validation automatically.')"
+            else
+              release_row="$(
+                gh api --paginate "repos/${upstream_repo}/releases?per_page=100" \
+                  --jq '.[] | select(.draft == false and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) | [(.published_at // .created_at), .tag_name] | @tsv' \
+                  | sort | tail -n 1
+              )"
+              upstream_tag="${release_row#*$'\t'}"
+              if [[ -n "$upstream_tag" ]]; then
+                upstream_sha="$(gh api "repos/${upstream_repo}/commits/${upstream_tag}" --jq .sha)"
+                upstream_value="${upstream_tag}@${upstream_sha}"
+                upstream_context="$(printf '\n- Upstream release: `%s` at `%s`' "$upstream_tag" "$upstream_sha")"
+              fi
+            fi
+          fi
+
+          fingerprint="$(
+            printf '%s' "${WORKFLOW_NAME}|${CONCLUSION}|${HEAD_SHA}|${upstream_value}" \
+              | git hash-object --stdin
+          )"
+          fingerprint_marker="<!-- automation-failure-fingerprint:${fingerprint} -->"
+
+          printf -v issue_body \
+            'The automated workflow **%s** failed and may require attention.\n\n- Run: [open workflow run](%s)\n- Event: `%s`\n- Commit: `%s`%s%s\n\nThis issue closes after a successful recovery run. Repeated checks of the same upstream state do not add another notification.\n\n%s' \
+            "$WORKFLOW_NAME" "$RUN_URL" "$RUN_EVENT" "$HEAD_SHA" "$upstream_context" "$next_step" "$fingerprint_marker"
+
+          if [[ -n "$existing_number" ]]; then
+            existing_body="$(
+              gh issue view "$existing_number" \
+                --repo "$GITHUB_REPOSITORY" \
+                --json body \
+                --jq .body
+            )"
+            if [[ "$existing_body" == *"$fingerprint_marker"* ]]; then
+              echo "Failure $fingerprint was already reported; leaving the issue unchanged."
+              exit 0
+            fi
+
+            gh issue comment "$existing_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "A different failure occurred in **${WORKFLOW_NAME}**: [open workflow run](${RUN_URL}) (commit \`${HEAD_SHA}\`)."
+            gh issue edit "$existing_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" \
+              --body "$issue_body"
+            exit 0
+          fi
+
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TITLE" \
+            --body "$issue_body"

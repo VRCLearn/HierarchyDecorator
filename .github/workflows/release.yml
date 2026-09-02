@@ -1,61 +1,339 @@
-name: Build Release
+name: Release upstream version
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
 
+env:
+  GH_REPO: ${{ github.repository }}
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: hierarchy-decorator-release
   cancel-in-progress: false
 
 jobs:
-  release:
-    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch
+  prepare:
+    name: Prepare the upstream release snapshot
+    runs-on: ubuntu-latest
+    outputs:
+      candidate_branch: ${{ steps.candidate.outputs.candidate_branch }}
+      candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
+      changed: ${{ steps.candidate.outputs.changed }}
+      fork_main_sha: ${{ steps.candidate.outputs.fork_main_sha }}
+      release_tag: ${{ steps.candidate.outputs.release_tag }}
+      upstream_prerelease: ${{ steps.candidate.outputs.upstream_prerelease }}
+      upstream_repo: ${{ steps.candidate.outputs.upstream_repo }}
+      upstream_sha: ${{ steps.candidate.outputs.upstream_sha }}
+      upstream_tag: ${{ steps.candidate.outputs.upstream_tag }}
+    steps:
+      - name: Check out master
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Build an exact upstream release snapshot with the fork overlay
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config=.github/upstream-sync.json
+          upstream_repo="$(jq -r '.repository' "$config")"
+          upstream_branch="$(jq -r '.branch' "$config")"
+          bootstrap_version="$(jq -r '.bootstrapVersion' "$config")"
+          bootstrap_source="$(jq -r '.bootstrapSourceCommit' "$config")"
+          main_sha="$(git rev-parse HEAD)"
+
+          if ! [[ "$upstream_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid upstream repository: $upstream_repo" >&2
+            exit 1
+          fi
+          if ! [[ "$upstream_branch" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid upstream branch: $upstream_branch" >&2
+            exit 1
+          fi
+          if ! [[ "$bootstrap_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+             ! [[ "$bootstrap_source" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid bootstrap release configuration." >&2
+            exit 1
+          fi
+
+          echo "fork_main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+          echo "upstream_repo=$upstream_repo" >> "$GITHUB_OUTPUT"
+
+          git remote add upstream "https://github.com/${upstream_repo}.git"
+          git fetch --force --no-tags upstream \
+            "refs/heads/${upstream_branch}:refs/remotes/upstream/${upstream_branch}"
+          upstream_main="$(git rev-parse "refs/remotes/upstream/${upstream_branch}")"
+          if ! git merge-base --is-ancestor "$upstream_main" "$main_sha"; then
+            echo "Fork master does not yet contain upstream $upstream_branch at $upstream_main." >&2
+            echo "Synchronize master before creating a package release." >&2
+            exit 1
+          fi
+
+          version_is_greater() {
+            local candidate="$1"
+            local baseline="$2"
+            local greatest
+            greatest="$(printf '%s\n%s\n' "$candidate" "$baseline" | sort -V | tail -n 1)"
+            [[ "$candidate" != "$baseline" && "$greatest" == "$candidate" ]]
+          }
+
+          selected_tag=""
+          selected_release_tag=""
+          selected_prerelease=""
+          selected_sha=""
+          release_rows=(
+            "0000-00-00T00:00:00Z"$'\t'"v${bootstrap_version}"$'\ttrue'
+          )
+          mapfile -t published_release_rows < <(
+            gh api --paginate "repos/${upstream_repo}/releases?per_page=100" \
+              --jq '.[] | select(.draft == false) | [(.published_at // .created_at), .tag_name, (.prerelease | tostring)] | @tsv' \
+              | sort
+          )
+          release_rows+=("${published_release_rows[@]}")
+
+          for release_row in "${release_rows[@]}"; do
+            IFS=$'\t' read -r published_at upstream_tag upstream_prerelease <<< "$release_row"
+            if ! [[ "$upstream_tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              echo "Ignoring unsupported upstream release tag $upstream_tag published at $published_at."
+              continue
+            fi
+
+            version="${BASH_REMATCH[1]}"
+            if [[ "$version" == "$bootstrap_version" ]]; then
+              upstream_sha="$bootstrap_source"
+              if ! git cat-file -e "${upstream_sha}^{commit}"; then
+                echo "::error title=Bootstrap source missing::The recorded source $upstream_sha is not present in upstream $upstream_branch."
+                exit 1
+              fi
+            elif ! version_is_greater "$version" "$bootstrap_version"; then
+              continue
+            else
+              git fetch --force --no-tags upstream \
+                "refs/tags/${upstream_tag}:refs/remotes/upstream/release-check"
+              upstream_sha="$(git rev-parse 'refs/remotes/upstream/release-check^{commit}')"
+            fi
+
+            release_tag="$version"
+            if gh release view "$release_tag" >/dev/null 2>&1; then
+              release_json="$(gh release view "$release_tag" --json assets,body,isDraft,isPrerelease)"
+              if [[ "$(jq -r '.isDraft or .isPrerelease' <<< "$release_json")" == "true" ]]; then
+                echo "Existing fork release $release_tag is not a stable published release." >&2
+                exit 1
+              fi
+              if ! jq -e --arg marker "<!-- upstream-source:${upstream_sha} -->" \
+                   '.body | contains($marker)' <<< "$release_json" >/dev/null; then
+                echo "Existing fork release $release_tag does not match upstream commit $upstream_sha." >&2
+                exit 1
+              fi
+              expected_zip="com.wooshii.hierarchydecorator-${version}.zip"
+              expected_unitypackage="com.wooshii.hierarchydecorator-${version}.unitypackage"
+              for expected_asset in "$expected_zip" "$expected_unitypackage" package.json; do
+                if ! jq -e --arg name "$expected_asset" \
+                     '.assets | any(.name == $name)' <<< "$release_json" >/dev/null; then
+                  echo "Existing fork release $release_tag is missing $expected_asset." >&2
+                  exit 1
+                fi
+              done
+              echo "Fork release $release_tag already mirrors upstream $upstream_sha."
+              continue
+            fi
+
+            if git ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+              echo "Tag $release_tag exists without a GitHub release." >&2
+              exit 1
+            fi
+
+            selected_tag="$upstream_tag"
+            selected_release_tag="$release_tag"
+            selected_prerelease="$upstream_prerelease"
+            selected_sha="$upstream_sha"
+            break
+          done
+
+          if [[ -z "$selected_tag" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "candidate_branch=" >> "$GITHUB_OUTPUT"
+            echo "candidate_sha=" >> "$GITHUB_OUTPUT"
+            echo "release_tag=" >> "$GITHUB_OUTPUT"
+            echo "upstream_prerelease=" >> "$GITHUB_OUTPUT"
+            echo "upstream_sha=" >> "$GITHUB_OUTPUT"
+            echo "upstream_tag=" >> "$GITHUB_OUTPUT"
+            echo "Every eligible upstream release is already synchronized."
+            exit 0
+          fi
+
+          version="${selected_tag#v}"
+          if ! git merge-base --is-ancestor "$selected_sha" "$upstream_main"; then
+            echo "Upstream release $selected_tag at $selected_sha is not in $upstream_branch." >&2
+            exit 1
+          fi
+
+          overlay_patch="$RUNNER_TEMP/fork-overlay.patch"
+          git diff --binary --full-index "$upstream_main" "$main_sha" -- \
+            . \
+            ':(exclude,glob).github/**' \
+            ':(exclude)VPM.md' \
+            > "$overlay_patch"
+
+          git switch --detach "$selected_sha"
+          if [[ -s "$overlay_patch" ]]; then
+            if ! git apply --3way --index "$overlay_patch"; then
+              conflicts="$(git diff --name-only --diff-filter=U)"
+              echo "::error title=Release overlay conflict::The fork overlay could not be applied to upstream $selected_tag."
+              {
+                echo "## Manual release synchronization required"
+                echo
+                echo "The fork overlay conflicts with upstream release \`$selected_tag\`:"
+                echo
+                echo '```text'
+                echo "$conflicts"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          fi
+
+          git restore --source="$main_sha" --staged --worktree -- .github VPM.md
+
+          package_version="$(jq -r '.version' package.json)"
+          if [[ "$package_version" != "$version" ]]; then
+            echo "Release snapshot version mismatch: upstream=$version, package=$package_version" >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          candidate_tree="$(git write-tree)"
+          candidate_sha="$(
+            printf 'Create VRCLearn snapshot for upstream %s\n' "$selected_tag" |
+              git commit-tree "$candidate_tree" -p "$main_sha"
+          )"
+          git diff --check "$main_sha" "$candidate_sha" -- \
+            . ':(exclude,glob)**/*.meta'
+
+          candidate_branch="automation/release-${version}-${RUN_ID}"
+          git push origin "${candidate_sha}:refs/heads/${candidate_branch}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "candidate_branch=$candidate_branch" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$selected_release_tag" >> "$GITHUB_OUTPUT"
+          echo "upstream_prerelease=$selected_prerelease" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$selected_sha" >> "$GITHUB_OUTPUT"
+          echo "upstream_tag=$selected_tag" >> "$GITHUB_OUTPUT"
+          echo "Prepared stable fork release $selected_release_tag from upstream $selected_tag at $selected_sha as $candidate_sha."
+
+      - name: Validate localization coverage
+        if: steps.candidate.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/validate-localization.ps1
+
+      - name: Build and validate the candidate VPM archive
+        if: steps.candidate.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/build-vpm.ps1 -Revision "${{ steps.candidate.outputs.candidate_sha }}" -RequireStableVersion
+
+      - name: Build and validate the candidate UnityPackage
+        if: steps.candidate.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/build-unitypackage.ps1
+
+  publish:
+    name: Publish the stable VRCLearn release
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out the validated release snapshot
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
 
-      - name: Build and validate VPM archive
+      - name: Build and validate the VPM archive
         id: package
         shell: pwsh
-        run: ./.github/scripts/build-vpm.ps1
+        run: ./.github/scripts/build-vpm.ps1 -Revision "${{ needs.prepare.outputs.candidate_sha }}" -RequireStableVersion
 
-      - name: Build and validate UnityPackage
+      - name: Build and validate the UnityPackage
         id: unitypackage
         shell: pwsh
         run: ./.github/scripts/build-unitypackage.ps1
 
-      - name: Ensure the release does not already exist
-        shell: bash
+      - name: Publish the stable GitHub release
         env:
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+          FORK_MAIN_SHA: ${{ needs.prepare.outputs.fork_main_sha }}
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.package.outputs.tag }}
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-              echo "::error::Release $RELEASE_TAG already exists."
-              exit 1
-          fi
-
-          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-              echo "::error::Tag $RELEASE_TAG already exists."
-              exit 1
-          fi
-
-      - name: Publish GitHub release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
-          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          MANIFEST_PATH: ${{ steps.package.outputs.manifest_path }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
           UNITYPACKAGE_PATH: ${{ steps.unitypackage.outputs.unitypackage_path }}
+          UPSTREAM_PRERELEASE: ${{ needs.prepare.outputs.upstream_prerelease }}
+          UPSTREAM_REPO: ${{ needs.prepare.outputs.upstream_repo }}
+          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
+          UPSTREAM_TAG: ${{ needs.prepare.outputs.upstream_tag }}
           ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        shell: bash
         run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG was published by another run."
+            exit 0
+          fi
+
+          source_status="release snapshot"
+          if [[ "$UPSTREAM_PRERELEASE" == "true" ]]; then
+            source_status="prerelease or bootstrap snapshot"
+          fi
+          printf -v release_notes \
+            'Stable VRCLearn distribution of upstream %s (%s) with the maintained fork localization and packaging.\n\n- Upstream source: https://github.com/%s/commit/%s\n- Fork overlay source: `%s`\n- Release snapshot: `%s`\n\nSource authorship and the MIT license remain with Wooshii and the upstream contributors.\n\n<!-- upstream-source:%s -->\n<!-- fork-overlay:%s -->' \
+            "$UPSTREAM_TAG" "$source_status" "$UPSTREAM_REPO" \
+            "$UPSTREAM_SHA" "$FORK_MAIN_SHA" "$CANDIDATE_SHA" "$UPSTREAM_SHA" "$FORK_MAIN_SHA"
+
           gh release create "$RELEASE_TAG" \
-              "$ZIP_PATH" \
-              "$UNITYPACKAGE_PATH" \
-              --target "$GITHUB_SHA" \
-              --title "$DISPLAY_NAME $RELEASE_TAG" \
-              --generate-notes
+            "$ZIP_PATH" \
+            "$UNITYPACKAGE_PATH" \
+            "$MANIFEST_PATH" \
+            --target "$CANDIDATE_SHA" \
+            --title "$PACKAGE_VERSION" \
+            --notes "$release_notes"
+
+      - name: Refresh the VPM listing and continue any release backlog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run build-listing.yml --ref master
+          gh workflow run release.yml --ref master
+
+  cleanup:
+    name: Remove temporary release snapshot branch
+    needs:
+      - prepare
+      - publish
+    if: always() && needs.prepare.outputs.candidate_branch != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the temporary branch
+        env:
+          CANDIDATE_BRANCH: ${{ needs.prepare.outputs.candidate_branch }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/git/refs/heads/${CANDIDATE_BRANCH}" \
+            >/dev/null 2>&1 || true

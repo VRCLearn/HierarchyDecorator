@@ -1,0 +1,211 @@
+name: Sync upstream master
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hierarchy-decorator-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare and validate upstream master merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      base_sha: ${{ steps.sync.outputs.base_sha }}
+      changed: ${{ steps.sync.outputs.changed }}
+      sync_branch: ${{ steps.sync.outputs.sync_branch }}
+      sync_sha: ${{ steps.sync.outputs.sync_sha }}
+      upstream_sha: ${{ steps.sync.outputs.upstream_sha }}
+    steps:
+      - name: Check out the fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Merge upstream master
+        id: sync
+        env:
+          RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config=.github/upstream-sync.json
+          upstream_repo="$(jq -r '.repository' "$config")"
+          upstream_branch="$(jq -r '.branch' "$config")"
+          base_sha="$(git rev-parse HEAD)"
+
+          if ! [[ "$upstream_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid upstream repository: $upstream_repo" >&2
+            exit 1
+          fi
+          if ! [[ "$upstream_branch" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid upstream branch: $upstream_branch" >&2
+            exit 1
+          fi
+
+          git remote add upstream "https://github.com/${upstream_repo}.git"
+          git fetch --force --no-tags upstream \
+            "refs/heads/${upstream_branch}:refs/remotes/upstream/${upstream_branch}"
+          upstream_sha="$(git rev-parse "refs/remotes/upstream/${upstream_branch}")"
+
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$upstream_sha" >> "$GITHUB_OUTPUT"
+
+          if git merge-base --is-ancestor "$upstream_sha" HEAD; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "sync_branch=" >> "$GITHUB_OUTPUT"
+            echo "sync_sha=$base_sha" >> "$GITHUB_OUTPUT"
+            echo "The fork already contains upstream $upstream_branch at $upstream_sha."
+            exit 0
+          fi
+
+          merge_base="$(git merge-base HEAD "$upstream_sha")"
+          workflow_changes="$(
+            git diff --name-only "$merge_base" "$upstream_sha" -- .github/workflows
+          )"
+          if [[ -n "$workflow_changes" ]]; then
+            echo "::error title=Use GitHub's Sync fork button::Upstream changed workflow files that GITHUB_TOKEN cannot update."
+            {
+              echo "## Manual upstream synchronization required"
+              echo
+              echo "Upstream at \`$upstream_sha\` changed workflow files:"
+              echo
+              echo '```text'
+              echo "$workflow_changes"
+              echo '```'
+              echo
+              echo "Open the repository's **Code** page and choose **Sync fork → Update branch**."
+              echo "That user-authorized update can modify workflow files. Its push to \`master\` starts validation again."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-edit "$upstream_sha"
+          git diff --check "$base_sha"..HEAD -- . ':(exclude,glob)**/*.meta'
+
+          sync_branch="automation/upstream-master-${RUN_ID}"
+          sync_sha="$(git rev-parse HEAD)"
+          git push origin "HEAD:refs/heads/${sync_branch}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sync_branch=$sync_branch" >> "$GITHUB_OUTPUT"
+          echo "sync_sha=$sync_sha" >> "$GITHUB_OUTPUT"
+          echo "Prepared upstream $upstream_branch at $upstream_sha as $sync_sha."
+
+      - name: Validate localization coverage
+        if: steps.sync.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/validate-localization.ps1
+
+      - name: Build and validate the candidate VPM archive
+        if: steps.sync.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/build-vpm.ps1 -Revision "${{ steps.sync.outputs.sync_sha }}"
+
+      - name: Build and validate the candidate UnityPackage
+        if: steps.sync.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/scripts/build-unitypackage.ps1
+
+      - name: Keep scheduled synchronization active
+        if: github.event_name == 'schedule' && steps.sync.outputs.changed == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now="$(date +%s)"
+          last_commit="$(git log -1 --format=%ct)"
+          maximum_idle_seconds="$((45 * 24 * 60 * 60))"
+          if (( now - last_commit < maximum_idle_seconds )); then
+            echo "The repository has been active within the last 45 days."
+            exit 0
+          fi
+
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive
+          git commit -m "Keep scheduled upstream synchronization active"
+          git push origin HEAD:master
+
+  promote:
+    name: Promote validated upstream master merge
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the validated merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.sync_sha }}
+
+      - name: Fast-forward master
+        env:
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin master
+          current_master="$(git rev-parse origin/master)"
+          if [[ "$current_master" != "$BASE_SHA" ]]; then
+            echo "master changed while the upstream candidate was tested." >&2
+            echo "Expected $BASE_SHA but found $current_master. Retry synchronization." >&2
+            exit 1
+          fi
+
+          git push origin HEAD:master
+
+  release:
+    name: Synchronize upstream releases
+    needs:
+      - prepare
+      - promote
+    if: >-
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.prepare.outputs.changed == 'false' || needs.promote.result == 'success')
+    permissions:
+      actions: write
+      contents: write
+    uses: ./.github/workflows/release.yml
+
+  cleanup:
+    name: Remove temporary master synchronization branch
+    needs:
+      - prepare
+      - promote
+    if: always() && needs.prepare.outputs.sync_branch != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete the temporary branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_BRANCH: ${{ needs.prepare.outputs.sync_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/git/refs/heads/${SYNC_BRANCH}" \
+            >/dev/null 2>&1 || true

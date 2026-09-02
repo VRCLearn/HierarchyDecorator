@@ -26,6 +26,8 @@
 </p>
 
 > This VRCLearn-maintained version adds multilingual settings and VPM distribution support.
+> See the [VRCLearn distribution policy](https://github.com/VRCLearn/HierarchyDecorator/blob/master/VPM.md)
+> for upstream synchronization and release details.
 
 ## About
 
