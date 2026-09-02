@@ -11,7 +11,7 @@ namespace HierarchyDecorator
         {
             // --- General Features
 
-            CreateDrawableGroup("Toggles")
+            CreateDrawableGroup(SettingsLocalization.Text("Group.Toggles"))
                 .RegisterSerializedProperty(serializedTab, "showActiveToggles", "activeToggleType", "activeSwiping", "swipeSameState", "swipeSelectionOnly", "depthMode");
 
             // --- Layers
@@ -33,10 +33,10 @@ namespace HierarchyDecorator
             SetupColorSettings(layerSettings, out var layerShow, out var layerColorSettings, out var layerUseSolidColor, out var layerUseRandomColor, out var layerUseRandomColorH, out var layerUseRandomColorS, out var layerUseRandomColorV);
             void OnChangedLayerRandomColor(SerializedProperty property) => OnChangedRandomizeFields(property, layerUseRandomColorH, layerUseRandomColorS, layerUseRandomColorV);
 
-            CreateDrawableGroup("Tags & Layers")
+            CreateDrawableGroup(SettingsLocalization.Text("Group.TagsLayers"))
                 .RegisterSerializedProperty(serializedTab, nameof(GlobalData.tagLayerLayout))
                 // tag settings
-                .RegisterDrawer(new SerializedGroupDrawer("Tag Settings", SerializedPropertyUtility.GetChildProperties(
+                .RegisterDrawer(new SerializedGroupDrawer(SettingsLocalization.Text("Group.TagSettings"), SerializedPropertyUtility.GetChildProperties(
                     tagSettings,
                     nameof(TagSettings.show))))
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
@@ -59,7 +59,7 @@ namespace HierarchyDecorator
                     nameof(TagLayerColorSettings.brightness))))
                     .EnableIf(() => !tagUseSolidColor.boolValue).ShowIf(() => tagShow.boolValue && tagUseRandomColor.boolValue).OnChanged(OnChangedTagRandomColor)
                 // layer settings
-                .RegisterDrawer(new SerializedGroupDrawer("Layer Settings", SerializedPropertyUtility.GetChildProperties(
+                .RegisterDrawer(new SerializedGroupDrawer(SettingsLocalization.Text("Group.LayerSettings"), SerializedPropertyUtility.GetChildProperties(
                     layerSettings,
                     nameof(LayerSettings.show))))
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
@@ -94,10 +94,10 @@ namespace HierarchyDecorator
             SerializedProperty instanceBreadcrumbsShow = instanceBreadcrumbs.FindPropertyRelative(nameof(BreadcrumbSettings.show));
             SerializedProperty fullDepthBreadcrumbsShow = fullDepthBreadcrumbs.FindPropertyRelative(nameof(BreadcrumbSettings.show));
 
-            CreateDrawableGroup("Breadcrumbs")
+            CreateDrawableGroup(SettingsLocalization.Text("Group.Breadcrumbs"))
                 .RegisterSerializedProperty(showBreadcrumbs)
                 .RegisterDrawer(new SerializedGroupDrawer(
-                    "Instance",
+                    SettingsLocalization.Text("Group.Instance"),
                     instanceBreadcrumbsShow))
                     .EnableIf(() => showBreadcrumbs.boolValue)
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
@@ -107,7 +107,7 @@ namespace HierarchyDecorator
                     nameof(BreadcrumbSettings.displayHorizontal))))
                     .EnableIf(() => showBreadcrumbs.boolValue && instanceBreadcrumbsShow.boolValue)
                 .RegisterDrawer(new SerializedGroupDrawer(
-                    "Hierarchy",
+                    SettingsLocalization.Text("Group.Hierarchy"),
                     fullDepthBreadcrumbsShow))
                     .EnableIf(() => showBreadcrumbs.boolValue)
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(

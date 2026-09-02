@@ -11,42 +11,46 @@ namespace HierarchyDecorator
     {
         private static class LabelContents
         {
-            public static readonly GUIContent MoveUp = new GUIContent("Move Up");
-            public static readonly GUIContent MoveDown = new GUIContent("Move Down");
-            public static readonly GUIContent DeleteGroup = new GUIContent("Delete Group");
+            public static GUIContent MoveUp => new GUIContent(SettingsLocalization.Text("Icon.MoveUp"));
+            public static GUIContent MoveDown => new GUIContent(SettingsLocalization.Text("Icon.MoveDown"));
+            public static GUIContent DeleteGroup => new GUIContent(SettingsLocalization.Text("Icon.DeleteGroup"));
         }
 
         private static class Labels
         {
             // --- Title
 
-            public const string TITLE = "Icon Selection";
+            public static string TITLE => SettingsLocalization.Text("Icon.Title");
 
             // --- Controls
 
-            public const string SHOW_ALL_LABEL = "Show All";
+            public static string SHOW_ALL_LABEL => SettingsLocalization.Text("Icon.ShowAll");
 
             // --- Sidebar group names
 
-            public const string EXCLUDED_COMPONENTS_LABEL = "Excluded";
-            public const string ALL_COMPONENTS_LABEL = "All";
-            public const string CUSTOM_COMPONENTS_LABEL = "Custom";
+            public const string EXCLUDED_COMPONENTS_KEY = "Excluded";
+            public const string ALL_COMPONENTS_KEY = "All";
+            public const string CUSTOM_COMPONENTS_KEY = "Custom";
+
+            public static string EXCLUDED_COMPONENTS_LABEL => SettingsLocalization.Text("Category.Excluded");
+            public static string ALL_COMPONENTS_LABEL => SettingsLocalization.Text("Category.All");
+            public static string CUSTOM_COMPONENTS_LABEL => SettingsLocalization.Text("Category.Custom");
 
             // --- Unity component enable/disable all
 
-            public const string ENABLE_LABEL = "Enable All";
-            public const string DISABLE_LABEL = "Disable All";
+            public static string ENABLE_LABEL => SettingsLocalization.Text("Icon.EnableAll");
+            public static string DISABLE_LABEL => SettingsLocalization.Text("Icon.DisableAll");
 
             // --- Custom group labels
 
-            public const string ADD_GROUP_LABEL = "Add Group";
-            public const string DELETE_GROUP_LABEL = "Delete";
+            public static string ADD_GROUP_LABEL => SettingsLocalization.Text("Icon.AddGroup");
+            public static string DELETE_GROUP_LABEL => SettingsLocalization.Text("Icon.Delete");
 
-            public const string DEFAULT_GROUP_LABEL = "Unnamed Group";
+            public static string DEFAULT_GROUP_LABEL => SettingsLocalization.Text("Icon.UnnamedGroup");
 
             // --- Custom component labels
 
-            public const string ADD_COMPONENT_LABEL = "Add Icon";
+            public static string ADD_COMPONENT_LABEL => SettingsLocalization.Text("Icon.AddIcon");
             public const string DELETE_COMPONENT_LABEL = "X";
         }
 
@@ -89,7 +93,7 @@ namespace HierarchyDecorator
             private static readonly GUIContent WarningGUI = EditorGUIUtility.IconContent("console.warnicon");
 #endif
 
-            public static readonly GUIContent EmptyComponent = new GUIContent("<No Component>", WarningGUI.image);
+            public static GUIContent EmptyComponent => new GUIContent(SettingsLocalization.Text("Icon.NoComponent"), WarningGUI.image);
         }
 
         // Const/Readonly
@@ -174,7 +178,7 @@ namespace HierarchyDecorator
             display = new EnumFlagToggleDrawer<DisplayMode>(displayProp);
             display.ToggleStyle = Style.ToolbarButtonLeft;
 
-            CreateDrawableGroup("Settings")
+            CreateDrawableGroup(SettingsLocalization.Text("Group.Settings"))
                 .RegisterSerializedProperty(serializedTab, "enableIcons", "clickToToggleComponent", "stackDuplicateIcons", "showMissingScriptWarning");
         }
 
@@ -230,7 +234,7 @@ namespace HierarchyDecorator
 
             // Pass over all icons to group
 
-            unityGroups.Add(Labels.ALL_COMPONENTS_LABEL, allIcons.ToArray());
+            unityGroups.Add(Labels.ALL_COMPONENTS_KEY, allIcons.ToArray());
 
             // Excluded group
 
@@ -243,8 +247,8 @@ namespace HierarchyDecorator
 
             // Assign global group to 'All'
 
-            groupNames[0] = Labels.EXCLUDED_COMPONENTS_LABEL;
-            groupNames[1] = Labels.ALL_COMPONENTS_LABEL;
+            groupNames[0] = Labels.EXCLUDED_COMPONENTS_KEY;
+            groupNames[1] = Labels.ALL_COMPONENTS_KEY;
 
         }
 
@@ -303,14 +307,14 @@ namespace HierarchyDecorator
 
                 EditorGUI.BeginChangeCheck();
 
-                EditorGUILayout.LabelField("Groups", Style.CenteredLabel, GUILayout.MinWidth(0));
+                EditorGUILayout.LabelField(SettingsLocalization.Text("Icon.Groups"), Style.CenteredLabel, GUILayout.MinWidth(0));
 
                 int index = categoryIndex;
                 for (int i = 0; i < groupNames.Length; i++)
                 {
                     string name = groupNames[i];
 
-                    if (GUILayout.Toggle(index == i, name, Style.ToolbarButtonLeft))
+                    if (GUILayout.Toggle(index == i, SettingsLocalization.GetCategoryLabel(name), Style.ToolbarButtonLeft))
                     {
                         index = i;
                     }
@@ -343,13 +347,13 @@ namespace HierarchyDecorator
 
         private void DrawComponents()
         {
-            string group = "All";
+            string group = Labels.ALL_COMPONENTS_KEY;
             if (categoryIndex != -1)
             {
                 group = groupNames[categoryIndex];
             }
 
-            bool isExcluded = group == "Excluded";
+            bool isExcluded = group == Labels.EXCLUDED_COMPONENTS_KEY;
             EditorGUI.BeginDisabledGroup(settings.Components.DisplayAll && !isExcluded);
             windowRect = EditorGUILayout.BeginVertical();
             {
@@ -368,7 +372,7 @@ namespace HierarchyDecorator
                 else // Draw the group if selected
                 if (isExcluded)
                 {
-                    DrawComponentsColumns(unityGroups["All"]);
+                    DrawComponentsColumns(unityGroups[Labels.ALL_COMPONENTS_KEY]);
                 }
                 else
                 if (categoryIndex < groupNames.Length)
@@ -390,7 +394,7 @@ namespace HierarchyDecorator
 
             searchText = EditorGUILayout.TextField(searchText, Style.ToolbarTextField);
 
-            bool isExcluded = groupNames[categoryIndex] == "Excluded";
+            bool isExcluded = groupNames[categoryIndex] == Labels.EXCLUDED_COMPONENTS_KEY;
             if (GUILayout.Button(Labels.ENABLE_LABEL, Style.ToolbarButtonResizable))
             {
                 foreach (IconInfo icon in icons)
@@ -496,7 +500,7 @@ namespace HierarchyDecorator
 
                         // Draw component
 
-                        if (groupNames[categoryIndex] == "Excluded")
+                        if (groupNames[categoryIndex] == Labels.EXCLUDED_COMPONENTS_KEY)
                         {
                             DrawExcludedComponent(type);
                         }
@@ -534,10 +538,10 @@ namespace HierarchyDecorator
             filter = filter.ToLower();
 
             string group = groupNames[categoryIndex];
-            bool isExcluded = group == "Excluded";
+            bool isExcluded = group == Labels.EXCLUDED_COMPONENTS_KEY;
             if (isExcluded)
             {
-                group = "All";
+                group = Labels.ALL_COMPONENTS_KEY;
             }
 
             IconInfo[] selectedTypes = unityGroups[group];

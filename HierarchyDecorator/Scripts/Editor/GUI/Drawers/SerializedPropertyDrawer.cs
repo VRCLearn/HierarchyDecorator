@@ -9,7 +9,7 @@ namespace HierarchyDecorator
 
         public SerializedPropertyElement(SerializedProperty target) : base (target) 
         {
-            content = new GUIContent(target.displayName, target.tooltip);
+            content = SettingsLocalization.GetPropertyContent(target);
         }
 
         protected override void OnGUI()
@@ -19,7 +19,7 @@ namespace HierarchyDecorator
             switch (Target.propertyType)
             {
                 default:
-                    EditorGUILayout.PropertyField (Target);
+                    SettingsLocalization.PropertyField(Target);
                     break;
 
                 case SerializedPropertyType.Boolean:

@@ -48,7 +48,7 @@ namespace HierarchyDecorator
         {
             if (settings == null)
             {
-                EditorGUILayout.LabelField ("Cannot find settings in project", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField (SettingsLocalization.Text("Settings.NotFound"), EditorStyles.boldLabel);
                 return;
             }
 
