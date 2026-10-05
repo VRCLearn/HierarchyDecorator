@@ -8,7 +8,7 @@
     },
     "url": "https://vrclearn.github.io/HierarchyDecorator/index.json",
     "description": "VPM distribution of Wooshii's HierarchyDecorator for Unity.",
-    "bannerUrl": "banner.png",
+    "bannerUrl": "vrclearn-banner.png",
     "infoLink": {
         "text": "Source and documentation",
         "url": "https://github.com/VRCLearn/HierarchyDecorator"

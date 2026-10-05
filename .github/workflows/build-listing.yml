@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/build-listing.yml"
       - ".github/source.json"
+      - .github/vpm/**
       - ".github/scripts/build-listing.ps1"
   release:
     types:
@@ -78,6 +79,8 @@ jobs:
         run: |
           set -euo pipefail
           cp .github/source.json official-template/source.json
+          cp .github/vpm/vrclearn-banner.png official-template/Website/vrclearn-banner.png
+          cat .github/vpm/banner.css >> official-template/Website/styles.css
           template=official-template/Website/index.html
           if ! perl -0pi -e \
             '$count = s{>Add to VCC<}{>Add to VCC/ALCOMD<}g; END { exit($count == 2 ? 0 : 1) }' \
