@@ -86,8 +86,8 @@ namespace HierarchyDecorator
 
         // Tags & Layers
         public TagLayerLayout tagLayerLayout;
-        public TagSettings tagSettings;
-        public LayerSettings layerSettings;
+        public TagSettings tagSettings = new TagSettings();
+        public LayerSettings layerSettings = new LayerSettings();
 
         // Components 
 
@@ -97,7 +97,7 @@ namespace HierarchyDecorator
 
         public bool showBreadcrumbs = true;
 
-        public BreadcrumbSettings instanceBreadcrumbs;
+        public BreadcrumbSettings instanceBreadcrumbs = new BreadcrumbSettings();
         public BreadcrumbSettings fullDepthBreadcrumbs = new BreadcrumbSettings()
         {
             style = BreadcrumbStyle.Dash,

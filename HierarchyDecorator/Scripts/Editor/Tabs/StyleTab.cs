@@ -182,6 +182,7 @@ namespace HierarchyDecorator
             style.UpdateStyle(EditorGUIUtility.isProSkin);
 
             settings.styleData.styles.Add(style);
+            EditorUtility.SetDirty(settings);
         }
 
         // Height Calculation

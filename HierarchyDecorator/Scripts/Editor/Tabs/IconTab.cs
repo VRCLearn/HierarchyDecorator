@@ -755,7 +755,11 @@ namespace HierarchyDecorator
 
             if (index != 0)
             {
-                menu.AddItem(moveUp, false, () => components.MoveCustomGroup(index, index - 1));
+                menu.AddItem(moveUp, false, () =>
+                {
+                    components.MoveCustomGroup(index, index - 1);
+                    EditorUtility.SetDirty(settings);
+                });
             }
             else
             {
@@ -766,7 +770,11 @@ namespace HierarchyDecorator
 
             if (index != settings.Components.CustomGroups.Length - 1)
             {
-                menu.AddItem(moveDown, false, () => components.MoveCustomGroup(index, index + 1));
+                menu.AddItem(moveDown, false, () =>
+                {
+                    components.MoveCustomGroup(index, index + 1);
+                    EditorUtility.SetDirty(settings);
+                });
             }
             else
             {
@@ -780,6 +788,7 @@ namespace HierarchyDecorator
             menu.AddItem(delete, false, () =>
             {
                 components.DeleteCustomGroup(index);
+                EditorUtility.SetDirty(settings);
             });
 
             // Refine menu position
@@ -821,6 +830,7 @@ namespace HierarchyDecorator
                             if (component.Type != script.GetClass())
                             {
                                 group.Update(component, script);
+                                EditorUtility.SetDirty(settings);
                             }
                         }
                         else
@@ -907,6 +917,7 @@ namespace HierarchyDecorator
                         if (!hoveredGroup.Contains(component) && component.IsValid())
                         {
                             hoveredGroup.Add(component);
+                            EditorUtility.SetDirty(settings);
                         }
                     }
 
