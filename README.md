@@ -84,7 +84,11 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
 
 Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. You can also open this page from `Tools > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
 
+New configurations open a preset chooser with image previews for **Detailed** and **Minimal**. Choose either image or its button to apply the preset. You can reopen the chooser from **Tools > Hierarchy Decorator > Choose Preset**. Presets change tag and layer visibility, breadcrumbs, and alternating row backgrounds; other settings are preserved. Existing configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
+
 On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
+
+Existing local configurations and migrated settings assets skip the first-run window and retain their current options.
 
 The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current language is checked. English is the default. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 

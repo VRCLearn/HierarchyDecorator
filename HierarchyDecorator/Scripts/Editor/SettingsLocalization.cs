@@ -24,6 +24,8 @@ namespace HierarchyDecorator
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
+            { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
+            { "Minimal", new[] { "シンプル", "간결", "精簡", "精简" } },
             { "Hierarchy Settings", new[] { "Hierarchy 設定", "하이어라키 설정", "Hierarchy 設定", "Hierarchy 设置" } },
             { "GitHub Repository", new[] { "GitHub リポジトリ", "GitHub 저장소", "GitHub 儲存庫", "GitHub 仓库" } },
             { "Cannot find settings in project", new[] { "プロジェクトに設定が見つかりません", "프로젝트에서 설정을 찾을 수 없습니다", "在專案中找不到設定", "在项目中找不到设置" } },
