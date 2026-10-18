@@ -81,6 +81,7 @@ namespace HierarchyDecorator
         {
             Settings settings = Settings;
             settings.ApplyPreset(preset);
+            OnSettings?.Invoke();
             EditorUtility.SetDirty(settings);
             SaveSettings(settings);
             InternalEditorUtility.RepaintAllViews();

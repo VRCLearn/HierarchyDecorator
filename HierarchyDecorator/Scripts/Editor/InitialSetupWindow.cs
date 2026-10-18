@@ -5,26 +5,36 @@ namespace HierarchyDecorator
 {
     internal class InitialSetupWindow : EditorWindow
     {
-        private Vector2 scrollPosition;
+        private const string DetailedPreviewGuid = "8c2c86f2ed464384ab7693ff820cd9a6";
+        private const string MinimalPreviewGuid = "0938738cc3ab43e5b342977dbf236c63";
 
         [SerializeField]
         private bool allowReselection;
+        private Texture2D detailedPreview;
+        private Texture2D minimalPreview;
 
         internal static void Open(bool allowReselection = false)
         {
             var window = GetWindow<InitialSetupWindow>(true, "Hierarchy Decorator", true);
             window.allowReselection = allowReselection;
-            window.minSize = new Vector2(420f, 360f);
+            window.minSize = new Vector2(760f, 340f);
         }
 
         private void OnEnable()
         {
+            detailedPreview = LoadPreview(DetailedPreviewGuid);
+            minimalPreview = LoadPreview(MinimalPreviewGuid);
             SettingsLocalization.LanguageChanged += Repaint;
         }
 
         private void OnDisable()
         {
             SettingsLocalization.LanguageChanged -= Repaint;
+        }
+
+        private static Texture2D LoadPreview(string guid)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(guid));
         }
 
         private void OnGUI()
@@ -36,31 +46,30 @@ namespace HierarchyDecorator
             }
 
             SettingsPreset? selected = null;
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-            using (new EditorGUILayout.HorizontalScope())
+            float previewHeight = Mathf.Min((position.width - 60f) * 0.5f * 270f / 420f, position.height - 106f - EditorGUIUtility.singleLineHeight);
+            using (new EditorGUILayout.VerticalScope())
             {
                 GUILayout.Space(12f);
-                using (new EditorGUILayout.VerticalScope())
+                SettingsLocalization.DrawLanguageSelector();
+                GUILayout.Space(12f);
+                using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Space(12f);
-                    SettingsLocalization.DrawLanguageSelector();
-                    GUILayout.Space(8f);
-                    EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset"), EditorStyles.boldLabel);
-                    GUILayout.Label(SettingsLocalization.Text("Choose the Hierarchy appearance. You can adjust these options in Settings later."), EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset style"), EditorStyles.boldLabel);
+                }
+                GUILayout.Space(8f);
+                using (new EditorGUILayout.HorizontalScope())
+                {
                     GUILayout.Space(12f);
-
-                    if (DrawPreset("Detailed", "Original upstream defaults: show tags, layers, breadcrumbs, and alternating row backgrounds.", "Use detailed preset"))
+                    if (DrawPreset(detailedPreview, "Detailed", previewHeight))
                         selected = SettingsPreset.Detailed;
-
-                    GUILayout.Space(8f);
-                    if (DrawPreset("Minimal", "Previous VRCLearn defaults: hide tags, layers, breadcrumbs, and alternating row backgrounds. Keep component icons, active toggles, and scene highlighting.", "Use minimal preset"))
+                    GUILayout.Space(12f);
+                    if (DrawPreset(minimalPreview, "Minimal", previewHeight))
                         selected = SettingsPreset.Minimal;
-
                     GUILayout.Space(12f);
                 }
                 GUILayout.Space(12f);
             }
-            EditorGUILayout.EndScrollView();
 
             if (selected.HasValue)
             {
@@ -73,15 +82,20 @@ namespace HierarchyDecorator
             }
         }
 
-        private static bool DrawPreset(string title, string description, string button)
+        private static bool DrawPreset(Texture2D preview, string name, float height)
         {
+            bool selected;
+            string label = SettingsLocalization.Text(name);
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                EditorGUILayout.LabelField(SettingsLocalization.Text(title), EditorStyles.boldLabel);
-                GUILayout.Label(SettingsLocalization.Text(description), EditorStyles.wordWrappedLabel);
+                Rect imageRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(height), GUILayout.ExpandWidth(true));
+                if (preview != null)
+                    GUI.DrawTexture(imageRect, preview, ScaleMode.ScaleToFit);
+                selected = GUI.Button(imageRect, new GUIContent(string.Empty, label), GUIStyle.none);
                 GUILayout.Space(6f);
-                return GUILayout.Button(SettingsLocalization.Text(button), GUILayout.Height(28f));
+                selected |= GUILayout.Button(label, GUILayout.Height(30f));
             }
+            return selected;
         }
     }
 }

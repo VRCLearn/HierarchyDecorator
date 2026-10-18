@@ -29,12 +29,14 @@ namespace HierarchyDecorator
             settings = target as Settings;
 
             Undo.undoRedoPerformed += Refresh;
+            HierarchyDecorator.OnSettings += OnSettingsChanged;
             SettingsLocalization.LanguageChanged += Repaint;
         }
 
         private void OnDisable()
         {
             Undo.undoRedoPerformed -= Refresh;
+            HierarchyDecorator.OnSettings -= OnSettingsChanged;
             SettingsLocalization.LanguageChanged -= Repaint;
         }
 
@@ -47,8 +49,13 @@ namespace HierarchyDecorator
         {
             if (!hasInitialized)
             {
+                if (Event.current.type != EventType.Layout)
+                {
+                    Repaint();
+                    return;
+                }
+
                 Initialize();
-                return;
             }
 
             EditorGUILayout.BeginVertical(Style.InspectorPadding);
@@ -120,6 +127,12 @@ namespace HierarchyDecorator
             EditorGUILayout.EndVertical ();
         }
         
+        private void OnSettingsChanged()
+        {
+            hasInitialized = false;
+            Refresh();
+        }
+
         private void Refresh()
         {
             serializedObject.Update();
