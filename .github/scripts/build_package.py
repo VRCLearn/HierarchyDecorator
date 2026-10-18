@@ -22,7 +22,7 @@ UNITY_ROOT = "Assets/VRCLearn/HierarchyDecorator"
 GUID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY)
 ROOT_GUID = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY + "#" + UNITY_ROOT).hex
 LICENSE_DECLARATION = "MIT"
-DIRECTORIES = ("VRCLearnHierarchyDecorator",)
+DIRECTORIES = ("HierarchyDecorator",)
 ROOT_FILES = ("package.json", "LICENSE.md", "README.md", "CHANGELOG.md")
 EXCLUDED = {"__pycache__", "fixtures", "testfixtures"}
 

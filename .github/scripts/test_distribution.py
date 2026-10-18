@@ -26,9 +26,9 @@ class DistributionTests(unittest.TestCase):
         for filename in builder.ROOT_FILES:
             (self.package / filename).write_bytes((builder.ROOT / filename).read_bytes())
             (self.package / (filename + ".meta")).write_bytes((builder.ROOT / (filename + ".meta")).read_bytes())
-        self.asset("VRCLearnHierarchyDecorator", folder=True)
-        self.asset("VRCLearnHierarchyDecorator/Empty", folder=True)
-        self.asset("VRCLearnHierarchyDecorator/Example.cs", b"// Package fixture\n")
+        self.asset("HierarchyDecorator", folder=True)
+        self.asset("HierarchyDecorator/Empty", folder=True)
+        self.asset("HierarchyDecorator/Example.cs", b"// Package fixture\n")
         for module in (builder, prepare_release):
             patcher = patch.object(module, "PACKAGE", self.package)
             patcher.start()
@@ -64,13 +64,13 @@ class DistributionTests(unittest.TestCase):
         zipped = builder.validate_zip(Path(result["archive"]), manifest)
         imported = builder.validate_unitypackage(Path(result["unitypackage"]), manifest)
         with zipfile.ZipFile(result["archive"]) as archive:
-            self.assertIn("VRCLearnHierarchyDecorator/Empty/", archive.namelist())
+            self.assertIn("HierarchyDecorator/Empty/", archive.namelist())
         for relative, content in original.items():
             if relative != "package.json":
                 self.assertEqual(zipped[relative], content)
-        asset = imported[builder.UNITY_ROOT + "/VRCLearnHierarchyDecorator/Example.cs"]
-        self.assertEqual(asset["asset.meta"], original["VRCLearnHierarchyDecorator/Example.cs.meta"])
-        self.assertEqual(asset["asset"], original["VRCLearnHierarchyDecorator/Example.cs"])
+        asset = imported[builder.UNITY_ROOT + "/HierarchyDecorator/Example.cs"]
+        self.assertEqual(asset["asset.meta"], original["HierarchyDecorator/Example.cs.meta"])
+        self.assertEqual(asset["asset"], original["HierarchyDecorator/Example.cs"])
         self.assertEqual(original, {path.relative_to(self.package).as_posix(): path.read_bytes()
                                     for path in self.package.rglob("*") if path.is_file()})
 
@@ -84,8 +84,8 @@ class DistributionTests(unittest.TestCase):
             self.assertIn(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + path.name, checksums)
 
     def test_excludes_development_and_unity_ignored_names_with_their_metadata(self):
-        for relative in ("VRCLearnHierarchyDecorator/.hidden", "VRCLearnHierarchyDecorator/Debug~", "VRCLearnHierarchyDecorator/__pycache__",
-                         "VRCLearnHierarchyDecorator/CVS", "VRCLearnHierarchyDecorator/Scratch.tmp"):
+        for relative in ("HierarchyDecorator/.hidden", "HierarchyDecorator/Debug~", "HierarchyDecorator/__pycache__",
+                         "HierarchyDecorator/CVS", "HierarchyDecorator/Scratch.tmp"):
             self.asset(relative, folder=True)
             self.asset(relative + "/Ignored.cs", b"// excluded")
         (self.package / ".github").mkdir()
@@ -96,13 +96,13 @@ class DistributionTests(unittest.TestCase):
         self.assertFalse(any(any(word in name for word in ("hidden", "Debug", "pycache", "CVS", "Scratch", ".github")) for name in names))
 
     def test_missing_metadata_and_duplicate_guids_fail_before_output(self):
-        path = self.package / "VRCLearnHierarchyDecorator/Example.cs.meta"
+        path = self.package / "HierarchyDecorator/Example.cs.meta"
         content = path.read_bytes()
         path.unlink()
         with self.assertRaisesRegex(ValueError, "missing existing Unity metadata"):
             self.build()
         path.write_bytes(content)
-        other = self.asset("VRCLearnHierarchyDecorator/Other.cs")
+        other = self.asset("HierarchyDecorator/Other.cs")
         other.with_name(other.name + ".meta").write_bytes(content)
         with self.assertRaisesRegex(ValueError, "duplicate GUID"):
             self.build()
@@ -178,7 +178,7 @@ class DistributionTests(unittest.TestCase):
         self.assertNotIn(fixture["packageName"], self.manifest["legacyPackages"])
 
     def test_csharp_namespaces_do_not_export_upstream_types(self):
-        for source in (builder.ROOT / "VRCLearnHierarchyDecorator").rglob("*.cs"):
+        for source in (builder.ROOT / "HierarchyDecorator").rglob("*.cs"):
             namespaces = re.findall(r"^\s*namespace\s+([\w.]+)", source.read_text(encoding="utf-8-sig"), re.MULTILINE)
             with self.subTest(source=source.relative_to(builder.ROOT).as_posix()):
                 self.assertTrue(namespaces, "Each package source must use an explicit namespace")

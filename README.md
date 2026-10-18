@@ -60,15 +60,11 @@ Existing repository subscriptions keep the same URL and ID.
 Old installations under `Assets`, UPM or VPM may remain installed. The first-run
 window detects previous settings and offers **Import settings and finish**, or
 you can choose a fresh Detailed or Minimal preset. Importing copies settings into
-`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`, backs up any current
-VRCLearn settings, and leaves the old installation and its configuration unchanged.
+`UserSettings/VRCLearnHierarchyDecoratorSettings.asset` and leaves the old
+installation and its configuration unchanged.
 You can reopen this flow from **Tools > VRCLearn > Hierarchy Decorator > Import
 Settings**. Removal of an old installation is optional and is performed through
 its original installation method.
-
-Each plugin draws in the same Unity Hierarchy window. The VRCLearn Preferences
-page includes **Enable Hierarchy Decorator**, which disables only this copy's
-rendering and interactions when you want to use the original copy's decorations.
 
 ### Other installation methods
 
@@ -124,11 +120,11 @@ package IDs. Install only one distribution of the VRCLearn package per project.
 
 Settings are saved locally for each project in `UserSettings/VRCLearnHierarchyDecoratorSettings.asset` and can be edited from `Preferences > VRCLearn > Hierarchy Decorator`. You can also open this page from `Tools > VRCLearn > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
 
-New configurations open a preset chooser with image previews for **Detailed** and **Minimal** and an optional import of detected previous settings. Choose either image or its button to apply the preset, or import settings to finish without applying a preset. You can reopen the chooser from **Tools > VRCLearn > Hierarchy Decorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference and rendering enable switch remain unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
+New configurations open a preset chooser with image previews for **Detailed** and **Minimal** and an optional import of detected previous settings. Choose either image or its button to apply the preset, or import settings to finish without applying a preset. You can reopen the chooser from **Tools > VRCLearn > Hierarchy Decorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference remains unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
 
 The import chooser detects the former `UserSettings/HierarchyDecoratorSettings.asset`, the previously selected asset, the old default path, and other recognized settings assets under `Assets`. Importing preserves styles, component groups, fonts and script references. The original asset and its `.meta` file are kept unchanged. The separate VRCLearn file is the only settings file used during normal operation; upstream preferences are read only when discovering optional import sources.
 
-Users upgrading from VRCLearn 1.0.0 can import their previous local file through the same chooser. Binary settings files without their original plugin available must first be saved as text assets using the original plugin.
+Binary settings files without their original plugin available must first be saved as text assets using the original plugin.
 
 The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > VRCLearn > Hierarchy Decorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 

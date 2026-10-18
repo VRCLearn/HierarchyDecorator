@@ -91,16 +91,9 @@ namespace VRCLearn.HierarchyDecorator
         {
             Settings imported = SettingsImport.Read(candidate);
             Settings current = Settings;
-            Settings previous = UnityEngine.Object.Instantiate(current);
             try
             {
-                string path = Constants.Paths.SETTINGS_FILE_PATH;
-                if (File.Exists(path))
-                    File.Copy(path, path + ".backup-" + Guid.NewGuid().ToString("N"));
-
-                bool enabled = current.enableHierarchyDecorator;
                 EditorUtility.CopySerialized(imported, current);
-                current.enableHierarchyDecorator = enabled;
                 current.name = "VRCLearn Hierarchy Decorator Settings";
                 current.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 current.NeedsPresetSelection = false;
@@ -110,15 +103,8 @@ namespace VRCLearn.HierarchyDecorator
                     throw new IOException("Cannot save imported settings.");
                 InternalEditorUtility.RepaintAllViews();
             }
-            catch
-            {
-                EditorUtility.CopySerialized(previous, current);
-                OnSettings?.Invoke();
-                throw;
-            }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(previous);
                 UnityEngine.Object.DestroyImmediate(imported);
             }
         }

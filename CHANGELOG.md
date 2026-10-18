@@ -2,13 +2,12 @@
 
 ### Changed
 
-- Isolate VRCLearn's assembly, C# namespaces, asset GUIDs, source folder, menu
+- Isolate VRCLearn's assembly, C# namespaces, asset GUIDs, menu
   paths and local settings from the upstream plugin so both can remain installed.
 - Stop automatically removing the upstream VPM package. Existing installations
   and their settings are retained; removing them is optional.
 - Add explicit previous-settings import to the first-run chooser and Tools menu,
-  including a backup of the current VRCLearn settings before replacement.
-- Add a rendering enable switch affecting only the VRCLearn copy.
+  leaving the source settings unchanged.
 - Verify asset identities and both editor assemblies in coexistence checks.
 
 ## [1.0.0] - 2026-10-19

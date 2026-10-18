@@ -62,15 +62,6 @@ namespace VRCLearn.HierarchyDecorator
             SettingsLocalization.DrawLanguageSelector();
             DrawTitle();
             EditorGUI.BeginChangeCheck();
-            EditorGUI.BeginChangeCheck();
-            bool enabled = EditorGUILayout.Toggle(SettingsLocalization.Content("Enable Hierarchy Decorator"), settings.enableHierarchyDecorator);
-            if (EditorGUI.EndChangeCheck())
-            {
-                Undo.RecordObject(settings, "Toggle VRCLearn Hierarchy Decorator");
-                settings.enableHierarchyDecorator = enabled;
-                serializedObject.Update();
-                EditorApplication.RepaintHierarchyWindow();
-            }
             DrawContent();
             if (EditorGUI.EndChangeCheck())
                 EditorUtility.SetDirty(settings);

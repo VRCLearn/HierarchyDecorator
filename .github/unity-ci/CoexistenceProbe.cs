@@ -174,14 +174,12 @@ namespace HierarchyDecoratorCI
             var current = (ScriptableObject)currentProperty.GetValue(null);
             using (var serialized = new SerializedObject(current))
             {
-                serialized.FindProperty("enableHierarchyDecorator").boolValue = false;
                 serialized.FindProperty("needsPresetSelection").boolValue = true;
                 serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue = "::before-import::";
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
             Require((bool)owner.GetMethod("SaveSettings", AnyStatic).Invoke(null, new object[] { current }),
                 "Could not save the pre-import current settings fixture.");
-            byte[] previousCurrent = File.ReadAllBytes(currentPath);
             string[] backupsBefore = Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecoratorSettings.asset.backup-*");
             string sourceValues = EditorJsonUtility.ToJson(source);
             owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new[] { FindCandidate(importer, LocalPath) });
@@ -193,9 +191,7 @@ namespace HierarchyDecoratorCI
             Require(!File.Exists(currentPath + ".tmp"), "Saving imported settings leaked its temporary file.");
             string[] backupsAfter = Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecoratorSettings.asset.backup-*");
             string[] addedBackups = backupsAfter.Except(backupsBefore).ToArray();
-            Require(backupsAfter.Length == backupsBefore.Length + 1 && addedBackups.Length == 1 &&
-                previousCurrent.SequenceEqual(File.ReadAllBytes(addedBackups[0])),
-                "Import did not create exactly one byte-identical backup of the previous current settings.");
+            Require(!addedBackups.Any(), "Import created an unexpected backup file.");
 
             Object[] persisted = InternalEditorUtility.LoadSerializedFileAndForget(currentPath);
             try
@@ -220,15 +216,13 @@ namespace HierarchyDecoratorCI
                 originalMeta.SequenceEqual(File.ReadAllBytes(AssetPath + ".meta")) &&
                 originalLocal.SequenceEqual(File.ReadAllBytes(LocalPath)) && sourceValues == EditorJsonUtility.ToJson(source),
                 "The complete import/save flow modified original settings.");
-            Checks.Add("complete import reuses current instance, preserves disabled state, clears setup, persists independently and backs up once");
+            Checks.Add("complete import reuses current instance, clears setup, persists independently and creates no backups");
         }
 
         private static void CheckImportState(Object settings)
         {
             using (var serialized = new SerializedObject(settings))
             {
-                Require(!serialized.FindProperty("enableHierarchyDecorator").boolValue,
-                    "Import did not preserve the current disabled rendering state.");
                 Require(!serialized.FindProperty("needsPresetSelection").boolValue,
                     "Import did not clear the initial preset selection marker.");
             }
@@ -309,23 +303,19 @@ namespace HierarchyDecoratorCI
                 oldSerialized.FindProperty("globalData.showAllComponents").boolValue = false;
                 oldSerialized.ApplyModifiedPropertiesWithoutUndo();
                 newSerialized.FindProperty("globalData.showAllComponents").boolValue = true;
-                newSerialized.FindProperty("enableHierarchyDecorator").boolValue = true;
                 newSerialized.ApplyModifiedPropertiesWithoutUndo();
                 oldSerialized.Update();
                 Require(!oldSerialized.FindProperty("globalData.showAllComponents").boolValue &&
-                    newSerialized.FindProperty("globalData.showAllComponents").boolValue &&
-                    newSerialized.FindProperty("enableHierarchyDecorator").boolValue, "Old state changed new state.");
+                    newSerialized.FindProperty("globalData.showAllComponents").boolValue, "Old state changed new state.");
                 oldSerialized.FindProperty("globalData.showAllComponents").boolValue = true;
                 oldSerialized.ApplyModifiedPropertiesWithoutUndo();
                 newSerialized.FindProperty("globalData.showAllComponents").boolValue = false;
-                newSerialized.FindProperty("enableHierarchyDecorator").boolValue = false;
                 newSerialized.ApplyModifiedPropertiesWithoutUndo();
                 oldSerialized.Update();
                 Require(oldSerialized.FindProperty("globalData.showAllComponents").boolValue &&
-                    !newSerialized.FindProperty("globalData.showAllComponents").boolValue &&
-                    !newSerialized.FindProperty("enableHierarchyDecorator").boolValue, "New state changed old state.");
+                    !newSerialized.FindProperty("globalData.showAllComponents").boolValue, "New state changed old state.");
             }
-            Checks.Add("both hierarchy callback sets and independent component visibility and new enable state");
+            Checks.Add("both hierarchy callback sets and independent component visibility");
         }
 
         private static void Require(bool condition, string message)

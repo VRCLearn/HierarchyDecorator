@@ -103,7 +103,7 @@ namespace VRCLearn.HierarchyDecorator
         public static void OnGUI(int id, Rect rect)
 #endif
         {
-            if (EditorApplication.isUpdating || !s_Settings.enableHierarchyDecorator)
+            if (EditorApplication.isUpdating)
             {
                 return;
             }

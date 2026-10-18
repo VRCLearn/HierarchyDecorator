@@ -7,8 +7,8 @@ namespace VRCLearn.HierarchyDecorator
 {
     internal class InitialSetupWindow : EditorWindow
     {
-        private const string DetailedPreviewGuid = "f26d2d7135e456b78538166214c0e9d8";
-        private const string MinimalPreviewGuid = "52218b70c0cb5ba5b98b6a871899753b";
+        private const string DetailedPreviewGuid = "8c2c86f2ed464384ab7693ff820cd9a6";
+        private const string MinimalPreviewGuid = "0938738cc3ab43e5b342977dbf236c63";
 
         [SerializeField]
         private bool allowReselection;

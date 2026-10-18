@@ -20,13 +20,12 @@ upstream: both plugins must be able to remain installed and usable independently
 Do not edit or replace the old release or move its tag.
 
 The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`,
-with the distinct `VRCLearnHierarchyDecorator` source folder. Only this maintained
+with the existing `HierarchyDecorator` source folder. Only this maintained
 distribution folder is declared in `legacyFolders`, with a stable GUID. Upstream
 Assets folders are not deleted. Settings are stored independently at
 `UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run chooser and
 **Tools > VRCLearn > Hierarchy Decorator > Import Settings** optionally import old
-settings, leaving their files and installation intact and backing up the current
-VRCLearn settings. Live upstream settings objects are copied field by field;
+settings, leaving their files and installation intact. Live upstream settings objects are copied field by field;
 recognized old GUID YAML files can be imported without the old assembly loaded.
 Unknown binary files require the original plugin to save a text asset first.
 

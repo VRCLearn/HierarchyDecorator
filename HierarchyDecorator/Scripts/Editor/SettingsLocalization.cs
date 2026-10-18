@@ -25,7 +25,6 @@ namespace VRCLearn.HierarchyDecorator
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
-            { "Enable Hierarchy Decorator", new[] { "Hierarchy Decorator を有効化", "Hierarchy Decorator 활성화", "啟用 Hierarchy Decorator", "启用 Hierarchy Decorator" } },
             { "Import previous settings", new[] { "以前の設定をインポート", "이전 설정 가져오기", "匯入舊設定", "导入旧设置" } },
             { "Import a copy of previous settings. The other installation and its files are kept unchanged.", new[] { "以前の設定のコピーをインポートします。他のインストールとそのファイルは変更されません。", "이전 설정의 복사본을 가져옵니다. 다른 설치와 파일은 변경되지 않습니다.", "匯入舊設定的副本，保留另一個安裝及其檔案。", "导入旧设置的副本，保留另一个安装及其文件。" } },
             { "Settings source", new[] { "設定のコピー元", "설정 원본", "設定來源", "设置来源" } },

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace VRCLearn.HierarchyDecorator
 {
@@ -13,8 +13,6 @@ namespace VRCLearn.HierarchyDecorator
 
         public GlobalData globalData = new GlobalData ();
         public HierarchyStyleData styleData = new HierarchyStyleData ();
-
-        public bool enableHierarchyDecorator = true;
 
         [SerializeField]
         private ComponentData components = new ComponentData ();
