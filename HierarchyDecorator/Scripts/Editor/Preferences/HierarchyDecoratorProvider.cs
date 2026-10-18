@@ -26,12 +26,6 @@ namespace HierarchyDecorator
             SettingsService.OpenUserPreferences (Path);
         }
 
-        [MenuItem ("Tools/Hierarchy Decorator/Choose Preset")]
-        private static void OpenPresets()
-        {
-            InitialSetupWindow.Open (true);
-        }
-
         [MenuItem (EnglishMenu)]
         private static void SelectEnglish() => SelectLanguage (SettingsLanguage.English);
 
