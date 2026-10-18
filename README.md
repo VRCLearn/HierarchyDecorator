@@ -86,7 +86,7 @@ Settings are saved locally for each project in `UserSettings/HierarchyDecoratorS
 
 On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
 
-The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. English is the default. The language choice is saved locally in the editor and does not change the project's settings asset.
+The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current language is checked. English is the default. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 
 Setting design may change over time with development to support more features, or keep things looking consistent & clean.
 
