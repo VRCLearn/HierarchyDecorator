@@ -24,7 +24,7 @@ namespace HierarchyDecorator
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
-            { "Choose a preset", new[] { "プリセットを選択", "프리셋 선택", "選擇預設", "选择预设" } },
+            { "Choose a preset style", new[] { "プリセットスタイルを選択", "프리셋 스타일 선택", "選擇預設樣式", "选择预设样式" } },
             { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
             { "Minimal", new[] { "シンプル", "간결", "精簡", "精简" } },
             { "Hierarchy Settings", new[] { "Hierarchy 設定", "하이어라키 설정", "Hierarchy 設定", "Hierarchy 设置" } },
