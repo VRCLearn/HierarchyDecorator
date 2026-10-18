@@ -27,9 +27,10 @@ namespace HierarchyDecorator
             this.serializedTab = serializedSettings.FindProperty(serializedTabName);
 
 #if UNITY_2019_4_OR_NEWER
-            Content = new GUIContent (name, GUIHelper.GetUnityIcon (icon));
+            Content = SettingsLocalization.Content(name);
+            Content.image = GUIHelper.GetUnityIcon(icon);
 #else
-            Content = new GUIContent (name);
+            Content = SettingsLocalization.Content(name);
 #endif
         }
 

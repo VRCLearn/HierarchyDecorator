@@ -29,11 +29,13 @@ namespace HierarchyDecorator
             settings = target as Settings;
 
             Undo.undoRedoPerformed += Refresh;
+            SettingsLocalization.LanguageChanged += Repaint;
         }
 
         private void OnDisable()
         {
             Undo.undoRedoPerformed -= Refresh;
+            SettingsLocalization.LanguageChanged -= Repaint;
         }
 
         public override bool UseDefaultMargins()
@@ -50,6 +52,7 @@ namespace HierarchyDecorator
             }
 
             EditorGUILayout.BeginVertical(Style.InspectorPadding);
+            SettingsLocalization.DrawLanguageSelector();
             DrawTitle();
             DrawContent();
             EditorGUILayout.EndVertical();
@@ -84,13 +87,13 @@ namespace HierarchyDecorator
 #endif
             EditorGUILayout.BeginHorizontal ();
             {
-                EditorGUILayout.LabelField ("Hierarchy Settings", Style.Title);
+                EditorGUILayout.LabelField (SettingsLocalization.Text("Hierarchy Settings"), Style.Title);
 
                 GUILayout.FlexibleSpace ();
 
                 // Link to repo for convenience
 
-                if (GUILayout.Button ("GitHub Repository", EditorStyles.miniButtonMid))
+                if (GUILayout.Button (SettingsLocalization.Text("GitHub Repository"), EditorStyles.miniButtonMid))
                 {
                     Application.OpenURL ("https://github.com/WooshiiDev/HierarchyDecorator/");
                 }

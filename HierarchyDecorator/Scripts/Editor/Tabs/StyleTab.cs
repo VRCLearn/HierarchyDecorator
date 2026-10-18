@@ -26,7 +26,7 @@ namespace HierarchyDecorator
         private readonly Color BACKGROUND_COLOR = new Color (0.235f, 0.360f, 0.580f);
         private readonly Color OUTLINE_COLOR = new Color (0.15f, 0.15f, 0.15f, 1f);
 
-        private readonly GUIContent[] Modes = { new GUIContent("Light Mode"), new GUIContent("Dark Mode") };
+        private readonly GUIContent[] Modes = { SettingsLocalization.Content("Light Mode"), SettingsLocalization.Content("Dark Mode") };
         private readonly string[] SettingList = { "prefix", "noSpaceAfterPrefix", "isRegex", "name", "font", "fontSize", "fontStyle", "fontAlignment",  "textFormatting" };
 
         public StyleTab(Settings settings, SerializedObject serializedSettings) : base (settings, serializedSettings, "styleData", "Visual", "d_InputField Icon")
@@ -92,7 +92,7 @@ namespace HierarchyDecorator
             Handles.EndGUI ();
 
             // Draw optionals
-            if (GUI.Button (rect, "Add New Style", Style.CenteredBoldLabel))
+            if (GUI.Button (rect, SettingsLocalization.Text("Add New Style"), Style.CenteredBoldLabel))
             {
                 CreateNewStyle();
             }
@@ -172,7 +172,7 @@ namespace HierarchyDecorator
 
         private void DrawNoElements(Rect rect)
         {
-            EditorGUI.LabelField (rect, "No styles to display.");
+            EditorGUI.LabelField (rect, SettingsLocalization.Text("No styles to display."));
         }
 
         private void CreateNewStyle()
@@ -239,7 +239,7 @@ namespace HierarchyDecorator
                 }
 
                 rect.height = EditorGUI.GetPropertyHeight (prop);
-                EditorGUI.PropertyField (rect, prop, true);
+                SettingsLocalization.PropertyField(rect, prop, SettingsLocalization.Content(prop.displayName, prop.tooltip), true);
                 rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
 
                 height += rect.height;
@@ -290,7 +290,7 @@ namespace HierarchyDecorator
             rect.y += EditorGUIUtility.singleLineHeight + ELEMENT_HEIGHT_SPACING;
 
             SerializedProperty prop = modeProperty.GetArrayElementAtIndex (selection);
-            EditorGUI.PropertyField (rect, prop, Modes[selection], true);
+            SettingsLocalization.PropertyField(rect, prop, Modes[selection], true);
 
             if (EditorGUI.EndChangeCheck ())
             {

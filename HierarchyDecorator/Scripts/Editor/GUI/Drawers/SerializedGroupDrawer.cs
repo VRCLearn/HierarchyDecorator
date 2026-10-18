@@ -14,7 +14,7 @@ namespace HierarchyDecorator
         public SerializedGroupDrawer(string title, params SerializedProperty[] target) : base(target)
         {
             if (!string.IsNullOrEmpty(title))
-                this.title = new GUIContent(title);
+                this.title = SettingsLocalization.Content(title);
             indent = 1;
         }
         public SerializedGroupDrawer(int indent, params SerializedProperty[] target) : base(target)
@@ -38,7 +38,7 @@ namespace HierarchyDecorator
 
                         EditorGUI.BeginChangeCheck();
 
-                        EditorGUILayout.PropertyField(property);
+                        SettingsLocalization.PropertyField(property);
 
                         if (EditorGUI.EndChangeCheck())
                         {
