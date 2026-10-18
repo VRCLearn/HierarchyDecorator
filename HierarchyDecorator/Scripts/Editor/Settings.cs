@@ -55,6 +55,13 @@ namespace HierarchyDecorator
 
         internal void ApplyPreset(SettingsPreset preset)
         {
+            globalData = new GlobalData();
+            styleData = new HierarchyStyleData();
+            components = new ComponentData();
+            components.OnInitialize();
+            components.UpdateComponents();
+            styleData.UpdateStyles(UnityEditor.EditorGUIUtility.isProSkin);
+
             bool detailed = preset == SettingsPreset.Detailed;
             globalData.tagSettings.show = detailed;
             globalData.layerSettings.show = detailed;
