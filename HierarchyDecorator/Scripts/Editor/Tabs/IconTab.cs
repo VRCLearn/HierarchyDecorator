@@ -11,9 +11,9 @@ namespace HierarchyDecorator
     {
         private static class LabelContents
         {
-            public static readonly GUIContent MoveUp = new GUIContent("Move Up");
-            public static readonly GUIContent MoveDown = new GUIContent("Move Down");
-            public static readonly GUIContent DeleteGroup = new GUIContent("Delete Group");
+            public static readonly GUIContent MoveUp = SettingsLocalization.Content("Move Up");
+            public static readonly GUIContent MoveDown = SettingsLocalization.Content("Move Down");
+            public static readonly GUIContent DeleteGroup = SettingsLocalization.Content("Delete Group");
         }
 
         private static class Labels
@@ -74,14 +74,14 @@ namespace HierarchyDecorator
 
         private static class Icons
         {
-            public static readonly GUIContent Menu = EditorGUIUtility.IconContent("d__Popup");
+            public static readonly GUIContent Menu = SettingsLocalization.Icon("d__Popup", "Group Options");
             public static readonly GUIContent Picker = EditorGUIUtility.IconContent("d_Button Icon");
 
-            public static readonly GUIContent AddComponent = EditorGUIUtility.IconContent("d_Toolbar Plus");
-            public static readonly GUIContent DeleteComponent = EditorGUIUtility.IconContent("d_TreeEditor.Trash");
+            public static readonly GUIContent AddComponent = SettingsLocalization.Icon("d_Toolbar Plus", "Add Icon");
+            public static readonly GUIContent DeleteComponent = SettingsLocalization.Icon("d_TreeEditor.Trash", "Delete");
 
-            public static readonly GUIContent EnableAll = EditorGUIUtility.IconContent("d_scenevis_visible_hover@2x");
-            public static readonly GUIContent DisableAll = EditorGUIUtility.IconContent("d_SceneViewVisibility@2x");
+            public static readonly GUIContent EnableAll = SettingsLocalization.Icon("d_scenevis_visible_hover@2x", "Enable All");
+            public static readonly GUIContent DisableAll = SettingsLocalization.Icon("d_SceneViewVisibility@2x", "Disable All");
 
 #if UNITY_2019_1_OR_NEWER
             private static readonly GUIContent WarningGUI = new GUIContent(EditorGUIUtility.IconContent("warning"));
@@ -89,7 +89,15 @@ namespace HierarchyDecorator
             private static readonly GUIContent WarningGUI = EditorGUIUtility.IconContent("console.warnicon");
 #endif
 
-            public static readonly GUIContent EmptyComponent = new GUIContent("<No Component>", WarningGUI.image);
+            public static GUIContent EmptyComponent
+            {
+                get
+                {
+                    GUIContent content = SettingsLocalization.Content("<No Component>");
+                    content.image = WarningGUI.image;
+                    return content;
+                }
+            }
         }
 
         // Const/Readonly
@@ -280,7 +288,7 @@ namespace HierarchyDecorator
             // Draw Content 
 
             HierarchyGUI.Space();
-            EditorGUILayout.LabelField(Labels.TITLE, Style.BoxHeader, GUILayout.Height(19f));
+            EditorGUILayout.LabelField(SettingsLocalization.Text(Labels.TITLE), Style.BoxHeader, GUILayout.Height(19f));
             HierarchyGUI.Space();
 
             EditorGUILayout.BeginHorizontal();
@@ -297,27 +305,31 @@ namespace HierarchyDecorator
 
             float height = isOnCustom ? Values.ICON_WINDOW_HEIGHT : 300f;
 
-            Rect rect = EditorGUILayout.BeginVertical(Style.BoxHeader, GUILayout.MaxWidth(71f), GUILayout.MinHeight(height));
+            float sidebarWidth = 71f;
+            foreach (string groupName in groupNames)
+                sidebarWidth = Mathf.Max(sidebarWidth, Style.ToolbarButtonLeft.CalcSize(GUIHelper.TempContent(SettingsLocalization.Text(groupName))).x);
+            sidebarWidth = Mathf.Max(sidebarWidth, Style.ToolbarButtonLeft.CalcSize(GUIHelper.TempContent(SettingsLocalization.Text(Labels.CUSTOM_COMPONENTS_LABEL))).x);
+            Rect rect = EditorGUILayout.BeginVertical(Style.BoxHeader, GUILayout.MaxWidth(sidebarWidth), GUILayout.MinHeight(height));
             {
                 display.OnDraw();
 
                 EditorGUI.BeginChangeCheck();
 
-                EditorGUILayout.LabelField("Groups", Style.CenteredLabel, GUILayout.MinWidth(0));
+                EditorGUILayout.LabelField(SettingsLocalization.Text("Groups"), Style.CenteredLabel, GUILayout.MinWidth(0));
 
                 int index = categoryIndex;
                 for (int i = 0; i < groupNames.Length; i++)
                 {
                     string name = groupNames[i];
 
-                    if (GUILayout.Toggle(index == i, name, Style.ToolbarButtonLeft))
+                    if (GUILayout.Toggle(index == i, SettingsLocalization.Text(name), Style.ToolbarButtonLeft))
                     {
                         index = i;
                     }
                 }
 
                 //int index = GUILayout.SelectionGrid(categoryIndex, groupNames, 1, Style.ToolbarButtonLeft);
-                bool isCustom = GUILayout.Toggle(isOnCustom, Labels.CUSTOM_COMPONENTS_LABEL, Style.ToolbarButtonLeft);
+                bool isCustom = GUILayout.Toggle(isOnCustom, SettingsLocalization.Text(Labels.CUSTOM_COMPONENTS_LABEL), Style.ToolbarButtonLeft);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -391,7 +403,7 @@ namespace HierarchyDecorator
             searchText = EditorGUILayout.TextField(searchText, Style.ToolbarTextField);
 
             bool isExcluded = groupNames[categoryIndex] == "Excluded";
-            if (GUILayout.Button(Labels.ENABLE_LABEL, Style.ToolbarButtonResizable))
+            if (GUILayout.Button(SettingsLocalization.Text(Labels.ENABLE_LABEL), Style.ToolbarButtonResizable))
             {
                 foreach (IconInfo icon in icons)
                 {
@@ -408,7 +420,7 @@ namespace HierarchyDecorator
                 }
             }
 
-            if (GUILayout.Button(Labels.DISABLE_LABEL, Style.ToolbarButtonResizable))
+            if (GUILayout.Button(SettingsLocalization.Text(Labels.DISABLE_LABEL), Style.ToolbarButtonResizable))
             {
                 foreach (IconInfo icon in icons)
                 {
@@ -833,7 +845,7 @@ namespace HierarchyDecorator
         {
             Rect buttonRect = EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(Labels.ADD_GROUP_LABEL, Style.ToolbarButtonResizable))
+            if (GUILayout.Button(SettingsLocalization.Text(Labels.ADD_GROUP_LABEL), Style.ToolbarButtonResizable))
             {
                 // Create new group
 

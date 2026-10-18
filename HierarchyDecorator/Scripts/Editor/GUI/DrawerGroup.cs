@@ -28,7 +28,7 @@ namespace HierarchyDecorator
         /// <param name="property"></param>
         public virtual void OnGUI()
         {
-            EditorGUILayout.LabelField (Title, Style.BoxHeader);
+            EditorGUILayout.LabelField (SettingsLocalization.Text(Title), Style.BoxHeader);
 
             for (int i = 0; i < drawers.Count; i++)
             {

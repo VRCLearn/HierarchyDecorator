@@ -1,3 +1,8 @@
+## Unreleased
+
+- Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
+  and Simplified Chinese, with a language selector saved as a local editor preference.
+
 ## v0.12.0
 
 ### Changes

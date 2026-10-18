@@ -78,7 +78,7 @@ namespace HierarchyDecorator
                 EditorGUILayout.BeginHorizontal();
             }
 
-            EditorGUILayout.LabelField(Target.displayName, Style.CenteredLabel, GUILayout.MinWidth(0));
+            EditorGUILayout.LabelField(SettingsLocalization.Text(Target.displayName), Style.CenteredLabel, GUILayout.MinWidth(0));
 
             int currentValue = Target.intValue;
 
@@ -92,7 +92,7 @@ namespace HierarchyDecorator
                 bool isSelected = (Target.intValue & value) != 0;
 
                 EditorGUI.BeginChangeCheck();
-                bool toggle = GUILayout.Toggle(isSelected, name, style);
+                bool toggle = GUILayout.Toggle(isSelected, SettingsLocalization.Text(name), style);
                 if (EditorGUI.EndChangeCheck())
                 {
                     if (toggle != isSelected)

@@ -84,6 +84,8 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
 
 There is a scriptable object that is required for hierarchy decorator to run. If it is deleted, another will be created in `Assets/HierarchyDecorator/`. These settings are also accessible from `Preferences`.
 
+The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. English is the default. The language choice is saved locally in the editor and does not change the project's settings asset.
+
 Setting design may change over time with development to support more features, or keep things looking consistent & clean.
 
 ### General
