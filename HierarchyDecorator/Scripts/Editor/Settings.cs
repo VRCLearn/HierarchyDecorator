@@ -2,6 +2,8 @@
 
 namespace HierarchyDecorator
 {
+    internal enum SettingsPreset { Detailed, Minimal }
+
     /// <summary>
     /// ScriptableObject containing all settings and relevant data for the hierarchy
     /// </summary>
@@ -15,7 +17,17 @@ namespace HierarchyDecorator
         [SerializeField]
         private ComponentData components = new ComponentData ();
 
+        // Missing in older settings files, so existing configurations skip setup.
+        [SerializeField, HideInInspector]
+        private bool needsPresetSelection;
+
         // Properties
+
+        internal bool NeedsPresetSelection
+        {
+            get => needsPresetSelection;
+            set => needsPresetSelection = value;
+        }
 
         public ComponentData Components
         {
@@ -39,6 +51,16 @@ namespace HierarchyDecorator
         {
             components.UpdateData ();
             styleData.UpdateStyles (isDarkMode);
+        }
+
+        internal void ApplyPreset(SettingsPreset preset)
+        {
+            bool detailed = preset == SettingsPreset.Detailed;
+            globalData.tagSettings.show = detailed;
+            globalData.layerSettings.show = detailed;
+            globalData.showBreadcrumbs = detailed;
+            styleData.twoToneBackground = detailed;
+            needsPresetSelection = false;
         }
 
         // Serialization

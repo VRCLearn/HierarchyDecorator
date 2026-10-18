@@ -24,6 +24,14 @@ namespace HierarchyDecorator
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
+            { "Choose a preset", new[] { "プリセットを選択", "프리셋 선택", "選擇預設", "选择预设" } },
+            { "Choose the initial Hierarchy appearance. You can adjust these options in Settings later.", new[] { "Hierarchy の初期表示を選択してください。各項目は後から設定で変更できます。", "Hierarchy의 초기 표시 방식을 선택하세요. 나중에 설정에서 각 옵션을 변경할 수 있습니다.", "選擇 Hierarchy 的初始顯示方式。之後可在設定中調整各項選項。", "选择 Hierarchy 的初始显示方式。之后可以在设置中调整各项选项。" } },
+            { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
+            { "Original upstream defaults: show tags, layers, breadcrumbs, and alternating row backgrounds.", new[] { "上流の既定設定：タグ、レイヤー、階層ガイド、交互の背景色を表示します。", "원본 프로젝트의 기본 설정: 태그, 레이어, 계층 안내선, 교차 배경색을 표시합니다.", "原上游預設：顯示標籤、圖層、階層引導線和交替背景色。", "原上游默认：显示标签、层、层级引导线和交替背景色。" } },
+            { "Use detailed preset", new[] { "詳細プリセットを使用", "상세 프리셋 사용", "使用詳細預設", "使用详细预设" } },
+            { "Minimal", new[] { "シンプル", "간결", "精簡", "精简" } },
+            { "Previous VRCLearn defaults: hide tags, layers, breadcrumbs, and alternating row backgrounds. Keep component icons, active toggles, and scene highlighting.", new[] { "旧 VRCLearn の既定設定：タグ、レイヤー、階層ガイド、交互の背景色を非表示にし、コンポーネントアイコン、有効状態の切り替え、シーンのハイライトは維持します。", "이전 VRCLearn의 기본 설정: 태그, 레이어, 계층 안내선, 교차 배경색을 숨깁니다. 컴포넌트 아이콘, 활성 상태 토글, 씬 강조 표시는 유지합니다.", "先前的 VRCLearn 預設：隱藏標籤、圖層、階層引導線和交替背景色，保留元件圖示、啟用狀態切換和場景醒目提示。", "之前的 VRCLearn 默认：隐藏标签、层、层级引导线和交替背景色，保留组件图标、启用状态开关和场景高亮。" } },
+            { "Use minimal preset", new[] { "シンプルプリセットを使用", "간결 프리셋 사용", "使用精簡預設", "使用精简预设" } },
             { "Hierarchy Settings", new[] { "Hierarchy 設定", "하이어라키 설정", "Hierarchy 設定", "Hierarchy 设置" } },
             { "GitHub Repository", new[] { "GitHub リポジトリ", "GitHub 저장소", "GitHub 儲存庫", "GitHub 仓库" } },
             { "Cannot find settings in project", new[] { "プロジェクトに設定が見つかりません", "프로젝트에서 설정을 찾을 수 없습니다", "在專案中找不到設定", "在项目中找不到设置" } },
