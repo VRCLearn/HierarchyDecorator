@@ -1,0 +1,74 @@
+name: Unity compile
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Personal activations share a limited number of seats, including local use.
+concurrency:
+  group: unity-compile
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    name: Compile Unity ${{ matrix.unity-version }}
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        unity-version: [2022.3.22f1, 6000.3.13f1]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check activation configuration
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [[ -z "$UNITY_EMAIL" || -z "$UNITY_PASSWORD" ]]; then
+            echo '::error::Configure UNITY_EMAIL and UNITY_PASSWORD in Actions secrets.'
+            exit 1
+          fi
+
+      - name: Prepare isolated UPM project
+        env:
+          UNITY_VERSION: ${{ matrix.unity-version }}
+        run: python3 .github/unity-ci/prepare_project.py --unity-version "$UNITY_VERSION" --project-path .unity-ci~/project
+
+      - name: Compile package in Unity Editor
+        uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          cliVersion: v0.1.72
+          projectPath: .unity-ci~/project
+          customImage: unityci/editor:ubuntu-${{ matrix.unity-version }}-base-3
+          targetPlatform: StandaloneLinux64
+          buildMethod: HierarchyDecoratorCI.CompileCheck.Run
+          manualExit: true
+          allowDirtyBuild: true
+          versioning: None
+
+      - name: Require compilation report
+        run: test -s .unity-ci~/project/Logs/compile-result.json
+
+      - name: Upload compilation report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unity-compile-${{ matrix.unity-version }}
+          path: .unity-ci~/project/Logs/compile-result.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7
