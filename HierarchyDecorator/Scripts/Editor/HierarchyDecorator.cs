@@ -186,15 +186,34 @@ namespace VRCLearn.HierarchyDecorator
         private static bool SaveSettings(Settings settings)
         {
             string path = Constants.Paths.SETTINGS_FILE_PATH;
-            string temporaryPath = path + ".tmp";
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
-                InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { settings }, temporaryPath, true);
-                if (File.Exists(path))
-                    File.Replace(temporaryPath, path, null);
-                else
-                    File.Move(temporaryPath, path);
+                if (Directory.Exists(path))
+                    throw new IOException("The settings path is a directory.");
+                if (File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReadOnly) != 0)
+                    throw new UnauthorizedAccessException("The settings file is read-only.");
+
+                // Unity already stages and moves the serialized file. An additional
+                // File.Replace can fail on Windows after the native save succeeds.
+                string saveError = null;
+                Application.LogCallback captureError = (message, stackTrace, type) =>
+                {
+                    if (saveError == null && (type == LogType.Error || type == LogType.Exception || type == LogType.Assert))
+                        saveError = message;
+                };
+                Application.logMessageReceived += captureError;
+                try
+                {
+                    InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { settings }, path, true);
+                }
+                finally
+                {
+                    Application.logMessageReceived -= captureError;
+                }
+                // The native void API can log an error without throwing.
+                if (saveError != null || !File.Exists(path))
+                    throw new IOException(saveError ?? "Unity did not create the settings file.");
 
                 EditorUtility.ClearDirty(settings);
                 s_SaveErrorReported = false;

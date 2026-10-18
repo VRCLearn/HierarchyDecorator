@@ -12,6 +12,12 @@
   settings assets; report incomplete removal instead of reporting success.
 - Verify asset identities and both editor assemblies in coexistence checks.
 
+### Fixed
+
+- Save local settings through Unity's native file writer without a second file
+  replacement, which could fail intermittently on Windows. Treat native save
+  errors as failures and retain the upstream installation when migration cannot save.
+
 ## [1.0.0] - 2026-10-19
 
 ### Added

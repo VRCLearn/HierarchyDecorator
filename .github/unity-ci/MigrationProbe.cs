@@ -31,7 +31,6 @@ namespace HierarchyDecoratorCI
         private static byte[] previousVpmManifest;
         private static byte[] previousUnityManifest;
         private static double deadline;
-        private static double readyAt;
         private static bool finished;
 
         [Serializable]
@@ -94,9 +93,7 @@ namespace HierarchyDecoratorCI
                 }
 
                 deadline = EditorApplication.timeSinceStartup + 180;
-                readyAt = EditorApplication.timeSinceStartup + 2;
                 EditorApplication.update += CheckTimeout;
-                // Let fixture import and initial automatic saves settle before simulating a user's click.
                 EditorApplication.update += WaitForFixture;
             }
             catch (Exception exception)
@@ -141,7 +138,7 @@ namespace HierarchyDecoratorCI
 
         private static void WaitForFixture()
         {
-            if (EditorApplication.timeSinceStartup < readyAt || EditorApplication.isCompiling || EditorApplication.isUpdating)
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
             EditorApplication.update -= WaitForFixture;
             BeginMigration();

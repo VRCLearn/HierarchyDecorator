@@ -133,3 +133,20 @@ to exercise the other installation routes. For VPM, also pass
 uses local packages and does not download them. Do not add `-quit`: the probe
 waits for asynchronous package removal and exits when finished. Read
 `Logs/migration-result.json` inside the disposable project for the result.
+
+## Windows settings-save regression
+
+Prepare a disposable project, copy the save probe, and add its explicit marker:
+
+```powershell
+python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project-path .unity-ci~/settings-save
+Copy-Item .github/unity-ci/SettingsSaveProbe.cs .unity-ci~/settings-save/Assets/Editor/
+New-Item .unity-ci~/settings-save/ProjectSettings/SettingsSaveProbe.enabled -ItemType File
+& "<path-to-Unity.exe>" -batchmode -nographics -projectPath "$PWD/.unity-ci~/settings-save" -executeMethod HierarchyDecoratorCI.SettingsSaveProbe.Run -logFile "$PWD/.unity-ci~/settings-save/editor.log"
+```
+
+Run this probe on Windows without `-quit`. It checks 600 saves of the real settings
+singleton, including immediate consecutive writes and writes across editor updates,
+and reads back fields and font/script references. Directory, read-only and locked-file
+failures must preserve existing contents and dirty state; each must recover after
+the fault is removed. Read `Logs/settings-save-result.json` for the result.
