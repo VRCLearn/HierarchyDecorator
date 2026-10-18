@@ -12,7 +12,7 @@
 <p align="center">
  <a href="https://unity3d.com/get-unity/download">
  <img src="https://img.shields.io/badge/unity-2018.4%2B-blue.svg" alt="Unity Download Link">
- <a href="https://github.com/VRCLearn/HierarchyDecorator/blob/master/LICENSE.md">
+ <a href="https://github.com/VRCLearn/HierarchyDecorator/blob/main/LICENSE.md">
  <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="License MIT">
 </p>
   
@@ -40,7 +40,7 @@ Everything is optional, and can be modified to the requirements of the project.
 
 ## Installation
 <p align="center">
-  <a href="https://github.com/VRCLearn/HierarchyDecorator/archive/refs/heads/master.zip">Source ZIP</a>
+  <a href="https://github.com/VRCLearn/HierarchyDecorator/archive/refs/heads/main.zip">Source ZIP</a>
 </p>
 
 HierarchyDecorator can also be installed directly through the git url
