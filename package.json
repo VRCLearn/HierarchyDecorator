@@ -1,5 +1,5 @@
 {
-  "name": "com.wooshii.hierarchydecorator",
+  "name": "com.vrclearn.hierarchydecorator",
   "displayName": "HierarchyDecorator",
   "version": "0.12.1",
   "unity": "2018.4",
@@ -10,10 +10,18 @@
   ],
   "category": "Editor",
   "dependencies": {},
-
-   "author": {
-    "name": "Wooshii",
-    "email": "wooshiidev@gmail.com",
-    "url": "https://github.com/WooshiiDev/HierarchyDecorator"
+  "license": "MIT",
+  "licensesUrl": "https://github.com/VRCLearn/HierarchyDecorator/blob/master/LICENSE.md",
+  "documentationUrl": "https://github.com/VRCLearn/HierarchyDecorator#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VRCLearn/HierarchyDecorator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VRCLearn/HierarchyDecorator/issues"
+  },
+  "author": {
+    "name": "VRCLearn",
+    "url": "https://github.com/VRCLearn"
   }
 }
