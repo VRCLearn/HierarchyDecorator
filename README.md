@@ -12,7 +12,7 @@
 <p align="center">
  <a href="https://unity3d.com/get-unity/download">
  <img src="https://img.shields.io/badge/unity-2018.4%2B-blue.svg" alt="Unity Download Link">
- <a href="https://github.com/WooshiiDev/HierarchyDecorator/blob/master/LICENSE">
+ <a href="https://github.com/VRCLearn/HierarchyDecorator/blob/master/LICENSE.md">
  <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="License MIT">
 </p>
   
@@ -22,10 +22,12 @@
   <a href="#installation">Installation</a> •
   <a href="#features">Features</a> •
   <a href="#support">Support</a> •
-  <a href="#donate">Donate</a>
+  <a href="#license-and-credits">License and credits</a>
 </p>
 
 ## About
+
+This is an independently maintained VRCLearn fork of [WooshiiDev/HierarchyDecorator](https://github.com/WooshiiDev/HierarchyDecorator), originally created by Damian Slocombe (Wooshii).
 
 Hierarchy Decorator is an extension for Unity 2018.4 and higher that extends Unity's hierarchy and takes it to the next level. With headers, component information and other features, it transforms the window into more than a plain list of objects. This can turn scene structures easier to read, understand and provide information on what is going on.
 
@@ -38,24 +40,20 @@ Everything is optional, and can be modified to the requirements of the project.
 
 ## Installation
 <p align="center">
-  <a href="https://github.com/WooshiiDev/HierarchyDecorator/releases">Releases</a> • <a href="https://github.com/WooshiiDev/HierarchyDecorator/releases/download/v0.11.2/HierarchyDecorator.v0.11.2.unitypackage">Unity Package</a> • <a href="https://github.com/WooshiiDev/HierarchyDecorator/archive/master.zip">Zip</a> 
+  <a href="https://github.com/VRCLearn/HierarchyDecorator/archive/refs/heads/master.zip">Source ZIP</a>
 </p>
 
 HierarchyDecorator can also be installed directly through the git url
 ```
-https://github.com/WooshiiDev/HierarchyDecorator.git
-```
-
-You can also install it via [upm](https://openupm.com/)
-
-```
-openupm add com.wooshii.hierarchydecorator
+https://github.com/VRCLearn/HierarchyDecorator.git
 ```
 
 You can also install this via git by adding the following to your **manifest.json**
 ```
-"com.wooshii.hierarchydecorator" : "https://github.com/WooshiiDev/HierarchyDecorator.git"
+"com.vrclearn.hierarchydecorator" : "https://github.com/VRCLearn/HierarchyDecorator.git"
 ```
+
+When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry with the one above. Keep existing settings assets and their `.meta` files. Install only one copy of HierarchyDecorator per project.
 
 ## Features
 
@@ -221,21 +219,10 @@ Scripts can also be dragged in from the project view and will be added to the gr
 </details>
 
 ## Support
-Please submit any queries, bugs or issues, to the [Issues](https://github.com/WooshiiDev/HierarchyDecorator/issues) page on this repository. All feedback is appreciated as it not just helps myself find problems I didn't otherwise see, but also helps improves Hierarchy Decorator as a whole.
+Please submit questions, bugs, and feature requests to [VRCLearn/HierarchyDecorator issues](https://github.com/VRCLearn/HierarchyDecorator/issues).
 
-A GitHub Project [Board](https://github.com/users/WooshiiDev/projects/1) for this also exists showing current development goals and future features.
+## License and credits
 
-Reach out to me or see my other work through:
-
- - Website: https://wooshii.dev/
- - Email: wooshiidev@gmail.com;
-
-## Donate
-HierarchyDecorator will be and always has been developed in my free time, and there are many more features I'd like to include. If you would to support me, you can do so below:
-
-[![PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/Wooshii?locale.x=en_GB)
-<p href="https://ko-fi.com/L3L026UOE"><img src="https://ko-fi.com/img/githubbutton_sm.svg">
-
-Development will be continued with this and will forever stay public and free.
+This fork is maintained by VRCLearn under the [MIT license](LICENSE.md). The original project was created by Damian Slocombe (Wooshii), with contributions from the [original contributors](https://github.com/WooshiiDev/HierarchyDecorator/graphs/contributors).
 
 Copyright (c) 2020-2025 Damian Slocombe
