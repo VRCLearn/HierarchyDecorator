@@ -44,6 +44,7 @@ namespace HierarchyDecorator
 
             EditorApplication.delayCall -= HierarchyManager.Initialize;
             EditorApplication.delayCall += HierarchyManager.Initialize;
+            EditorApplication.delayCall += ShowInitialSetup;
 
             EditorApplication.update += SaveDirtySettings;
             AssemblyReloadEvents.beforeAssemblyReload += FlushSettings;
@@ -52,6 +53,33 @@ namespace HierarchyDecorator
         }
 
         // Setup 
+
+        private static void ShowInitialSetup()
+        {
+            if (Application.isBatchMode)
+                return;
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorApplication.delayCall += ShowInitialSetup;
+                return;
+            }
+
+            if (Settings.NeedsPresetSelection)
+                InitialSetupWindow.Open();
+        }
+
+        internal static void ApplyInitialPreset(SettingsPreset preset)
+        {
+            Settings settings = Settings;
+            if (!settings.NeedsPresetSelection)
+                return;
+
+            settings.ApplyPreset(preset);
+            EditorUtility.SetDirty(settings);
+            SaveSettings(settings);
+            InternalEditorUtility.RepaintAllViews();
+        }
 
         private static void UpdateComponentData()
         {
@@ -100,6 +128,7 @@ namespace HierarchyDecorator
                 Settings legacy = FindLegacySettings();
                 settings = legacy != null ? UnityEngine.Object.Instantiate(legacy) : ScriptableObject.CreateInstance<Settings>();
                 settings.name = "HierarchyDecorator Settings";
+                settings.NeedsPresetSelection = legacy == null;
             }
 
             settings.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;

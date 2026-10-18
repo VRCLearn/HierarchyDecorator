@@ -84,7 +84,11 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
 
 Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. You can also open this page from `Tools > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
 
+For a new configuration, a first-run window offers two presets: **Detailed** keeps the original upstream defaults, while **Minimal** uses the previous VRCLearn defaults by hiding tags, layers, breadcrumbs, and alternating row backgrounds. Both keep component icons, active toggles, scene highlighting, and the built-in header styles. After choosing, you can customize individual options in Settings. Closing the window without choosing postpones the choice until the next editor startup or script reload. Batch mode does not open the window or complete the choice.
+
 On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
+
+Existing local configurations and migrated settings assets skip the first-run window and retain their current options.
 
 The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current language is checked. English is the default. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 
