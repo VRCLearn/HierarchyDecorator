@@ -21,6 +21,15 @@ Start from the latest `main` and open your pull request against
 - Explain what changed and why, and link related issues when applicable. State
   which Unity version and checks you used, along with anything left unverified.
 
+The C# compile workflow runs on all pull requests, including forks, pushes to
+`main`, and manual dispatch. It uses Unity's bundled Roslyn compiler and reference
+assemblies for Unity 2022.3.22f1 and 6000.3.13f1 to compile the Windows, macOS, and
+Linux editor branches. It needs no license or secrets and never launches the
+Editor. It does not check package import, assembly loading, or editor behavior.
+The approach follows [unity-mcp's compile check](https://github.com/CoplayDev/unity-mcp/blob/main/tools/compile-check.sh).
+The reference list in `.github/unity-ci/csharp-references.txt` and version symbols
+in `compile-csharp.sh` should be checked when updating Unity versions or dependencies.
+
 The Unity compile workflow checks the package in an isolated UPM project using
 Unity 2022.3.22f1 and 6000.3.13f1. It runs on repository pull requests, pushes to
 `main`, and manual dispatch, and uploads a compilation report. It checks editor
