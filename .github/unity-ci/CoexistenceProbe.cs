@@ -15,9 +15,7 @@ namespace HierarchyDecoratorCI
     public static class CoexistenceProbe
     {
         private const BindingFlags AnyStatic = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-        private const BindingFlags AnyInstance = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         private const string AssetPath = "Assets/HierarchyDecorator/Settings.asset";
-        private const string LocalPath = "UserSettings/HierarchyDecoratorSettings.asset";
         private static readonly List<string> Checks = new List<string>();
 
         [Serializable]
@@ -56,35 +54,9 @@ namespace HierarchyDecoratorCI
                     originalValues == EditorJsonUtility.ToJson(source), "Asset import modified its source.");
                 Checks.Add("asset import preserves nested values, references, original bytes and script identities");
 
-                Directory.CreateDirectory("UserSettings");
-                Require(!File.Exists(LocalPath) || (File.ReadAllText(LocalPath).Contains("::coexistence::") &&
-                    File.ReadAllText(LocalPath).Contains("Coexistence custom group")),
-                    "Refusing to overwrite previous local settings that are not a probe fixture.");
-                Object previousLocal = Object.Instantiate(source);
-                try
-                {
-                    InternalEditorUtility.SaveToSerializedFileAndForget(new[] { previousLocal }, LocalPath, true);
-                }
-                finally
-                {
-                    Object.DestroyImmediate(previousLocal);
-                }
-                byte[] originalLocal = File.ReadAllBytes(LocalPath);
-                Require(File.ReadAllText(LocalPath).StartsWith("%YAML", StringComparison.Ordinal), "Expected a YAML fixture.");
-                string[] beforeTemporary = Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecorator-import-*.tmp");
-                ScriptableObject localCopy = Import(importer, LocalPath);
-                CheckImported(source, localCopy, newType, originalScript, font);
-                Require(originalLocal.SequenceEqual(File.ReadAllBytes(LocalPath)) &&
-                    originalAsset.SequenceEqual(File.ReadAllBytes(AssetPath)) &&
-                    originalValues == EditorJsonUtility.ToJson(source), "YAML import modified its source.");
-                Require(beforeTemporary.OrderBy(path => path).SequenceEqual(
-                    Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecorator-import-*.tmp").OrderBy(path => path)),
-                    "YAML import leaked temporary files.");
-                Checks.Add("local YAML GUID mapping preserves values and references without source changes or temporary files");
-
-                CheckImportAndSave(importer, source, newType, originalScript, font, originalAsset, originalMeta, originalLocal);
+                CheckImportAndSave(importer, source, newType, originalScript, font, originalAsset, originalMeta);
                 CheckCallbacksAndState(oldType.Assembly, newType.Assembly, source, assetCopy);
-                Object.DestroyImmediate(localCopy);
+                Object.DestroyImmediate(assetCopy);
                 WriteReport(true, null);
                 Debug.Log("HIERARCHY_DECORATOR_COEXISTENCE_OK");
                 EditorApplication.Exit(0);
@@ -148,17 +120,16 @@ namespace HierarchyDecoratorCI
 
         private static ScriptableObject Import(Type importer, string path)
         {
-            return (ScriptableObject)importer.GetMethod("Read", AnyStatic).Invoke(null, new[] { FindCandidate(importer, path) });
+            return (ScriptableObject)importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { FindCandidate(importer, path) });
         }
 
-        private static object FindCandidate(Type importer, string path)
+        private static string FindCandidate(Type importer, string path)
         {
             var candidates = (IEnumerable)importer.GetMethod("FindCandidates", AnyStatic).Invoke(null, null);
-            object selected = null;
-            foreach (object candidate in candidates)
+            string selected = null;
+            foreach (string candidate in candidates)
             {
-                string candidatePath = (string)candidate.GetType().GetField("Path", AnyInstance).GetValue(candidate);
-                if (Path.GetFullPath(candidatePath) == Path.GetFullPath(path))
+                if (Path.GetFullPath(candidate) == Path.GetFullPath(path))
                     selected = candidate;
             }
             Require(selected != null, "Import candidate was not detected: " + path);
@@ -166,7 +137,7 @@ namespace HierarchyDecoratorCI
         }
 
         private static void CheckImportAndSave(Type importer, ScriptableObject source, Type newType, MonoScript originalScript,
-            Font font, byte[] originalAsset, byte[] originalMeta, byte[] originalLocal)
+            Font font, byte[] originalAsset, byte[] originalMeta)
         {
             const string currentPath = "UserSettings/VRCLearnHierarchyDecoratorSettings.asset";
             Type owner = newType.Assembly.GetType("VRCLearn.HierarchyDecorator.HierarchyDecorator", true);
@@ -180,19 +151,14 @@ namespace HierarchyDecoratorCI
             }
             Require((bool)owner.GetMethod("SaveSettings", AnyStatic).Invoke(null, new object[] { current }),
                 "Could not save the pre-import current settings fixture.");
-            string[] backupsBefore = Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecoratorSettings.asset.backup-*");
             string sourceValues = EditorJsonUtility.ToJson(source);
-            owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new[] { FindCandidate(importer, LocalPath) });
+            owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new object[] { FindCandidate(importer, AssetPath) });
             Require((ScriptableObject)currentProperty.GetValue(null) == current, "Import replaced the current Settings instance.");
             CheckImported(source, current, newType, originalScript, font);
             CheckImportState(current);
-            Require(File.Exists(currentPath) && Path.GetFullPath(currentPath) != Path.GetFullPath(LocalPath),
+            Require(File.Exists(currentPath) && Path.GetFullPath(currentPath) != Path.GetFullPath(AssetPath),
                 "Imported settings were not saved to their independent local file.");
             Require(!File.Exists(currentPath + ".tmp"), "Saving imported settings leaked its temporary file.");
-            string[] backupsAfter = Directory.GetFiles("UserSettings", "VRCLearnHierarchyDecoratorSettings.asset.backup-*");
-            string[] addedBackups = backupsAfter.Except(backupsBefore).ToArray();
-            Require(!addedBackups.Any(), "Import created an unexpected backup file.");
-
             Object[] persisted = InternalEditorUtility.LoadSerializedFileAndForget(currentPath);
             try
             {
@@ -214,9 +180,9 @@ namespace HierarchyDecoratorCI
             }
             Require(originalAsset.SequenceEqual(File.ReadAllBytes(AssetPath)) &&
                 originalMeta.SequenceEqual(File.ReadAllBytes(AssetPath + ".meta")) &&
-                originalLocal.SequenceEqual(File.ReadAllBytes(LocalPath)) && sourceValues == EditorJsonUtility.ToJson(source),
+                sourceValues == EditorJsonUtility.ToJson(source),
                 "The complete import/save flow modified original settings.");
-            Checks.Add("complete import reuses current instance, clears setup, persists independently and creates no backups");
+            Checks.Add("complete import reuses current instance, clears setup and persists independently");
         }
 
         private static void CheckImportState(Object settings)

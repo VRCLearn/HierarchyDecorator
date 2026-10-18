@@ -25,11 +25,11 @@ namespace VRCLearn.HierarchyDecorator
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
-            { "Import previous settings", new[] { "以前の設定をインポート", "이전 설정 가져오기", "匯入舊設定", "导入旧设置" } },
-            { "Import a copy of previous settings. The other installation and its files are kept unchanged.", new[] { "以前の設定のコピーをインポートします。他のインストールとそのファイルは変更されません。", "이전 설정의 복사본을 가져옵니다. 다른 설치와 파일은 변경되지 않습니다.", "匯入舊設定的副本，保留另一個安裝及其檔案。", "导入旧设置的副本，保留另一个安装及其文件。" } },
+            { "Migrate from wooshii", new[] { "wooshii 版から移行", "wooshii 버전에서 마이그레이션", "從 wooshii 版遷移", "从 wooshii 版迁移" } },
+            { "Choosing a preset keeps wooshii installed. Migration imports the selected settings, then removes the wooshii installation and the selected old settings asset.", new[] { "プリセットを選ぶと wooshii 版は残ります。移行すると選択した設定をインポートし、wooshii 版と選択した旧設定アセットを削除します。", "프리셋을 선택하면 wooshii 버전이 유지됩니다. 마이그레이션하면 선택한 설정을 가져온 다음 wooshii 설치와 선택한 이전 설정 에셋을 제거합니다.", "選擇預設會保留 wooshii 版。遷移會先匯入選定設定，再移除 wooshii 安裝及選定的舊設定資產。", "选择预设会保留 wooshii 版。迁移会先导入所选设置，再移除 wooshii 安装及所选的旧设置资产。" } },
             { "Settings source", new[] { "設定のコピー元", "설정 원본", "設定來源", "设置来源" } },
-            { "Import settings and finish", new[] { "設定をインポートして完了", "설정 가져오기 및 완료", "匯入設定並完成", "导入设置并完成" } },
-            { "Cannot import settings", new[] { "設定をインポートできません", "설정을 가져올 수 없습니다", "無法匯入設定", "无法导入设置" } },
+            { "Migrate settings and remove wooshii", new[] { "設定を移行して wooshii 版を削除", "설정 마이그레이션 및 wooshii 제거", "遷移設定並移除 wooshii", "一键迁移并移除 wooshii" } },
+            { "Migrating...", new[] { "移行中…", "마이그레이션 중…", "遷移中…", "正在迁移…" } },
             { "Choose a preset style", new[] { "プリセットスタイルを選択", "프리셋 스타일 선택", "選擇預設樣式", "选择预设样式" } },
             { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
             { "Minimal", new[] { "シンプル", "간결", "精簡", "精简" } },

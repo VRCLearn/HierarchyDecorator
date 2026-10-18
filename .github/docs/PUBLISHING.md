@@ -21,13 +21,30 @@ Do not edit or replace the old release or move its tag.
 
 The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`,
 with the existing `HierarchyDecorator` source folder. Only this maintained
-distribution folder is declared in `legacyFolders`, with a stable GUID. Upstream
-Assets folders are not deleted. Settings are stored independently at
-`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run chooser and
-**Tools > VRCLearn > Hierarchy Decorator > Import Settings** optionally import old
-settings, leaving their files and installation intact. Live upstream settings objects are copied field by field;
-recognized old GUID YAML files can be imported without the old assembly loaded.
-Unknown binary files require the original plugin to save a text asset first.
+UnityPackage distribution folder is declared in `legacyFolders`, with a stable
+GUID, so installing its VPM format can remove that duplicate distribution. The
+wooshii package and Assets folders must not appear in `legacyPackages` or
+`legacyFolders`: VPM applies those rules during installation, before a user can
+choose whether to migrate.
+
+Settings are stored independently at
+`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run preset
+chooser and **Tools > VRCLearn > Hierarchy Decorator > Choose Preset** offer
+**Migrate settings and remove wooshii** for loaded upstream settings assets.
+Choosing a preset or closing the chooser leaves wooshii installed. No offline
+settings recovery or old local settings format is supported.
+
+Migration validates the removal route, copies the selected settings and saves
+before cleanup. Assets cleanup identifies upstream files by their known GUIDs,
+removes the selected settings asset, and removes only empty plugin directories. It retains
+unrelated files and unselected settings. UPM dependencies use `Client.Remove` and
+retain external source directories. Embedded packages are removed only from the
+confirmed project-local package directory. VPM removal uses the project's existing
+VPM Core API with forced removal disabled; it must update package records as well
+as remove the installation. No VPM dependency is added to this tool. A missing or
+unsupported VPM Resolver, or another package depending on wooshii, prevents
+migration before settings change. Import/save failures prevent cleanup; later
+cleanup failures must be reported as incomplete migration.
 
 ## Validate and build
 
@@ -98,5 +115,21 @@ python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project
 
 `HierarchyDecoratorCI.CompileCheck.Run` also verifies the two assemblies and
 Settings types when the old package is present. `CoexistenceProbe.cs` exercises
-independent settings, menus, callbacks and non-destructive settings imports in an
-isolated project. Never run this fixture-producing probe against a user project.
+independent settings, menus, callbacks and settings copies in an isolated
+project. The migration probes verify explicit removal and retention of unrelated
+files for the supported installation routes. Never run these fixture-producing
+probes against a user project.
+
+To run the removal probe, prepare a fresh disposable project and launch its Editor:
+
+```powershell
+python .github/unity-ci/prepare_migration_project.py --unity-version 2022.3.22f1 --project-path .unity-ci~/migration-assets --upstream-package <local-upstream-package-path> --mode assets
+& "<path-to-Unity.exe>" -batchmode -nographics -projectPath "$PWD/.unity-ci~/migration-assets" -executeMethod HierarchyDecoratorCI.MigrationProbe.Run -logFile "$PWD/.unity-ci~/migration-assets/editor.log"
+```
+
+Use `--mode local`, `--mode embedded`, or `--mode vpm` with a fresh project path
+to exercise the other installation routes. For VPM, also pass
+`--vpm-resolver <extracted-official-resolver-package-path>`. The preparation script
+uses local packages and does not download them. Do not add `-quit`: the probe
+waits for asynchronous package removal and exits when finished. Read
+`Logs/migration-result.json` inside the disposable project for the result.

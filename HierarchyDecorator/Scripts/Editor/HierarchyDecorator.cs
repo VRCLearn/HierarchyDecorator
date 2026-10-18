@@ -12,7 +12,7 @@ namespace VRCLearn.HierarchyDecorator
         public static event Action OnSettings;
 
         public const string SETTINGS_TYPE_STRING = "Settings";
-        private const string SettingsSessionKey = "com.vrclearn.hierarchydecorator.settings.instance.v2";
+        private const string SettingsSessionKey = "com.vrclearn.hierarchydecorator.settings.instance";
         private static double s_NextSaveTime;
         private static bool s_SaveErrorReported;
 
@@ -87,9 +87,9 @@ namespace VRCLearn.HierarchyDecorator
             InternalEditorUtility.RepaintAllViews();
         }
 
-        internal static void ImportSettings(SettingsImport.Candidate candidate)
+        internal static void ImportSettings(string path)
         {
-            Settings imported = SettingsImport.Read(candidate);
+            Settings imported = SettingsImport.Read(path);
             Settings current = Settings;
             try
             {

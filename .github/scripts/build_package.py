@@ -74,7 +74,7 @@ def staged_manifest(output: Path, download_url: str | None, repository: str | No
     if manifest.get("license") != LICENSE_DECLARATION:
         raise ValueError("The package must retain the upstream MIT license.")
     if manifest.get("legacyPackages") or "zipSHA256" in manifest:
-        raise ValueError("Upstream packages must remain installed; ZIP hashes belong in the listing.")
+        raise ValueError("Installation must not automatically remove upstream packages; ZIP hashes belong in the listing.")
     if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", manifest.get("version", "")):
         raise ValueError("Package version must be a numeric stable semantic version.")
     author = manifest.get("author", {})

@@ -33,12 +33,6 @@ namespace VRCLearn.HierarchyDecorator
             InitialSetupWindow.Open (true);
         }
 
-        [MenuItem ("Tools/VRCLearn/Hierarchy Decorator/Import Settings")]
-        private static void OpenImport()
-        {
-            InitialSetupWindow.Open (true);
-        }
-
         [MenuItem (AutoMenu)]
         private static void SelectAuto() => SelectLanguage (SettingsLanguage.Auto);
 

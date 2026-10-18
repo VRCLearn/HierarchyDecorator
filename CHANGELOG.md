@@ -4,10 +4,12 @@
 
 - Isolate VRCLearn's assembly, C# namespaces, asset GUIDs, menu
   paths and local settings from the upstream plugin so both can remain installed.
-- Stop automatically removing the upstream VPM package. Existing installations
-  and their settings are retained; removing them is optional.
-- Add explicit previous-settings import to the first-run chooser and Tools menu,
-  leaving the source settings unchanged.
+- Stop automatically removing the upstream VPM package during installation.
+  Choosing a fresh preset keeps both plugins installed.
+- Add optional one-click migration to the first-run preset chooser: import and
+  save wooshii settings, then remove its Assets, UPM, embedded or VPM installation
+  and the selected old settings asset. Retain unrelated user files and other
+  settings assets; report incomplete removal instead of reporting success.
 - Verify asset identities and both editor assemblies in coexistence checks.
 
 ## [1.0.0] - 2026-10-19
