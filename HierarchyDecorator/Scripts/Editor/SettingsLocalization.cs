@@ -25,7 +25,7 @@ namespace HierarchyDecorator
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
             { "Choose a preset", new[] { "プリセットを選択", "프리셋 선택", "選擇預設", "选择预设" } },
-            { "Choose the initial Hierarchy appearance. You can adjust these options in Settings later.", new[] { "Hierarchy の初期表示を選択してください。各項目は後から設定で変更できます。", "Hierarchy의 초기 표시 방식을 선택하세요. 나중에 설정에서 각 옵션을 변경할 수 있습니다.", "選擇 Hierarchy 的初始顯示方式。之後可在設定中調整各項選項。", "选择 Hierarchy 的初始显示方式。之后可以在设置中调整各项选项。" } },
+            { "Choose the Hierarchy appearance. You can adjust these options in Settings later.", new[] { "Hierarchy の表示を選択してください。各項目は後から設定で変更できます。", "Hierarchy의 표시 방식을 선택하세요. 나중에 설정에서 각 옵션을 변경할 수 있습니다.", "選擇 Hierarchy 的顯示方式。之後可在設定中調整各項選項。", "选择 Hierarchy 的显示方式。之后可以在设置中调整各项选项。" } },
             { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
             { "Original upstream defaults: show tags, layers, breadcrumbs, and alternating row backgrounds.", new[] { "上流の既定設定：タグ、レイヤー、階層ガイド、交互の背景色を表示します。", "원본 프로젝트의 기본 설정: 태그, 레이어, 계층 안내선, 교차 배경색을 표시합니다.", "原上游預設：顯示標籤、圖層、階層引導線和交替背景色。", "原上游默认：显示标签、层、层级引导线和交替背景色。" } },
             { "Use detailed preset", new[] { "詳細プリセットを使用", "상세 프리셋 사용", "使用詳細預設", "使用详细预设" } },

@@ -71,10 +71,15 @@ namespace HierarchyDecorator
 
         internal static void ApplyInitialPreset(SettingsPreset preset)
         {
-            Settings settings = Settings;
-            if (!settings.NeedsPresetSelection)
+            if (!Settings.NeedsPresetSelection)
                 return;
 
+            ApplyPreset(preset);
+        }
+
+        internal static void ApplyPreset(SettingsPreset preset)
+        {
+            Settings settings = Settings;
             settings.ApplyPreset(preset);
             EditorUtility.SetDirty(settings);
             SaveSettings(settings);

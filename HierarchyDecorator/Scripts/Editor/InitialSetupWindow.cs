@@ -7,9 +7,13 @@ namespace HierarchyDecorator
     {
         private Vector2 scrollPosition;
 
-        internal static void Open()
+        [SerializeField]
+        private bool allowReselection;
+
+        internal static void Open(bool allowReselection = false)
         {
             var window = GetWindow<InitialSetupWindow>(true, "Hierarchy Decorator", true);
+            window.allowReselection = allowReselection;
             window.minSize = new Vector2(420f, 360f);
         }
 
@@ -25,7 +29,7 @@ namespace HierarchyDecorator
 
         private void OnGUI()
         {
-            if (!HierarchyDecorator.Settings.NeedsPresetSelection)
+            if (!allowReselection && !HierarchyDecorator.Settings.NeedsPresetSelection)
             {
                 Close();
                 return;
@@ -42,7 +46,7 @@ namespace HierarchyDecorator
                     SettingsLocalization.DrawLanguageSelector();
                     GUILayout.Space(8f);
                     EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset"), EditorStyles.boldLabel);
-                    GUILayout.Label(SettingsLocalization.Text("Choose the initial Hierarchy appearance. You can adjust these options in Settings later."), EditorStyles.wordWrappedLabel);
+                    GUILayout.Label(SettingsLocalization.Text("Choose the Hierarchy appearance. You can adjust these options in Settings later."), EditorStyles.wordWrappedLabel);
                     GUILayout.Space(12f);
 
                     if (DrawPreset("Detailed", "Original upstream defaults: show tags, layers, breadcrumbs, and alternating row backgrounds.", "Use detailed preset"))
@@ -60,7 +64,10 @@ namespace HierarchyDecorator
 
             if (selected.HasValue)
             {
-                HierarchyDecorator.ApplyInitialPreset(selected.Value);
+                if (allowReselection)
+                    HierarchyDecorator.ApplyPreset(selected.Value);
+                else
+                    HierarchyDecorator.ApplyInitialPreset(selected.Value);
                 Close();
                 GUIUtility.ExitGUI();
             }
