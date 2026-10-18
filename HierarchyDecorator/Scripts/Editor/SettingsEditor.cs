@@ -95,7 +95,7 @@ namespace HierarchyDecorator
 
                 if (GUILayout.Button (SettingsLocalization.Text("GitHub Repository"), EditorStyles.miniButtonMid))
                 {
-                    Application.OpenURL ("https://github.com/WooshiiDev/HierarchyDecorator/");
+                    Application.OpenURL ("https://github.com/VRCLearn/HierarchyDecorator/");
                 }
             }
             EditorGUILayout.EndHorizontal ();
