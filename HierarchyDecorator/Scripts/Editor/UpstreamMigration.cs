@@ -14,6 +14,8 @@ namespace VRCLearn.HierarchyDecorator
     {
         internal const string PackageId = "com.wooshii.hierarchydecorator";
         internal static bool IsRunning { get; private set; }
+        internal static bool IsVpmManaged => File.Exists("Packages/vpm-manifest.json") &&
+            File.ReadAllText("Packages/vpm-manifest.json").Contains("\"" + PackageId + "\"");
 
         private static RemoveRequest request;
         private static Action<Exception> completion;
@@ -22,6 +24,7 @@ namespace VRCLearn.HierarchyDecorator
         private static HashSet<string> folders;
         private static bool resolvePackages;
         private static bool imported;
+        private static bool removeInstallation;
 
         internal static void Start(string sourcePath, Action<Exception> completed)
         {
@@ -29,10 +32,8 @@ namespace VRCLearn.HierarchyDecorator
                 throw new InvalidOperationException("A wooshii migration is already running.");
 
             // Validate the removal route before changing settings or deleting files.
-            PackageInfo package = PackageInfo.GetAllRegisteredPackages().FirstOrDefault(item => item.name == PackageId);
-            Action removeVpm = VpmRemoval.GetRemoval();
-            if (removeVpm != null)
-                RequireProjectPackage(Path.Combine("Packages", PackageId));
+            bool vpmManaged = IsVpmManaged;
+            PackageInfo package = vpmManaged ? null : PackageInfo.GetAllRegisteredPackages().FirstOrDefault(item => item.name == PackageId);
             if (package != null)
             {
                 foreach (PackageInfo dependent in PackageInfo.GetAllRegisteredPackages())
@@ -44,7 +45,7 @@ namespace VRCLearn.HierarchyDecorator
                     RequireProjectPackage(package.resolvedPath);
             }
 
-            assets = UpstreamAssets.FindFiles();
+            assets = vpmManaged ? new List<string>() : UpstreamAssets.FindFiles();
             folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             settingsPath = sourcePath;
             RequireAssetPath(sourcePath);
@@ -58,24 +59,20 @@ namespace VRCLearn.HierarchyDecorator
                     parent = Path.GetDirectoryName(parent).Replace('\\', '/');
                 }
             }
-            if (package == null && assets.Count == 0)
+            if (!vpmManaged && package == null && assets.Count == 0)
                 throw new InvalidOperationException("The wooshii installation could not be identified.");
 
             IsRunning = true;
             completion = completed;
-            resolvePackages = removeVpm != null || package?.source == PackageSource.Embedded;
+            resolvePackages = package?.source == PackageSource.Embedded;
+            removeInstallation = !vpmManaged;
             imported = false;
             EditorApplication.LockReloadAssemblies();
             try
             {
                 HierarchyDecorator.ImportSettings(sourcePath);
                 imported = true;
-                if (removeVpm != null)
-                {
-                    removeVpm();
-                    RemovePackageReferenceOrFinish();
-                }
-                else if (package == null)
+                if (package == null)
                 {
                     Finish(null);
                 }
@@ -124,7 +121,7 @@ namespace VRCLearn.HierarchyDecorator
             Action<Exception> completed = completion;
             try
             {
-                if (error == null)
+                if (error == null && removeInstallation)
                 {
                     AssetDatabase.StartAssetEditing();
                     try

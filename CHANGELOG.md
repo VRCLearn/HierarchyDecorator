@@ -6,10 +6,15 @@
   paths and local settings from the upstream plugin so both can remain installed.
 - Stop automatically removing the upstream VPM package during installation.
   Choosing a fresh preset keeps both plugins installed.
-- Add optional one-click migration to the first-run preset chooser: import and
-  save wooshii settings, then remove its Assets, UPM, embedded or VPM installation
-  and the selected old settings asset. Retain unrelated user files and other
-  settings assets; report incomplete removal instead of reporting success.
+- Add optional settings migration to the first-run preset chooser. Non-VPM
+  migration saves settings before removing the old Assets, UPM or embedded
+  installation and selected old settings asset. Retain unrelated files and other
+  settings assets; report incomplete cleanup instead of reporting success.
+- For VPM installations, import settings only and keep the old installation,
+  selected settings asset and both package manifests unchanged. Leave removal
+  to VCC/ALCOMD without invoking a Resolver API or checking removal dependencies.
+- Identify Assets installations by known directory layouts and folder/file GUIDs,
+  then match distributed relative file paths to handle regenerated file GUIDs.
 - Verify asset identities and both editor assemblies in coexistence checks.
 
 ### Fixed

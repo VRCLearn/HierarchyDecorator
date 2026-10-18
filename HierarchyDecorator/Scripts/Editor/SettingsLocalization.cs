@@ -29,6 +29,8 @@ namespace VRCLearn.HierarchyDecorator
             { "Choosing a preset keeps wooshii installed. Migration imports the selected settings, then removes the wooshii installation and the selected old settings asset.", new[] { "プリセットを選ぶと wooshii 版は残ります。移行すると選択した設定をインポートし、wooshii 版と選択した旧設定アセットを削除します。", "프리셋을 선택하면 wooshii 버전이 유지됩니다. 마이그레이션하면 선택한 설정을 가져온 다음 wooshii 설치와 선택한 이전 설정 에셋을 제거합니다.", "選擇預設會保留 wooshii 版。遷移會先匯入選定設定，再移除 wooshii 安裝及選定的舊設定資產。", "选择预设会保留 wooshii 版。迁移会先导入所选设置，再移除 wooshii 安装及所选的旧设置资产。" } },
             { "Settings source", new[] { "設定のコピー元", "설정 원본", "設定來源", "设置来源" } },
             { "Migrate settings and remove wooshii", new[] { "設定を移行して wooshii 版を削除", "설정 마이그레이션 및 wooshii 제거", "遷移設定並移除 wooshii", "一键迁移并移除 wooshii" } },
+            { "Import settings", new[] { "設定をインポート", "설정 가져오기", "匯入設定", "导入设置" } },
+            { "Import the selected settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package.", new[] { "選択した設定のみインポートします。wooshii 版と元の設定は残ります。パッケージの削除は VCC または ALCOM で行ってください。", "선택한 설정만 가져옵니다. wooshii 및 원본 설정은 유지됩니다. 패키지 제거는 VCC 또는 ALCOM에서 진행하세요.", "僅匯入選定設定，保留 wooshii 安裝和原始設定；請使用 VCC 或 ALCOM 移除套件。", "仅导入所选设置，保留 wooshii 安装和原始设置；请使用 VCC 或 ALCOM 移除包。" } },
             { "Migrating...", new[] { "移行中…", "마이그레이션 중…", "遷移中…", "正在迁移…" } },
             { "Choose a preset style", new[] { "プリセットスタイルを選択", "프리셋 스타일 선택", "選擇預設樣式", "选择预设样式" } },
             { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },

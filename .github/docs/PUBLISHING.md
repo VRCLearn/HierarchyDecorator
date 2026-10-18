@@ -30,21 +30,28 @@ choose whether to migrate.
 Settings are stored independently at
 `UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run preset
 chooser and **Tools > VRCLearn > Hierarchy Decorator > Choose Preset** offer
-**Migrate settings and remove wooshii** for loaded upstream settings assets.
-Choosing a preset or closing the chooser leaves wooshii installed. No offline
-settings recovery or old local settings format is supported.
+migration for loaded upstream settings assets. Choosing a preset or closing the
+chooser leaves wooshii installed. Settings are imported from the installed
+upstream plugin's assets under `Assets`.
 
-Migration validates the removal route, copies the selected settings and saves
-before cleanup. Assets cleanup identifies upstream files by their known GUIDs,
-removes the selected settings asset, and removes only empty plugin directories. It retains
-unrelated files and unselected settings. UPM dependencies use `Client.Remove` and
-retain external source directories. Embedded packages are removed only from the
-confirmed project-local package directory. VPM removal uses the project's existing
-VPM Core API with forced removal disabled; it must update package records as well
-as remove the installation. No VPM dependency is added to this tool. A missing or
-unsupported VPM Resolver, or another package depending on wooshii, prevents
-migration before settings change. Import/save failures prevent cleanup; later
-cleanup failures must be reported as incomplete migration.
+Migration copies the selected settings and saves before any cleanup. Non-VPM
+Assets cleanup locates the known `Assets/HierarchyDecorator` root and the nested
+`Assets/HierarchyDecorator/HierarchyDecorator` layout, plus renamed roots
+identified by known folder or distributed file GUIDs. It uses the distributed
+relative file paths within identified roots as well as known file GUIDs, so
+regenerated file GUIDs do not leave the original scripts behind. Cleanup removes
+recognized distribution files, the selected settings asset and empty plugin
+directories. It retains extra user files and unselected settings. UPM dependencies
+use `Client.Remove` and retain external source directories. Embedded packages are
+removed only from the confirmed project-local package directory. Import/save
+failures prevent cleanup; later cleanup failures are reported as incomplete
+migration.
+
+For a VPM-managed wooshii installation, migration imports settings only. Keep the
+old package installation, selected old settings asset, `Packages/manifest.json`
+and `Packages/vpm-manifest.json` unchanged. The user can remove wooshii through
+VCC/ALCOMD after importing. The tool must not invoke Resolver APIs, edit package
+records, or preflight package dependencies for VPM removal.
 
 ## Validate and build
 
@@ -116,11 +123,12 @@ python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project
 `HierarchyDecoratorCI.CompileCheck.Run` also verifies the two assemblies and
 Settings types when the old package is present. `CoexistenceProbe.cs` exercises
 independent settings, menus, callbacks and settings copies in an isolated
-project. The migration probes verify explicit removal and retention of unrelated
-files for the supported installation routes. Never run these fixture-producing
+project. The migration probes cover explicit removal for non-VPM installations,
+retention of unrelated files, and settings-only import with unchanged VPM
+installation and manifest files. Never run these fixture-producing
 probes against a user project.
 
-To run the removal probe, prepare a fresh disposable project and launch its Editor:
+To run the migration probe, prepare a fresh disposable project and launch its Editor:
 
 ```powershell
 python .github/unity-ci/prepare_migration_project.py --unity-version 2022.3.22f1 --project-path .unity-ci~/migration-assets --upstream-package <local-upstream-package-path> --mode assets
@@ -128,10 +136,11 @@ python .github/unity-ci/prepare_migration_project.py --unity-version 2022.3.22f1
 ```
 
 Use `--mode local`, `--mode embedded`, or `--mode vpm` with a fresh project path
-to exercise the other installation routes. For VPM, also pass
-`--vpm-resolver <extracted-official-resolver-package-path>`. The preparation script
-uses local packages and does not download them. Do not add `-quit`: the probe
-waits for asynchronous package removal and exits when finished. Read
+to exercise the other installation routes. VPM mode verifies settings import
+while retaining the old installation, selected settings and both manifest files;
+it does not require a Resolver package. The preparation script uses local packages
+and does not download them. Do not add `-quit`: the probe waits for asynchronous
+package operations where needed and exits when finished. Read
 `Logs/migration-result.json` inside the disposable project for the result.
 
 ## Windows settings-save regression

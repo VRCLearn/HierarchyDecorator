@@ -18,6 +18,7 @@ namespace VRCLearn.HierarchyDecorator
         private int selectedImport;
         private Vector2 scrollPosition;
         private string importError;
+        private bool vpmManaged;
 
         internal static void Open(bool allowReselection = false)
         {
@@ -47,6 +48,7 @@ namespace VRCLearn.HierarchyDecorator
         private void RefreshImports()
         {
             importCandidates = SettingsImport.FindCandidates();
+            vpmManaged = UpstreamMigration.IsVpmManaged;
             selectedImport = 0;
             importError = null;
         }
@@ -133,14 +135,17 @@ namespace VRCLearn.HierarchyDecorator
 
             GUILayout.Space(12f);
             EditorGUILayout.LabelField(SettingsLocalization.Text("Migrate from wooshii"), EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(SettingsLocalization.Text("Choosing a preset keeps wooshii installed. Migration imports the selected settings, then removes the wooshii installation and the selected old settings asset."), MessageType.Info);
+            EditorGUILayout.HelpBox(SettingsLocalization.Text(vpmManaged
+                ? "Import the selected settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package."
+                : "Choosing a preset keeps wooshii installed. Migration imports the selected settings, then removes the wooshii installation and the selected old settings asset."), MessageType.Info);
             selectedImport = EditorGUILayout.Popup(SettingsLocalization.Text("Settings source"), selectedImport, importCandidates.ToArray());
             if (!string.IsNullOrEmpty(importError))
                 EditorGUILayout.HelpBox(importError, MessageType.Error);
             string migration = null;
             using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode))
             {
-                if (GUILayout.Button(SettingsLocalization.Text(UpstreamMigration.IsRunning ? "Migrating..." : "Migrate settings and remove wooshii"), GUILayout.Height(30f)))
+                if (GUILayout.Button(SettingsLocalization.Text(UpstreamMigration.IsRunning ? "Migrating..."
+                    : vpmManaged ? "Import settings" : "Migrate settings and remove wooshii"), GUILayout.Height(30f)))
                 {
                     importError = null;
                     migration = importCandidates[selectedImport];

@@ -16,6 +16,7 @@ namespace HierarchyDecoratorCI
         private const BindingFlags AnyStatic = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
         private const string Marker = "ProjectSettings/MigrationProbe.enabled";
         private const string SettingsPath = "Assets/MigrationSettings/Selected.asset";
+        private const string OtherSettingsPath = "Assets/MigrationSettings/Unselected.asset";
         private const string CurrentSettingsPath = "UserSettings/VRCLearnHierarchyDecoratorSettings.asset";
         private const string UserContent = "This file belongs to the user, not the plugin.\n";
         private static readonly List<string> Checks = new List<string>();
@@ -25,9 +26,10 @@ namespace HierarchyDecoratorCI
         private static Type newSettingsType;
         private static Font fixtureFont;
         private static MonoScript fixtureScript;
-        private static byte[] previousCurrentSettings;
         private static byte[] selectedSettings;
         private static byte[] selectedSettingsMeta;
+        private static byte[] otherSettings;
+        private static byte[] otherSettingsMeta;
         private static byte[] previousVpmManifest;
         private static byte[] previousUnityManifest;
         private static double deadline;
@@ -40,8 +42,9 @@ namespace HierarchyDecoratorCI
             public string upstreamRoot;
             public bool failSave;
             public bool vpm;
-            public bool expectPreflightFailure;
             public string externalSource;
+            public string regeneratedAsset;
+            public string regeneratedGuid;
         }
 
         [Serializable]
@@ -51,7 +54,6 @@ namespace HierarchyDecoratorCI
             public string mode;
             public bool failSave;
             public bool vpm;
-            public bool expectPreflightFailure;
             public bool passed;
             public string[] checks;
             public string error;
@@ -71,6 +73,8 @@ namespace HierarchyDecoratorCI
                 CreateSettings(oldType);
                 selectedSettings = File.ReadAllBytes(SettingsPath);
                 selectedSettingsMeta = File.ReadAllBytes(SettingsPath + ".meta");
+                otherSettings = File.ReadAllBytes(OtherSettingsPath);
+                otherSettingsMeta = File.ReadAllBytes(OtherSettingsPath + ".meta");
                 previousUnityManifest = File.ReadAllBytes("Packages/manifest.json");
                 if (File.Exists("Packages/vpm-manifest.json"))
                     previousVpmManifest = File.ReadAllBytes("Packages/vpm-manifest.json");
@@ -98,10 +102,7 @@ namespace HierarchyDecoratorCI
             }
             catch (Exception exception)
             {
-                if (configuration != null && configuration.expectPreflightFailure && originalFiles != null && previousCurrentSettings != null)
-                    CheckPreflightFailure(exception);
-                else
-                    Finish(false, exception);
+                Finish(false, exception);
             }
         }
 
@@ -109,30 +110,15 @@ namespace HierarchyDecoratorCI
         {
             try
             {
-                if (configuration.expectPreflightFailure)
-                {
-                    Type owner = newSettingsType.Assembly.GetType("VRCLearn.HierarchyDecorator.HierarchyDecorator", true);
-                    var current = (ScriptableObject)owner.GetProperty("Settings", AnyStatic).GetValue(null);
-                    using (var serialized = new SerializedObject(current))
-                    {
-                        serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue = "::before-preflight::";
-                        serialized.ApplyModifiedPropertiesWithoutUndo();
-                    }
-                    Require((bool)owner.GetMethod("SaveSettings", AnyStatic).Invoke(null, new object[] { current }),
-                        "Could not establish the unchanged-current-settings preflight fixture.");
-                    previousCurrentSettings = File.ReadAllBytes(CurrentSettingsPath);
-                }
-
                 Type migration = newSettingsType.Assembly.GetType("VRCLearn.HierarchyDecorator.UpstreamMigration", true);
+                Require((bool)migration.GetProperty("IsVpmManaged", AnyStatic).GetValue(null) == configuration.vpm,
+                    "VPM ownership was not detected correctly.");
                 var callback = new Action<Exception>(Completed);
                 migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { SettingsPath, callback });
             }
             catch (Exception exception)
             {
-                if (configuration.expectPreflightFailure)
-                    CheckPreflightFailure(exception);
-                else
-                    Finish(false, exception);
+                Finish(false, exception);
             }
         }
 
@@ -175,10 +161,15 @@ namespace HierarchyDecoratorCI
             }
             EditorUtility.SetDirty(source);
             AssetDatabase.SaveAssets();
+            Require(!File.Exists(OtherSettingsPath) && AssetDatabase.CopyAsset(SettingsPath, OtherSettingsPath),
+                "Could not create independent unselected-settings fixture.");
             if (configuration.mode == "assets")
             {
                 Require(File.ReadAllText(Path.Combine(configuration.upstreamRoot, "UserNote.txt")).Replace("\r\n", "\n") == UserContent,
-                    "Expected user-owned file in the renamed Assets fixture.");
+                    "Expected user-owned file in the Assets fixture.");
+                Require(File.Exists(configuration.regeneratedAsset) &&
+                    AssetDatabase.AssetPathToGUID(configuration.regeneratedAsset).Equals(configuration.regeneratedGuid, StringComparison.OrdinalIgnoreCase),
+                    "Regenerated-GUID fixture was not imported with its new identity.");
             }
         }
 
@@ -186,17 +177,14 @@ namespace HierarchyDecoratorCI
         {
             try
             {
-                if (configuration.expectPreflightFailure)
-                {
-                    CheckPreflightFailure(error);
-                    return;
-                }
+                Require(File.ReadAllBytes(OtherSettingsPath).SequenceEqual(otherSettings) &&
+                    File.ReadAllBytes(OtherSettingsPath + ".meta").SequenceEqual(otherSettingsMeta),
+                    "Import or cleanup modified unselected upstream settings.");
                 if (configuration.failSave)
                 {
                     Require(error != null, "Expected save failure was reported as migration success.");
                     CheckOriginalInstallation();
-                    Require(File.Exists(SettingsPath) && File.Exists(SettingsPath + ".meta"),
-                        "Failed import deleted the selected old settings.");
+                    CheckOldSettingsAndPackageRecords();
                     Checks.Add("save failure leaves all upstream files and selected old settings untouched");
                     Finish(true, null);
                     return;
@@ -205,6 +193,14 @@ namespace HierarchyDecoratorCI
                 Require(error == null, "Migration failed: " + error);
                 Require(File.Exists(CurrentSettingsPath), "New settings were not persisted before cleanup.");
                 CheckSavedSettings();
+                if (configuration.vpm)
+                {
+                    CheckOriginalInstallation();
+                    CheckOldSettingsAndPackageRecords();
+                    Checks.Add("VPM import preserves the old package, both manifests and selected old settings byte-for-byte");
+                    Finish(true, null);
+                    return;
+                }
                 Require(!File.Exists(SettingsPath) && !File.Exists(SettingsPath + ".meta"),
                     "Selected upstream settings were not removed after successful import.");
                 Require(Directory.Exists("Assets/MigrationSettings"), "Cleanup deleted the user's settings directory.");
@@ -219,7 +215,10 @@ namespace HierarchyDecoratorCI
                     Require(Directory.GetFiles(configuration.upstreamRoot, "*.cs", SearchOption.AllDirectories).Length == 0 &&
                         Directory.GetFiles(configuration.upstreamRoot, "*.asmdef", SearchOption.AllDirectories).Length == 0,
                         "Upstream source files remain after cleanup.");
-                    Checks.Add("renamed Assets installation is removed while user content remains");
+                    Require(!string.IsNullOrEmpty(configuration.regeneratedAsset) &&
+                        !File.Exists(configuration.regeneratedAsset) && !File.Exists(configuration.regeneratedAsset + ".meta"),
+                        "Cleanup left the distributed asset with a regenerated GUID behind.");
+                    Checks.Add("Assets distribution files, including the regenerated-GUID file, are removed while user content remains");
                 }
                 else if (configuration.mode == "local")
                 {
@@ -243,14 +242,6 @@ namespace HierarchyDecoratorCI
                     if (externalFiles != null)
                         Checks.Add("remaining UPM reference is removed without changing its external source");
                 }
-                if (configuration.vpm)
-                {
-                    Require(!File.ReadAllText("Packages/vpm-manifest.json").Contains("\"com.wooshii.hierarchydecorator\""),
-                        "VPM still contains an upstream locked entry or direct dependency.");
-                    Require(!File.ReadAllText("Packages/manifest.json").Contains("com.wooshii.hierarchydecorator"),
-                        "UPM still contains an upstream package reference after VPM removal.");
-                    Checks.Add("VPM removal updates both locked/direct records and Unity package references");
-                }
                 Finish(true, null);
             }
             catch (Exception exception)
@@ -266,29 +257,13 @@ namespace HierarchyDecoratorCI
                     "Original installation changed: " + pair.Key);
         }
 
-        private static void CheckPreflightFailure(Exception error)
+        private static void CheckOldSettingsAndPackageRecords()
         {
-            try
-            {
-                Require(error != null, "Expected VPM preflight rejection was reported as success.");
-                string expectedReason = Directory.Exists("Packages/dev.vrclearn.migration-consumer")
-                    ? "required by dev.vrclearn.migration-consumer"
-                    : "available VPM Resolver";
-                Require(error.ToString().Contains(expectedReason), "Unexpected preflight failure: " + error);
-                CheckOriginalInstallation();
-                Require(File.ReadAllBytes(SettingsPath).SequenceEqual(selectedSettings) &&
-                    File.ReadAllBytes(SettingsPath + ".meta").SequenceEqual(selectedSettingsMeta) &&
-                    File.ReadAllBytes(CurrentSettingsPath).SequenceEqual(previousCurrentSettings) &&
-                    File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest) &&
-                    (previousVpmManifest == null || File.ReadAllBytes("Packages/vpm-manifest.json").SequenceEqual(previousVpmManifest)),
-                    "Preflight failure changed selected old settings, current new settings or package records.");
-                Checks.Add("VPM preflight failure preserves old installation and both old and new settings byte-for-byte");
-                Finish(true, null);
-            }
-            catch (Exception exception)
-            {
-                Finish(false, exception);
-            }
+            Require(File.ReadAllBytes(SettingsPath).SequenceEqual(selectedSettings) &&
+                File.ReadAllBytes(SettingsPath + ".meta").SequenceEqual(selectedSettingsMeta) &&
+                File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest) &&
+                (previousVpmManifest == null || File.ReadAllBytes("Packages/vpm-manifest.json").SequenceEqual(previousVpmManifest)),
+                "The selected upstream settings or package records changed.");
         }
 
         private static void CheckSavedSettings()
@@ -344,7 +319,6 @@ namespace HierarchyDecoratorCI
                 mode = configuration == null ? "unknown" : configuration.mode,
                 failSave = configuration != null && configuration.failSave,
                 vpm = configuration != null && configuration.vpm,
-                expectPreflightFailure = configuration != null && configuration.expectPreflightFailure,
                 passed = passed,
                 checks = Checks.ToArray(),
                 error = error == null ? null : error.ToString()
