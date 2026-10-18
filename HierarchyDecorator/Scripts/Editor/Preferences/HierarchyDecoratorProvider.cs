@@ -59,7 +59,7 @@ namespace HierarchyDecorator
         private static void SelectLanguage(SettingsLanguage language)
         {
             SettingsLocalization.Language = language;
-            SettingsService.RepaintAllSettingsWindow ();
+            UnityEditorInternal.InternalEditorUtility.RepaintAllViews ();
         }
 
         private static bool ValidateLanguage(string menuPath, SettingsLanguage language)
