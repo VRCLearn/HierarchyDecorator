@@ -50,14 +50,14 @@ namespace HierarchyDecorator
             using (new EditorGUILayout.VerticalScope())
             {
                 GUILayout.Space(12f);
+                SettingsLocalization.DrawLanguageSelector();
+                GUILayout.Space(12f);
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Space(12f);
                     EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset"), EditorStyles.boldLabel);
                 }
                 GUILayout.Space(8f);
-                SettingsLocalization.DrawLanguageSelector();
-                GUILayout.Space(12f);
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Space(12f);
