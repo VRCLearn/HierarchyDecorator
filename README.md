@@ -223,6 +223,8 @@ Scripts can also be dragged in from the project view and will be added to the gr
 ## Support
 Please submit questions, bugs, and feature requests to [VRCLearn/HierarchyDecorator issues](https://github.com/VRCLearn/HierarchyDecorator/issues).
 
+For bug fixes, features, documentation, and translations, see the [contribution guidelines](CONTRIBUTING.md).
+
 ## License and credits
 
 This fork is maintained by VRCLearn under the [MIT license](LICENSE.md). The original project was created by Damian Slocombe (Wooshii), with contributions from the [original contributors](https://github.com/WooshiiDev/HierarchyDecorator/graphs/contributors).
