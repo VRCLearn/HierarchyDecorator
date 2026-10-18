@@ -46,10 +46,16 @@ namespace HierarchyDecorator
             }
 
             SettingsPreset? selected = null;
-            float previewHeight = Mathf.Min((position.width - 60f) * 0.5f * 270f / 420f, position.height - 98f);
+            float previewHeight = Mathf.Min((position.width - 60f) * 0.5f * 270f / 420f, position.height - 106f - EditorGUIUtility.singleLineHeight);
             using (new EditorGUILayout.VerticalScope())
             {
                 GUILayout.Space(12f);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(12f);
+                    EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset"), EditorStyles.boldLabel);
+                }
+                GUILayout.Space(8f);
                 SettingsLocalization.DrawLanguageSelector();
                 GUILayout.Space(12f);
                 using (new EditorGUILayout.HorizontalScope())
