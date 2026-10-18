@@ -1,9 +1,9 @@
 {
   "name": "com.vrclearn.hierarchydecorator",
   "displayName": "HierarchyDecorator",
-  "version": "0.12.1",
+  "version": "1.0.0",
   "unity": "2018.4",
-  "description": "HierarchyDecorator is an extension for the Unity Hierarchy enhancing it's utility.",
+  "description": "Customize the Unity Hierarchy with headers, component icons, tags, layers and multilingual settings. Independently maintained by VRCLearn.",
   "keywords": [
     "hierarchy",
     "editor"
@@ -22,6 +22,17 @@
   },
   "author": {
     "name": "VRCLearn",
-    "url": "https://github.com/VRCLearn"
+    "url": "https://github.com/VRCLearn",
+    "email": "185041488+CQMHV@users.noreply.github.com"
+  },
+  "type": "tool",
+  "vpmDependencies": {},
+  "changelogUrl": "https://github.com/VRCLearn/HierarchyDecorator/blob/main/CHANGELOG.md",
+  "url": "https://github.com/VRCLearn/HierarchyDecorator/releases/download/1.0.0/com.vrclearn.hierarchydecorator-1.0.0.zip",
+  "legacyPackages": [
+    "com.wooshii.hierarchydecorator"
+  ],
+  "legacyFolders": {
+    "Assets/VRCLearn/HierarchyDecorator": "dcbe82a2298156a6827faa55e44e9bd5"
   }
 }

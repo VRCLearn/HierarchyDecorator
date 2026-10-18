@@ -1,0 +1,40 @@
+name: Validate VPM package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Verify publishing and update behavior
+        run: python -m unittest discover -s .github/scripts -v
+      - name: Build and validate release archives
+        shell: pwsh
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_REVISION: ${{ github.sha }}
+        run: |
+          $manifest = Get-Content -Raw package.json | ConvertFrom-Json
+          $url = "https://github.com/$env:RELEASE_REPOSITORY/releases/download/$($manifest.version)/$($manifest.name)-$($manifest.version).zip"
+          python .github/scripts/build_package.py --output Output~/Release --download-url $url --repository $env:RELEASE_REPOSITORY --revision $env:RELEASE_REVISION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

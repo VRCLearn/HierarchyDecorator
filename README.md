@@ -39,6 +39,38 @@ Everything is optional, and can be modified to the requirements of the project.
 </p>
 
 ## Installation
+
+### VPM (VCC / ALCOMD)
+
+Open the [VRCLearn installation page](https://vrclearn.github.io/HierarchyDecorator/)
+and click **Add to VCC/ALCOMD**, or add this repository URL manually:
+
+```text
+https://vrclearn.github.io/HierarchyDecorator/index.json
+```
+
+In your project's package manager, install **HierarchyDecorator**
+(`com.vrclearn.hierarchydecorator`). Refresh the repository and select **Update**
+when a newer version is available. This editor tool has no VRChat SDK dependency
+and works in both avatar and world projects. VPM installation automatically removes
+the former `com.wooshii.hierarchydecorator` package. Existing repository subscriptions
+keep the same URL and ID; select the new VRCLearn package to migrate from 0.12.1.
+
+For an existing manual installation under `Assets`, close Unity, keep the old
+settings assets and their `.meta` files, and remove the old tool's scripts before
+installing through VPM. On the next editor startup, existing settings migrate to
+`UserSettings/HierarchyDecoratorSettings.asset`. The VPM migration does not delete
+`Assets/HierarchyDecorator`, where older installations may store settings. Direct
+UPM installations must remove the old dependency from `Packages/manifest.json`
+before switching to VPM.
+
+### Other installation methods
+
+The [Releases page](https://github.com/VRCLearn/HierarchyDecorator/releases) provides
+VPM ZIP, UnityPackage, manifest and checksum files. UnityPackage installs to
+`Assets/VRCLearn/HierarchyDecorator`; VPM can migrate that specific distribution
+folder automatically. Install only one distribution format per project.
+
 <p align="center">
   <a href="https://github.com/VRCLearn/HierarchyDecorator/archive/refs/heads/main.zip">Source ZIP</a>
 </p>

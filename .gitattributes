@@ -1,1 +1,3 @@
 .github/unity-ci/*.sh text eol=lf
+.github/scripts/*.py text eol=lf
+.github/workflows/*.yml text eol=lf

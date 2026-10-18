@@ -39,6 +39,18 @@ Maintainers configure `UNITY_EMAIL` and `UNITY_PASSWORD` as Actions secrets for
 GameCI's online Personal activation. Unity jobs are skipped for fork pull requests,
 which do not receive these secrets.
 
+## VPM releases
+
+Publishing follows the VRCLearn convention: immutable GitHub Release assets and
+an official VRChat template hosted on GitHub Pages. See
+[publishing instructions](.github/docs/PUBLISHING.md) for local builds, validation,
+version tags, and the existing package ID migration.
+
+Run `python -m unittest discover -s .github/scripts -v` before changing distribution
+code. The package workflow runs these tests and builds the archives on Windows,
+macOS and Linux with Python 3.10 and 3.12. Keep the existing Unity compilation
+checks for C# changes. Distribution checks do not test interactive editor behavior.
+
 ## AI-assisted development
 
 AI-assisted development is welcome. Contributors are responsible for understanding,

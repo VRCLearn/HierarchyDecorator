@@ -1,6 +1,9 @@
 # This .gitignore file should be placed at the root of your Unity project directory
 # Generated Unity compilation project
 /.unity-ci~/
+/Output~/
+/dist/
+**/__pycache__/
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #

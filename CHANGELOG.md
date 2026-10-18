@@ -1,11 +1,23 @@
 ## Unreleased
 
+## [1.0.0] - 2026-10-19
+
+### Added
+
+- Publish the independently maintained VRCLearn package as
+  `com.vrclearn.hierarchydecorator` through VPM, with an official-template installation
+  page, versioned release archives, checksums, and automatic repository updates.
+- Replace the former `com.wooshii.hierarchydecorator` VPM package on installation,
+  preserving the existing repository URL, repository ID, and historical 0.12.1 listing.
 - Save project-local personal settings under `UserSettings`, migrating a copy of
   existing settings assets while preserving the originals and their references.
 - Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
   and Simplified Chinese, with a language selector saved as a local editor preference.
 - Add Auto to the language selector and Tools menu, following the operating system
   language by default for new preferences and falling back to English when unsupported.
+- Offer Detailed and Minimal presets with image previews on first use, and reopen
+  the chooser from the Tools menu.
+- Open Preferences and switch settings languages directly from the Tools menu.
 
 ## v0.12.0
 
