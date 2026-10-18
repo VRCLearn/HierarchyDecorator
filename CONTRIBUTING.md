@@ -21,6 +21,15 @@ Start from the latest `main` and open your pull request against
 - Explain what changed and why, and link related issues when applicable. State
   which Unity version and checks you used, along with anything left unverified.
 
+The Unity compile workflow checks the package in an isolated UPM project using
+Unity 2022.3.22f1 and 6000.3.13f1. It runs on repository pull requests, pushes to
+`main`, and manual dispatch, and uploads a compilation report. It checks editor
+compilation, without building a player or testing interactive UI behavior.
+
+Maintainers configure `UNITY_EMAIL` and `UNITY_PASSWORD` as Actions secrets for
+GameCI's online Personal activation. Unity jobs are skipped for fork pull requests,
+which do not receive these secrets.
+
 ## AI-assisted development
 
 AI-assisted development is welcome. Contributors are responsible for understanding,
