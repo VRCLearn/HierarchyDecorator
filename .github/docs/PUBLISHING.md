@@ -59,8 +59,9 @@ distribution tests do not check interactive editor behavior.
    the source of GitHub Release notes; preparation fails if its section is absent.
 2. Run the distribution tests and relevant Unity compilation checks. Inspect the
    staged archives, license, source revision and independent settings and installation identities.
-3. Check remote history, tags and releases for duplicates, commit, and push `main`.
-   After validation succeeds, push a three-part numeric tag matching the manifest
+3. Check remote history, tags and releases for duplicates, commit to a feature
+   branch, and open a pull request against `main`. After review, merge and verify
+   validation on `main`, then push a three-part numeric tag matching the manifest
    exactly, such as `1.0.0`, without a `v` prefix.
 4. `release.yml` validates the archives, creates the Release and explicitly
    dispatches `vpm-listing.yml` on `main`. Existing releases keep their assets on

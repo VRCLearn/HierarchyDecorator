@@ -186,23 +186,29 @@ class DistributionTests(unittest.TestCase):
                                     name.startswith("VRCLearn.HierarchyDecorator.") for name in namespaces), namespaces)
 
     def test_unity_project_can_include_both_local_packages_without_replacement(self):
-        upstream = self.root / "upstream package"
+        # Relative Unity package paths require the project and repository to be
+        # on the same drive; hosted Windows runners keep TEMP on another drive.
+        temporary = tempfile.TemporaryDirectory(dir=builder.ROOT, prefix=".coexistence-test-")
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name).resolve()
+        upstream = root / "upstream package"
         upstream.mkdir()
         (upstream / "package.json").write_text(json.dumps({"name": "com.wooshii.hierarchydecorator"}), encoding="utf-8")
-        project = self.root / "coexistence project"
-        subprocess.run([sys.executable, str(builder.ROOT / ".github/unity-ci/prepare_project.py"),
+        project = root / "coexistence project"
+        prepared = subprocess.run([sys.executable, str(builder.ROOT / ".github/unity-ci/prepare_project.py"),
                         "--unity-version", "2022.3.22f1", "--project-path", str(project),
-                        "--upstream-package", str(upstream)], check=True, capture_output=True, text=True)
+                        "--upstream-package", str(upstream)], capture_output=True, text=True)
+        self.assertEqual(prepared.returncode, 0, prepared.stderr)
         manifest = json.loads((project / "Packages/manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(set(manifest["dependencies"]),
                          {builder.PACKAGE_ID, "com.wooshii.hierarchydecorator"})
         for package_id, path in manifest["dependencies"].items():
             target = (project / "Packages" / path.removeprefix("file:")).resolve()
             expected = upstream if package_id == "com.wooshii.hierarchydecorator" else builder.ROOT
-            self.assertEqual(target, expected)
+            self.assertEqual(target, expected.resolve())
 
         (upstream / "package.json").write_text(json.dumps({"name": "wrong.package"}), encoding="utf-8")
-        rejected = self.root / "rejected project"
+        rejected = root / "rejected project"
         result = subprocess.run([sys.executable, str(builder.ROOT / ".github/unity-ci/prepare_project.py"),
                                  "--unity-version", "2022.3.22f1", "--project-path", str(rejected),
                                  "--upstream-package", str(upstream)], capture_output=True, text=True)
