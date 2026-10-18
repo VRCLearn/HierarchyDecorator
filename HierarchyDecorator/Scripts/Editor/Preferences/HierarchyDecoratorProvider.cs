@@ -7,6 +7,7 @@ namespace HierarchyDecorator
     public static class HierarchyDecoratorProvider
     {
         private const string LanguageMenu = "Tools/Hierarchy Decorator/Language/";
+        private const string AutoMenu = LanguageMenu + "Auto";
         private const string EnglishMenu = LanguageMenu + "English";
         private const string JapaneseMenu = LanguageMenu + "日本語";
         private const string KoreanMenu = LanguageMenu + "한국어";
@@ -32,6 +33,9 @@ namespace HierarchyDecorator
             InitialSetupWindow.Open (true);
         }
 
+        [MenuItem (AutoMenu)]
+        private static void SelectAuto() => SelectLanguage (SettingsLanguage.Auto);
+
         [MenuItem (EnglishMenu)]
         private static void SelectEnglish() => SelectLanguage (SettingsLanguage.English);
 
@@ -46,6 +50,9 @@ namespace HierarchyDecorator
 
         [MenuItem (SimplifiedChineseMenu)]
         private static void SelectSimplifiedChinese() => SelectLanguage (SettingsLanguage.SimplifiedChinese);
+
+        [MenuItem (AutoMenu, true)]
+        private static bool ValidateAuto() => ValidateLanguage (AutoMenu, SettingsLanguage.Auto);
 
         [MenuItem (EnglishMenu, true)]
         private static bool ValidateEnglish() => ValidateLanguage (EnglishMenu, SettingsLanguage.English);

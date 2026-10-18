@@ -7,6 +7,7 @@ namespace HierarchyDecorator
 {
     internal enum SettingsLanguage
     {
+        Auto,
         English,
         Japanese,
         Korean,
@@ -17,8 +18,8 @@ namespace HierarchyDecorator
     internal static class SettingsLocalization
     {
         private const string PreferenceKey = "com.vrclearn.hierarchydecorator.language";
-        private static readonly string[] LanguageCodes = { "en", "ja", "ko", "zh-Hant", "zh-Hans" };
-        private static readonly string[] LanguageNames = { "English", "日本語", "한국어", "繁體中文", "简体中文" };
+        private static readonly string[] LanguageCodes = { "auto", "en", "ja", "ko", "zh-Hant", "zh-Hans" };
+        private static readonly string[] LanguageNames = { "Auto", "English", "日本語", "한국어", "繁體中文", "简体中文" };
 
         // English source text is the fallback. Columns: Japanese, Korean, traditional and simplified Chinese.
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
@@ -155,8 +156,26 @@ namespace HierarchyDecorator
 
         private static SettingsLanguage LoadLanguage()
         {
-            int index = Array.IndexOf(LanguageCodes, EditorPrefs.GetString(PreferenceKey, "en"));
+            int index = Array.IndexOf(LanguageCodes, EditorPrefs.GetString(PreferenceKey, "auto"));
             return index < 0 ? SettingsLanguage.English : (SettingsLanguage)index;
+        }
+
+        private static SettingsLanguage AutomaticLanguage()
+        {
+            switch (Application.systemLanguage)
+            {
+                case SystemLanguage.Japanese:
+                    return SettingsLanguage.Japanese;
+                case SystemLanguage.Korean:
+                    return SettingsLanguage.Korean;
+                case SystemLanguage.ChineseTraditional:
+                    return SettingsLanguage.TraditionalChinese;
+                case SystemLanguage.Chinese:
+                case SystemLanguage.ChineseSimplified:
+                    return SettingsLanguage.SimplifiedChinese;
+                default:
+                    return SettingsLanguage.English;
+            }
         }
 
         internal static SettingsLanguage Language
@@ -184,10 +203,11 @@ namespace HierarchyDecorator
 
         internal static string Text(string source)
         {
-            if (string.IsNullOrEmpty(source) || language == SettingsLanguage.English)
+            SettingsLanguage resolvedLanguage = language == SettingsLanguage.Auto ? AutomaticLanguage() : language;
+            if (string.IsNullOrEmpty(source) || resolvedLanguage == SettingsLanguage.English)
                 return source;
 
-            return Translations.TryGetValue(source, out string[] translations) ? translations[(int)language - 1] : source;
+            return Translations.TryGetValue(source, out string[] translations) ? translations[(int)resolvedLanguage - (int)SettingsLanguage.Japanese] : source;
         }
 
         internal static GUIContent Content(string text, string tooltip = null)

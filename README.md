@@ -90,7 +90,7 @@ On first use, an existing settings asset is copied to the new location, preservi
 
 Existing local configurations and migrated settings assets skip the first-run window and retain their current options.
 
-The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current language is checked. English is the default. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
+The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 
 Setting design may change over time with development to support more features, or keep things looking consistent & clean.
 

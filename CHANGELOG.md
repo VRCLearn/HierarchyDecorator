@@ -4,6 +4,8 @@
   existing settings assets while preserving the originals and their references.
 - Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
   and Simplified Chinese, with a language selector saved as a local editor preference.
+- Add Auto to the language selector and Tools menu, following the operating system
+  language by default for new preferences and falling back to English when unsupported.
 
 ## v0.12.0
 
