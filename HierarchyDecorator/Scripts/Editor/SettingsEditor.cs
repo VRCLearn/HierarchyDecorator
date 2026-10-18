@@ -54,7 +54,10 @@ namespace HierarchyDecorator
             EditorGUILayout.BeginVertical(Style.InspectorPadding);
             SettingsLocalization.DrawLanguageSelector();
             DrawTitle();
+            EditorGUI.BeginChangeCheck();
             DrawContent();
+            if (EditorGUI.EndChangeCheck())
+                EditorUtility.SetDirty(settings);
             EditorGUILayout.EndVertical();
         }
 

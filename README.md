@@ -82,7 +82,9 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
  <img align="center" width="929" alt="chrome_hzlst44Z1X" src="https://user-images.githubusercontent.com/31889435/226493547-3ec3db89-bcdf-4412-b000-c90aa9ee30b7.png">
 </p>
 
-There is a scriptable object that is required for hierarchy decorator to run. If it is deleted, another will be created in `Assets/HierarchyDecorator/`. These settings are also accessible from `Preferences`.
+Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. New installations do not create a settings asset under `Assets`.
+
+On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
 
 The settings inspector and Preferences page include a language selector for English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. English is the default. The language choice is saved locally in the editor and does not change the project's settings asset.
 

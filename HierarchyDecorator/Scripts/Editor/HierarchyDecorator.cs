@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 
 namespace HierarchyDecorator
 {
@@ -10,9 +12,9 @@ namespace HierarchyDecorator
         public static event Action OnSettings;
 
         public const string SETTINGS_TYPE_STRING = "Settings";
-        public const string SETTINGS_NAME_STRING = "Settings";
-
-        private static string s_SettingsPrefGUID = Constants.Paths.PREF_GUID;
+        private const string SettingsSessionKey = "com.vrclearn.hierarchydecorator.settings.instance";
+        private static double s_NextSaveTime;
+        private static bool s_SaveErrorReported;
 
         private static Settings s_Settings;
         public static Settings Settings
@@ -42,6 +44,11 @@ namespace HierarchyDecorator
 
             EditorApplication.delayCall -= HierarchyManager.Initialize;
             EditorApplication.delayCall += HierarchyManager.Initialize;
+
+            EditorApplication.update += SaveDirtySettings;
+            AssemblyReloadEvents.beforeAssemblyReload += FlushSettings;
+            EditorApplication.quitting += FlushSettings;
+            Undo.undoRedoPerformed += OnUndoRedo;
         }
 
         // Setup 
@@ -50,59 +57,131 @@ namespace HierarchyDecorator
         {
             Settings.Components.UpdateData();
             Settings.Components.UpdateComponents(true);
+            EditorUtility.SetDirty(Settings);
         }
 
         // Factory Methods
 
         /// <summary>
-        /// Load the asset for settings, or create one if it doesn't already exist
+        /// Restore local settings, migrating a copy of an existing asset when needed.
         /// </summary>
         /// <returns>The loaded settings</returns>
         private static Settings GetOrCreateSettings()
         {
-            if (TryLoadSettings(out Settings settings))
+            Settings settings = EditorUtility.InstanceIDToObject(SessionState.GetInt(SettingsSessionKey, 0)) as Settings;
+            if (settings != null && !EditorUtility.IsPersistent(settings))
             {
+                settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
                 return settings;
             }
 
-            return CreateSettings();
-        }
-
-        private static bool TryLoadSettings(out Settings settings)
-        {
-            // Make sure the key is still valid - no assuming that settings just 'exist'
-
-            if (EditorPrefs.HasKey(s_SettingsPrefGUID))
+            bool hasLocalFile = File.Exists(Constants.Paths.SETTINGS_FILE_PATH);
+            if (hasLocalFile)
             {
-                string path = AssetDatabase.GUIDToAssetPath(EditorPrefs.GetString(s_SettingsPrefGUID));
-
-                if (AssetDatabase.GetMainAssetTypeAtPath(path) != null)
+                settings = null;
+                UnityEngine.Object[] loadedObjects = InternalEditorUtility.LoadSerializedFileAndForget(Constants.Paths.SETTINGS_FILE_PATH);
+                if (loadedObjects != null)
                 {
-                    settings =  AssetDatabase.LoadAssetAtPath<Settings>(path);
-                    return true;
+                    foreach (UnityEngine.Object loaded in loadedObjects)
+                    {
+                        if (loaded is Settings loadedSettings)
+                        {
+                            settings = loadedSettings;
+                            break;
+                        }
+                    }
                 }
+
+                if (settings == null)
+                    throw new InvalidDataException("Cannot load HierarchyDecorator settings from " + Constants.Paths.SETTINGS_FILE_PATH);
+            }
+            else
+            {
+                Settings legacy = FindLegacySettings();
+                settings = legacy != null ? UnityEngine.Object.Instantiate(legacy) : ScriptableObject.CreateInstance<Settings>();
+                settings.name = "HierarchyDecorator Settings";
             }
 
-            settings = null;
-            return false;
-        }
+            settings.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
+            settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
+            SessionState.SetInt(SettingsSessionKey, settings.GetInstanceID());
 
-        private static Settings CreateSettings()
-        {
-            Settings settings = AssetUtility.FindOrCreateScriptable<Settings>(
-                SETTINGS_TYPE_STRING, 
-                SETTINGS_NAME_STRING, 
-                Constants.Paths.DEFAULT_ASSET_FOLDER
-                );
-            settings.SetDefaults(EditorGUIUtility.isProSkin);
-
-            string path = AssetDatabase.GetAssetPath(settings);
-            EditorPrefs.SetString(s_SettingsPrefGUID, AssetDatabase.AssetPathToGUID(path));
-
-            EditorUtility.SetDirty(settings);
-            AssetDatabase.SaveAssets();
+            if (!hasLocalFile)
+                SaveSettings(settings);
 
             return settings;
+        }
+
+        private static Settings FindLegacySettings()
+        {
+            string path = AssetDatabase.GUIDToAssetPath(EditorPrefs.GetString(Constants.Paths.PREF_GUID, string.Empty));
+            Settings settings = AssetDatabase.LoadAssetAtPath<Settings>(path);
+            if (settings != null)
+                return settings;
+
+            settings = AssetDatabase.LoadAssetAtPath<Settings>(Constants.Paths.DEFAULT_ASSET_PATH);
+            if (settings != null)
+                return settings;
+
+            foreach (string guid in AssetDatabase.FindAssets("t:" + SETTINGS_TYPE_STRING, new[] { "Assets" }))
+            {
+                settings = AssetDatabase.LoadAssetAtPath<Settings>(AssetDatabase.GUIDToAssetPath(guid));
+                if (settings != null)
+                    return settings;
+            }
+
+            return null;
+        }
+
+        private static void SaveDirtySettings()
+        {
+            if (EditorApplication.timeSinceStartup < s_NextSaveTime)
+                return;
+
+            s_NextSaveTime = EditorApplication.timeSinceStartup + 0.5;
+            FlushSettings();
+        }
+
+        private static void FlushSettings()
+        {
+            if (s_Settings != null && EditorUtility.IsDirty(s_Settings))
+                SaveSettings(s_Settings);
+        }
+
+        private static void SaveSettings(Settings settings)
+        {
+            string path = Constants.Paths.SETTINGS_FILE_PATH;
+            string temporaryPath = path + ".tmp";
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { settings }, temporaryPath, true);
+                if (File.Exists(path))
+                    File.Replace(temporaryPath, path, null);
+                else
+                    File.Move(temporaryPath, path);
+
+                EditorUtility.ClearDirty(settings);
+                s_SaveErrorReported = false;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                if (!s_SaveErrorReported)
+                    Debug.LogError("Cannot save HierarchyDecorator settings to " + path + ": " + exception.Message);
+                s_SaveErrorReported = true;
+                EditorUtility.SetDirty(settings);
+            }
+        }
+
+        private static void OnUndoRedo()
+        {
+            if (s_Settings == null)
+                return;
+
+            s_Settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
+            s_Settings.Components.UpdateComponents(true);
+            EditorUtility.SetDirty(s_Settings);
+            EditorApplication.RepaintHierarchyWindow();
         }
 
         /// <summary>
@@ -111,7 +190,7 @@ namespace HierarchyDecorator
         /// <returns>Serialized version of the settings</returns>
         public static SerializedObject GetSerializedSettings()
         {
-            return new SerializedObject (GetOrCreateSettings ());
+            return new SerializedObject (Settings);
         }
     
         /// <summary>

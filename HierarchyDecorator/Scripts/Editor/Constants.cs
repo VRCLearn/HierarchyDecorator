@@ -12,7 +12,7 @@ namespace HierarchyDecorator
         public static class Paths
         {
             /// <summary>
-            /// Pref path used to cache the GUID of the settings asset.
+            /// Legacy preference used to locate settings assets for migration.
             /// </summary>
             public static string PREF_GUID = Application.productName + "_HD_GUID";
 
@@ -22,14 +22,14 @@ namespace HierarchyDecorator
             public const string SETTINGS_PATH = "Hierarchy Decorator";
 
             /// <summary>
-            /// Default creation path for the <see cref="Settings"/> asset.
+            /// Previous default asset path, retained for migration.
             /// </summary>
             public const string DEFAULT_ASSET_PATH = "Assets/HierarchyDecorator/Settings.asset";
 
             /// <summary>
-            /// The default folder path when creating a <see cref="Settings"/> asset.
+            /// Project-local file used to persist personal settings.
             /// </summary>
-            public const string DEFAULT_ASSET_FOLDER = "Assets/HierarchyDecorator/";
+            public const string SETTINGS_FILE_PATH = "UserSettings/HierarchyDecoratorSettings.asset";
         }
        
 
