@@ -13,6 +13,12 @@ namespace HierarchyDecorator
             new SettingsPreferences (Path, SettingsScope.User),
         };
 
+        [MenuItem ("Tools/Hierarchy Decorator/Settings")]
+        private static void OpenSettings()
+        {
+            SettingsService.OpenUserPreferences (Path);
+        }
+
         [SettingsProviderGroup]
         public static SettingsProvider[] Load()
         {

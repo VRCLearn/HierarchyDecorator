@@ -82,7 +82,7 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
  <img align="center" width="929" alt="chrome_hzlst44Z1X" src="https://user-images.githubusercontent.com/31889435/226493547-3ec3db89-bcdf-4412-b000-c90aa9ee30b7.png">
 </p>
 
-Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. New installations do not create a settings asset under `Assets`.
+Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. You can also open this page from `Tools > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
 
 On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
 
