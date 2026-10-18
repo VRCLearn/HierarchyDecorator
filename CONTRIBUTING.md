@@ -11,7 +11,7 @@ behavior you would like to see.
 
 ## Pull requests
 
-Start from the latest `master` and open your pull request against
+Start from the latest `main` and open your pull request against
 [VRCLearn/HierarchyDecorator](https://github.com/VRCLearn/HierarchyDecorator).
 
 - Keep changes focused and follow the existing code style, using four spaces for
