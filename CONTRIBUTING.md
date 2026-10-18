@@ -41,6 +41,12 @@ which do not receive these secrets.
 
 ## VPM releases
 
+The maintained package uses the `VRCLearn.HierarchyDecorator` namespace and
+`VRCLearn.HierarchyDecorator.Editor` assembly. Keep its asset GUIDs, menus and
+settings separate from upstream. Upstream coexistence must work without removing
+the original package; old identities are used only for optional settings import.
+Extensions targeting this fork must reference these independent identities.
+
 Publishing follows the VRCLearn convention: immutable GitHub Release assets and
 an official VRChat template hosted on GitHub Pages. See
 [publishing instructions](.github/docs/PUBLISHING.md) for local builds, validation,

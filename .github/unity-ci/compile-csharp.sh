@@ -11,8 +11,8 @@ absolute_path() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }
 repo=$(absolute_path "$(dirname "${BASH_SOURCE[0]}")/../..")
 unity_data=$(absolute_path "${UNITY_DATA:-/opt/unity/Editor/Data}")
 output="$repo/.unity-ci~/csharp"
-sources_dir="$repo/HierarchyDecorator/Scripts/Editor"
-assembly=Wooshii.HierarchyDecorator.Editor
+sources_dir="$repo/VRCLearnHierarchyDecorator/Scripts/Editor"
+assembly=VRCLearn.HierarchyDecorator.Editor
 compiler="$unity_data/DotNetSdkRoslyn/csc.dll"
 dotnet="$unity_data/NetCoreRuntime/dotnet"
 if [[ -f "$dotnet.exe" ]]; then dotnet="$dotnet.exe"; fi
@@ -24,7 +24,7 @@ patch=${BASH_REMATCH[3]}
 
 mapfile -d '' sources < <(find "$sources_dir" -type f -name '*.cs' -print0 | sort -z)
 [[ ${#sources[@]} -gt 0 ]] || fail 'No package C# sources found.'
-mapfile -d '' asmdefs < <(find "$repo/HierarchyDecorator" -name '*.asmdef' -print0)
+mapfile -d '' asmdefs < <(find "$repo/VRCLearnHierarchyDecorator" -name '*.asmdef' -print0)
 [[ ${#asmdefs[@]} -eq 1 && ${asmdefs[0]} == "$sources_dir/$assembly.asmdef" ]] || fail 'Update the compile check for the changed assembly layout.'
 
 # These match the framework and engine reference directories used by Unity's

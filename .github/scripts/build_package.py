@@ -22,7 +22,7 @@ UNITY_ROOT = "Assets/VRCLearn/HierarchyDecorator"
 GUID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY)
 ROOT_GUID = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY + "#" + UNITY_ROOT).hex
 LICENSE_DECLARATION = "MIT"
-DIRECTORIES = ("HierarchyDecorator",)
+DIRECTORIES = ("VRCLearnHierarchyDecorator",)
 ROOT_FILES = ("package.json", "LICENSE.md", "README.md", "CHANGELOG.md")
 EXCLUDED = {"__pycache__", "fixtures", "testfixtures"}
 
@@ -73,8 +73,8 @@ def staged_manifest(output: Path, download_url: str | None, repository: str | No
         raise ValueError("The package must declare its VRCLearn identity with no VPM dependencies.")
     if manifest.get("license") != LICENSE_DECLARATION:
         raise ValueError("The package must retain the upstream MIT license.")
-    if manifest.get("legacyPackages") != ["com.wooshii.hierarchydecorator"] or "zipSHA256" in manifest:
-        raise ValueError("Only the former package is replaced; ZIP hashes belong in the listing.")
+    if manifest.get("legacyPackages") or "zipSHA256" in manifest:
+        raise ValueError("Upstream packages must remain installed; ZIP hashes belong in the listing.")
     if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", manifest.get("version", "")):
         raise ValueError("Package version must be a numeric stable semantic version.")
     author = manifest.get("author", {})

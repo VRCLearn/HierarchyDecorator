@@ -21,7 +21,7 @@ def release_notes(version: str) -> str:
     return (f"Hierarchy Decorator {version}\n\n" + match.group(1).strip() +
             "\n\nInstall from the [VRCLearn VPM repository](https://vrclearn.github.io/HierarchyDecorator/). "
             "Select **HierarchyDecorator** (`com.vrclearn.hierarchydecorator`) in VCC/ALCOMD. "
-            "This replaces the former `com.wooshii.hierarchydecorator` VPM package.\n\n"
+            "The VRCLearn package can coexist with the original plugin; importing previous settings is optional.\n\n"
             f"[Installation and migration instructions](https://github.com/{REPOSITORY}#installation).\n")
 
 

@@ -1,0 +1,160 @@
+using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+namespace VRCLearn.HierarchyDecorator
+{
+    internal class InitialSetupWindow : EditorWindow
+    {
+        private const string DetailedPreviewGuid = "f26d2d7135e456b78538166214c0e9d8";
+        private const string MinimalPreviewGuid = "52218b70c0cb5ba5b98b6a871899753b";
+
+        [SerializeField]
+        private bool allowReselection;
+        private Texture2D detailedPreview;
+        private Texture2D minimalPreview;
+        private List<SettingsImport.Candidate> importCandidates;
+        private int selectedImport;
+        private Vector2 scrollPosition;
+        private string importError;
+
+        internal static void Open(bool allowReselection = false)
+        {
+            var window = GetWindow<InitialSetupWindow>(true, "Hierarchy Decorator (VRCLearn)", true);
+            window.allowReselection = allowReselection;
+            window.minSize = new Vector2(760f, 340f);
+            window.RefreshImports();
+        }
+
+        private void OnEnable()
+        {
+            detailedPreview = LoadPreview(DetailedPreviewGuid);
+            minimalPreview = LoadPreview(MinimalPreviewGuid);
+            RefreshImports();
+            SettingsLocalization.LanguageChanged += Repaint;
+        }
+
+        private void OnDisable()
+        {
+            SettingsLocalization.LanguageChanged -= Repaint;
+        }
+
+        private static Texture2D LoadPreview(string guid)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(guid));
+        }
+
+        private void RefreshImports()
+        {
+            importCandidates = SettingsImport.FindCandidates();
+            selectedImport = 0;
+            importError = null;
+        }
+
+        private void OnGUI()
+        {
+            if (!allowReselection && !HierarchyDecorator.Settings.NeedsPresetSelection)
+            {
+                Close();
+                return;
+            }
+
+            SettingsPreset? selected = null;
+            bool imported = false;
+            float previewHeight = Mathf.Min((position.width - 60f) * 0.5f * 270f / 420f, 270f);
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            using (new EditorGUILayout.VerticalScope())
+            {
+                GUILayout.Space(12f);
+                SettingsLocalization.DrawLanguageSelector();
+                imported = DrawImport();
+                GUILayout.Space(12f);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(12f);
+                    EditorGUILayout.LabelField(SettingsLocalization.Text("Choose a preset style"), EditorStyles.boldLabel);
+                }
+                GUILayout.Space(8f);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(12f);
+                    if (DrawPreset(detailedPreview, "Detailed", previewHeight))
+                        selected = SettingsPreset.Detailed;
+                    GUILayout.Space(12f);
+                    if (DrawPreset(minimalPreview, "Minimal", previewHeight))
+                        selected = SettingsPreset.Minimal;
+                    GUILayout.Space(12f);
+                }
+                GUILayout.Space(12f);
+            }
+            EditorGUILayout.EndScrollView();
+
+            if (imported)
+            {
+                Close();
+                GUIUtility.ExitGUI();
+            }
+
+            if (selected.HasValue)
+            {
+                if (allowReselection)
+                    HierarchyDecorator.ApplyPreset(selected.Value);
+                else
+                    HierarchyDecorator.ApplyInitialPreset(selected.Value);
+                Close();
+                GUIUtility.ExitGUI();
+            }
+        }
+
+        private bool DrawImport()
+        {
+            if (importCandidates == null || importCandidates.Count == 0)
+                return false;
+
+            GUILayout.Space(12f);
+            EditorGUILayout.LabelField(SettingsLocalization.Text("Import previous settings"), EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(SettingsLocalization.Text("Import a copy of previous settings. The other installation and its files are kept unchanged."), MessageType.Info);
+            string[] labels = new string[importCandidates.Count];
+            for (int i = 0; i < labels.Length; i++)
+                labels[i] = importCandidates[i].Path;
+            selectedImport = EditorGUILayout.Popup(SettingsLocalization.Text("Settings source"), selectedImport, labels);
+            if (!string.IsNullOrEmpty(importError))
+                EditorGUILayout.HelpBox(importError, MessageType.Error);
+            bool imported = false;
+            using (new EditorGUI.DisabledScope(EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode))
+            {
+                if (GUILayout.Button(SettingsLocalization.Text("Import settings and finish"), GUILayout.Height(30f)))
+                {
+                    try
+                    {
+                        HierarchyDecorator.ImportSettings(importCandidates[selectedImport]);
+                        imported = true;
+                    }
+                    catch (Exception exception)
+                    {
+                        importError = SettingsLocalization.Text("Cannot import settings") + ": " + exception.Message;
+                        Debug.LogException(exception);
+                    }
+                }
+            }
+            return imported;
+        }
+
+        private static bool DrawPreset(Texture2D preview, string name, float height)
+        {
+            bool selected;
+            string label = SettingsLocalization.Text(name);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                Rect imageRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(height), GUILayout.ExpandWidth(true));
+                if (preview != null)
+                    GUI.DrawTexture(imageRect, preview, ScaleMode.ScaleToFit);
+                selected = GUI.Button(imageRect, new GUIContent(string.Empty, label), GUIStyle.none);
+                GUILayout.Space(6f);
+                selected |= GUILayout.Button(label, GUILayout.Height(30f));
+            }
+            return selected;
+        }
+    }
+}

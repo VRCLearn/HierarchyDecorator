@@ -1,0 +1,90 @@
+using System.Runtime.CompilerServices;
+using UnityEditor;
+using UnityEngine;
+
+namespace VRCLearn.HierarchyDecorator
+{
+
+
+    [InitializeOnLoad]
+    public static class Constants
+    {
+        public static class Paths
+        {
+            /// <summary>
+            /// Path used for showing Hierarchy Decorator settings in Preferences. See <see cref="HierarchyDecoratorProvider"/>.
+            /// </summary>
+            public const string SETTINGS_PATH = "VRCLearn/Hierarchy Decorator";
+
+            /// <summary>
+            /// Project-local file used to persist personal settings.
+            /// </summary>
+            public const string SETTINGS_FILE_PATH = "UserSettings/VRCLearnHierarchyDecoratorSettings.asset";
+        }
+       
+
+        // --- Colours
+
+        // - Two Tone Colours
+
+        public readonly static Color DarkModeEvenColor = new Color (0.25f, 0.25f, 0.25f, 1f);
+        public readonly static Color DarkModeOddColor = new Color (0.225f, 0.225f, 0.225f, 1f);
+
+        public readonly static Color LightModeEvenColor = new Color (0.8f, 0.8f, 0.8f, 1f);
+        public readonly static Color LightModeOddColor = new Color (0.765f, 0.765f, 0.765f, 1f);
+
+        // - Standard Colours
+
+        public readonly static Color SelectionColour = new Color (58f / 255f, 178f / 255f, 178f / 255f, 1);
+    
+        public readonly static Color HoverColour = new Color (150f / 255f, 150f / 255f, 150f / 255f, 1);
+
+        public readonly static Color InactiveColour = new Color (0.20f, 0.20f, 0.20f, 0.35f);
+
+        public readonly static Color InactivePrefabColour = new Color (0.48f, 0.67f, 0.95f, 0.6f);
+
+        public readonly static Color DarkBackgroundColour = new Color (0.219f, 0.219f, 0.219f);
+
+        public readonly static Color LightBackgroundColour = new Color (0.8f, 0.8f, 0.8f, 1);
+
+        public static Color DefaultBackgroundColor => EditorGUIUtility.isProSkin ? DarkBackgroundColour : LightBackgroundColour;
+
+        // --- Instance Data
+
+        public static string[] LayerMasks => UnityEditorInternal.InternalEditorUtility.layers;
+        public readonly static LayerMask AllLayers = ~0;
+
+        // --- Editor Settings
+
+        public readonly static CategoryFilter DefaultFilter = new CategoryFilter("Other", string.Empty, FilterType.NONE);
+
+        public readonly static CategoryFilter[] ComponentFilters =
+        {
+            new CategoryFilter ("2D", "2D", FilterType.NAME),
+
+            // Animation
+            new CategoryFilter ("Animation", "Anim", FilterType.NAME),
+            new CategoryFilter ("Animation", "Constraint", FilterType.NAME),
+
+            // Audio
+            new CategoryFilter ("Audio", "Audio", FilterType.NAME),
+
+            // Mesh
+            new CategoryFilter ("Mesh", "Renderer", FilterType.NAME),
+            new CategoryFilter ("Mesh", "Mesh", FilterType.NAME),
+
+            // Physics
+            new CategoryFilter ("Physics", "Collider", FilterType.NAME),
+            new CategoryFilter ("Physics", "Joint", FilterType.NAME),
+            new CategoryFilter ("Physics", "Rigidbody", FilterType.NAME),
+
+            // Networking
+            new CategoryFilter ("Network", "Network", FilterType.NAME),
+
+            new CategoryFilter ("UI", "Canvas", FilterType.NAME),
+            new CategoryFilter ("UI", "UnityEngine.EventSystems.UIBehaviour, UnityEngine.UI", FilterType.TYPE),
+            new CategoryFilter ("UI", "UnityEngine.GUIElement, UnityEngine", FilterType.TYPE)
+        };
+    }
+
+}

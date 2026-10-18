@@ -13,18 +13,22 @@ token is required.
 - Maintained package: `com.vrclearn.hierarchydecorator`.
 
 The listing retains the former `com.wooshii.hierarchydecorator` 0.12.1 package and
-its original release assets. Users select the maintained VRCLearn package to
-migrate; `legacyPackages` removes the old VPM package. Do not edit or replace the
-old release or move its tag.
+its original release assets. The maintained package has an independent assembly
+`VRCLearn.HierarchyDecorator.Editor`, `VRCLearn.HierarchyDecorator` namespaces,
+asset GUIDs, menus and settings. Do not restore `legacyPackages` replacement of
+upstream: both plugins must be able to remain installed and usable independently.
+Do not edit or replace the old release or move its tag.
 
-The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`.
-Only this new distribution folder is declared in `legacyFolders`, with a stable
-GUID. Do not add broad automatic removal of `Assets/HierarchyDecorator`: it may
-contain users' settings assets. For older manual installations, remove their
-scripts while preserving settings and metadata before installing VPM. On the
-next editor startup the maintained package copies the existing settings into
-`UserSettings/HierarchyDecoratorSettings.asset`. Direct UPM installations must
-remove their Git dependency before switching to VPM.
+The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`,
+with the distinct `VRCLearnHierarchyDecorator` source folder. Only this maintained
+distribution folder is declared in `legacyFolders`, with a stable GUID. Upstream
+Assets folders are not deleted. Settings are stored independently at
+`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run chooser and
+**Tools > VRCLearn > Hierarchy Decorator > Import Settings** optionally import old
+settings, leaving their files and installation intact and backing up the current
+VRCLearn settings. Live upstream settings objects are copied field by field;
+recognized old GUID YAML files can be imported without the old assembly loaded.
+Unknown binary files require the original plugin to save a text asset first.
 
 ## Validate and build
 
@@ -36,7 +40,7 @@ python .github/scripts/build_package.py --output Output~/Release --repository VR
 ```
 
 The builder stages a manifest and creates a VPM ZIP, UnityPackage and
-`SHA256SUMS.txt`. Both formats preserve existing asset GUIDs and the upstream MIT
+`SHA256SUMS.txt`. Both formats preserve VRCLearn asset GUIDs and the upstream MIT
 license. The manifest records the source repository, full source revision and exact
 versioned download URL. `zipSHA256` belongs in the index, not inside `package.json`.
 Development files and Unity-ignored names are excluded, including their metadata;
@@ -54,7 +58,7 @@ distribution tests do not check interactive editor behavior.
    Keep an `Unreleased` section above released versions. The tagged changelog is
    the source of GitHub Release notes; preparation fails if its section is absent.
 2. Run the distribution tests and relevant Unity compilation checks. Inspect the
-   staged archives, license, source revision and settings migration declaration.
+   staged archives, license, source revision and independent settings and installation identities.
 3. Check remote history, tags and releases for duplicates, commit, and push `main`.
    After validation succeeds, push a three-part numeric tag matching the manifest
    exactly, such as `1.0.0`, without a `v` prefix.
@@ -81,3 +85,18 @@ commit after 45 days of repository inactivity keeps scheduled updates active.
 GitHub Pages must use GitHub Actions as its build source. Deployment needs
 `pages: write` and `id-token: write`; release publication needs `contents: write`
 and workflow dispatch needs `actions: write`.
+
+## Coexistence verification
+
+The distribution tests keep a committed snapshot of upstream 0.12.1 identities
+and reject shared GUIDs, assembly names, namespaces or unresolved internal assembly
+references. To prepare a real Unity project containing both packages:
+
+```powershell
+python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project-path .unity-ci~/coexistence-project --upstream-package <local-upstream-package-path>
+```
+
+`HierarchyDecoratorCI.CompileCheck.Run` also verifies the two assemblies and
+Settings types when the old package is present. `CoexistenceProbe.cs` exercises
+independent settings, menus, callbacks and non-destructive settings imports in an
+isolated project. Never run this fixture-producing probe against a user project.
