@@ -53,11 +53,13 @@ In your project's package manager, install **HierarchyDecorator**
 (`com.vrclearn.hierarchydecorator`). Refresh the repository and select **Update**
 when a newer version is available. This editor tool has no VRChat SDK dependency
 and works in both avatar and world projects. The maintained package has independent
-assemblies, C# namespaces, asset GUIDs, menus and settings. It can remain installed
-alongside `com.wooshii.hierarchydecorator`; installation does not remove that package.
+assemblies, C# namespaces, asset GUIDs, menus and settings. VCC/ALCOMD replaces
+`com.wooshii.hierarchydecorator` during VPM installation through `legacyPackages`,
+before Unity opens. Configuration transfer remains an optional action in Unity.
 Existing repository subscriptions keep the same URL and ID.
 
-Existing wooshii installations remain usable alongside this package. The first-run
+With other installation methods, existing wooshii installations remain usable
+alongside this package. The first-run
 preset chooser lets you apply a fresh Detailed or Minimal preset and keep wooshii
 installed, or migrate wooshii's current configuration into
 `UserSettings/Settings.asset`. Reopen the chooser from
