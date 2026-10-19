@@ -151,12 +151,11 @@ class DistributionTests(unittest.TestCase):
             prepare_release.prepare(self.root / "missing-notes", version, builder.REPOSITORY, "ab" * 20)
         self.assertFalse((self.root / "missing-notes").exists())
 
-    def test_listing_preserves_repository_identity_and_both_package_ids(self):
+    def test_listing_preserves_repository_identity_and_only_lists_maintained_package(self):
         source = json.loads((builder.ROOT / ".github/vpm/source.json").read_text(encoding="utf-8"))
         self.assertEqual(source["id"], "io.github.vrclearn.hierarchydecorator")
         self.assertEqual(source["url"], "https://vrclearn.github.io/HierarchyDecorator/index.json")
-        self.assertEqual(source["packages"], {builder.PACKAGE_ID: builder.REPOSITORY,
-                                            "com.wooshii.hierarchydecorator": builder.REPOSITORY})
+        self.assertEqual(source["packages"], {builder.PACKAGE_ID: builder.REPOSITORY})
         self.assertNotIn("Assets/HierarchyDecorator", self.manifest["legacyFolders"])
 
     def test_release_asset_and_assembly_identities_are_independent_from_upstream(self):

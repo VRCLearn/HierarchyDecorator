@@ -14,8 +14,7 @@
     },
     "repository": "VRCLearn/HierarchyDecorator",
     "packages": {
-        "com.vrclearn.hierarchydecorator": "VRCLearn/HierarchyDecorator",
-        "com.wooshii.hierarchydecorator": "VRCLearn/HierarchyDecorator"
+        "com.vrclearn.hierarchydecorator": "VRCLearn/HierarchyDecorator"
     },
     "githubRepos": [
         "VRCLearn/HierarchyDecorator"
