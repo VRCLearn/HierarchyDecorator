@@ -20,7 +20,7 @@ namespace HierarchyDecoratorCI
         private const string DefaultSettingsPath = "Assets/HierarchyDecorator/Settings.asset";
         private const string WrongTypePath = "Assets/MigrationSettings/NotSettings.txt";
         private const string OtherSettingsPath = "Assets/MigrationSettings/Unselected.asset";
-        private const string CurrentSettingsPath = "UserSettings/HierarchyDecoratorSettings.asset";
+        private const string CurrentSettingsPath = "UserSettings/Settings.asset";
         private const string UserContent = "This file belongs to the user, not the plugin.\n";
         private static readonly List<string> Checks = new List<string>();
         private static Dictionary<string, byte[]> originalFiles;
@@ -353,7 +353,7 @@ namespace HierarchyDecoratorCI
             try
             {
                 Require(loaded != null && loaded.Length == 1 && loaded[0].GetType() == newSettingsType &&
-                    loaded[0].name == "HierarchyDecorator Settings",
+                    loaded[0].name == "Settings",
                     "Persisted settings have the wrong identity.");
                 using (var serialized = new SerializedObject(loaded[0]))
                 {

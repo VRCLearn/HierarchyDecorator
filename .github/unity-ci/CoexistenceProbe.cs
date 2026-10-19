@@ -207,7 +207,7 @@ namespace HierarchyDecoratorCI
         private static void CheckImportAndSave(Type importer, ScriptableObject source, Type newType, MonoScript originalScript,
             Font font, byte[] originalAsset, byte[] originalMeta)
         {
-            const string currentPath = "UserSettings/HierarchyDecoratorSettings.asset";
+            const string currentPath = "UserSettings/Settings.asset";
             Type owner = newType.Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true);
             PropertyInfo currentProperty = owner.GetProperty("Settings", AnyStatic);
             var current = (ScriptableObject)currentProperty.GetValue(null);
@@ -257,7 +257,7 @@ namespace HierarchyDecoratorCI
         {
             using (var serialized = new SerializedObject(settings))
             {
-                Require(settings.name == "HierarchyDecorator Settings", "Imported configuration object has an unexpected name.");
+                Require(settings.name == "Settings", "Imported configuration object has an unexpected name.");
                 Require(!serialized.FindProperty("needsPresetSelection").boolValue,
                     "Import did not clear the initial preset selection marker.");
             }

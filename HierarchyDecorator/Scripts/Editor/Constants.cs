@@ -19,7 +19,7 @@ namespace HierarchyDecorator.Editor
             /// <summary>
             /// Project-local file used to persist personal settings.
             /// </summary>
-            public const string SETTINGS_FILE_PATH = "UserSettings/HierarchyDecoratorSettings.asset";
+            public const string SETTINGS_FILE_PATH = "UserSettings/Settings.asset";
         }
        
 

@@ -19,8 +19,8 @@
   GUID, re-reading it when migration starts. Remove settings scans, default-path
   fallbacks and source selection; require an invalid current reference to be
   restored through wooshii before migration.
-- Use `UserSettings/HierarchyDecoratorSettings.asset`, name the settings object
-  `HierarchyDecorator Settings`, and title the preset window `HierarchyDecorator`.
+- Keep the original `Settings.asset` file name and `Settings` object name, saving
+  personal settings at `UserSettings/Settings.asset`. Title the preset window `HierarchyDecorator`.
   Use `Tools > HierarchyDecorator` and `Preferences > HierarchyDecorator` without
   a publisher menu group. Keep the `VRCLearn.HierarchyDecorator.Editor` assembly
   publisher identity and use the `HierarchyDecorator.Editor` namespace.

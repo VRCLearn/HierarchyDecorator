@@ -94,7 +94,7 @@ namespace HierarchyDecorator.Editor
             try
             {
                 EditorUtility.CopySerialized(imported, current);
-                current.name = "HierarchyDecorator Settings";
+                current.name = "Settings";
                 current.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 current.NeedsPresetSelection = false;
                 current.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
@@ -154,7 +154,7 @@ namespace HierarchyDecorator.Editor
             else
             {
                 settings = ScriptableObject.CreateInstance<Settings>();
-                settings.name = "HierarchyDecorator Settings";
+                settings.name = "Settings";
                 settings.NeedsPresetSelection = true;
             }
 

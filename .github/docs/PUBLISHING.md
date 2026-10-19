@@ -19,17 +19,17 @@ asset GUIDs, menus and settings. Do not restore `legacyPackages` replacement of
 upstream: both plugins must be able to remain installed and usable independently.
 Do not edit or replace the old release or move its tag.
 
-The UnityPackage format installs beneath `Assets/com.vrclearn.hierarchydecorator`,
-using its existing package ID as the directory name and retaining the
-`HierarchyDecorator` source folder. Only `Assets/com.vrclearn.hierarchydecorator`
+The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`,
+following the publisher/product directory layout and retaining the
+`HierarchyDecorator` source folder. Only `Assets/VRCLearn/HierarchyDecorator`
 is declared in `legacyFolders`, with its distribution folder GUID, so installing
 the VPM format can remove that duplicate distribution. The
 wooshii package and Assets folders must not appear in `legacyPackages` or
 `legacyFolders`: VPM applies those rules during installation, before a user can
 choose whether to migrate.
 
-Settings are stored at `UserSettings/HierarchyDecoratorSettings.asset`, using the
-object name `HierarchyDecorator Settings`. The preset window title is
+Settings are stored at `UserSettings/Settings.asset`, using the
+object name `Settings`. The preset window title is
 `HierarchyDecorator`; **Tools > HierarchyDecorator > Choose Preset**
 reopens it. Choosing a preset or closing the window leaves wooshii installed.
 The assembly, namespace, package ID and internal preference keys remain

@@ -60,7 +60,7 @@ Existing repository subscriptions keep the same URL and ID.
 Existing wooshii installations remain usable alongside this package. The first-run
 preset chooser lets you apply a fresh Detailed or Minimal preset and keep wooshii
 installed, or migrate wooshii's current configuration into
-`UserSettings/HierarchyDecoratorSettings.asset`. Reopen the chooser from
+`UserSettings/Settings.asset`. Reopen the chooser from
 **Tools > HierarchyDecorator > Choose Preset**.
 
 Migration handles the old installation according to how it was installed:
@@ -87,7 +87,7 @@ package records or check dependencies for removal.
 
 The [Releases page](https://github.com/VRCLearn/HierarchyDecorator/releases) provides
 VPM ZIP, UnityPackage, manifest and checksum files. UnityPackage installs to
-`Assets/com.vrclearn.hierarchydecorator`; VPM can migrate that specific distribution
+`Assets/VRCLearn/HierarchyDecorator`; VPM can migrate that specific distribution
 folder automatically. Install only one VRCLearn distribution format per project; the upstream plugin may remain installed independently.
 
 <p align="center">
@@ -135,7 +135,7 @@ only one distribution of the VRCLearn package per project.
  <img align="center" width="929" alt="chrome_hzlst44Z1X" src="https://user-images.githubusercontent.com/31889435/226493547-3ec3db89-bcdf-4412-b000-c90aa9ee30b7.png">
 </p>
 
-Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > HierarchyDecorator`. You can also open this page from `Tools > HierarchyDecorator > Settings`. New installations do not create a settings asset under `Assets`.
+Settings are saved locally for each project in `UserSettings/Settings.asset` and can be edited from `Preferences > HierarchyDecorator`. You can also open this page from `Tools > HierarchyDecorator > Settings`. New installations do not create a settings asset under `Assets`.
 
 New configurations open the `HierarchyDecorator` preset window with image previews for **Detailed** and **Minimal** and optional migration of wooshii's current configuration. Choose either image or its button to apply the preset and keep wooshii installed, or migrate its settings using the installation-specific behavior described above. You can reopen the chooser from **Tools > HierarchyDecorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference remains unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
 
@@ -152,7 +152,7 @@ the new settings. Styles, component groups, fonts and script references are
 preserved. For non-VPM installations, the current source settings asset is removed
 after saving. VPM import retains that asset and the old installation. Other user
 files and settings assets remain untouched. The new settings object is named
-`HierarchyDecorator Settings`, and the independent local file is the only settings
+`Settings`, and the independent local file is the only settings
 file used during normal operation. The original plugin must still be installed
 so its current configuration can be loaded.
 

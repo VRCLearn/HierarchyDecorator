@@ -68,7 +68,7 @@ namespace HierarchyDecorator.Editor
                     serializedCopy.ApplyModifiedPropertiesWithoutUndo();
                 }
 
-                copy.name = "HierarchyDecorator Settings";
+                copy.name = "Settings";
                 copy.NeedsPresetSelection = false;
                 copy.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 return copy;
