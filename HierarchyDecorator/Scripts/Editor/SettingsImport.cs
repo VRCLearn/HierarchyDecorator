@@ -12,14 +12,14 @@ namespace HierarchyDecorator.Editor
 
         internal static string FindSource()
         {
-            if (Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", false) == null)
-                return null;
-
             string guid = EditorPrefs.GetString(Application.productName + "_HD_GUID", string.Empty);
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            if (string.IsNullOrEmpty(path) || !IsSettings(AssetDatabase.LoadMainAssetAtPath(path)))
-                throw new InvalidDataException("Cannot locate the current wooshii settings. Open wooshii settings and try again.");
-            return path;
+            if (string.IsNullOrEmpty(path))
+                return null;
+            Object source = AssetDatabase.LoadMainAssetAtPath(path);
+            if (source == null)
+                throw new InvalidDataException("The current wooshii settings asset is unavailable: " + path);
+            return IsSettings(source) ? path : null;
         }
 
         internal static Settings Read(string path)

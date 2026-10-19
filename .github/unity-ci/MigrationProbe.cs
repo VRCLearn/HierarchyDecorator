@@ -15,8 +15,8 @@ namespace HierarchyDecoratorCI
     {
         private const BindingFlags AnyStatic = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
         private const string Marker = "ProjectSettings/MigrationProbe.enabled";
-        private const string SettingsPath = "Assets/MigrationSettings/CurrentRenamed.asset";
-        private const string InitialSettingsPath = "Assets/MigrationSettings/BeforeMove.asset";
+        private static string SettingsPath => configuration.sourcePath;
+        private static string InitialSettingsPath => Path.GetDirectoryName(SettingsPath).Replace('\\', '/') + "/BeforeMove.asset";
         private const string DefaultSettingsPath = "Assets/HierarchyDecorator/Settings.asset";
         private const string WrongTypePath = "Assets/MigrationSettings/NotSettings.txt";
         private const string OtherSettingsPath = "Assets/MigrationSettings/Unselected.asset";
@@ -33,8 +33,8 @@ namespace HierarchyDecoratorCI
         private static byte[] selectedSettingsMeta;
         private static byte[] otherSettings;
         private static byte[] otherSettingsMeta;
-        private static byte[] previousVpmManifest;
         private static byte[] previousUnityManifest;
+        private static byte[] previousCurrent;
         private static double deadline;
         private static bool finished;
         private static string preferenceKey;
@@ -53,7 +53,8 @@ namespace HierarchyDecoratorCI
             public string upstreamRoot;
             public bool failSave;
             public bool emptyAssets;
-            public bool vpm;
+            public string activeGuid;
+            public string sourcePath;
             public string externalSource;
             public string regeneratedAsset;
             public string regeneratedGuid;
@@ -65,7 +66,8 @@ namespace HierarchyDecoratorCI
             public string unityVersion;
             public string mode;
             public bool failSave;
-            public bool vpm;
+            public string activeGuid;
+            public string sourcePath;
             public bool passed;
             public string[] checks;
             public string error;
@@ -82,7 +84,7 @@ namespace HierarchyDecoratorCI
                 previousPreference = EditorPrefs.GetString(preferenceKey, string.Empty);
                 preferenceCaptured = true;
                 configuration = JsonUtility.FromJson<Configuration>(File.ReadAllText(Marker));
-                Require(new[] { "assets", "local", "embedded" }.Contains(configuration.mode), "Unknown installation fixture.");
+                Require(new[] { "assets", "local", "embedded", "settings-only", "empty" }.Contains(configuration.mode), "Unknown installation fixture.");
                 Require(Directory.Exists(configuration.upstreamRoot), "Upstream fixture is absent.");
                 Type oldType = Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", true);
                 newSettingsType = Type.GetType("HierarchyDecorator.Editor.Settings, VRCLearn.HierarchyDecorator.Editor", true);
@@ -94,8 +96,6 @@ namespace HierarchyDecoratorCI
                 defaultSettings = File.ReadAllBytes(DefaultSettingsPath);
                 defaultSettingsMeta = File.ReadAllBytes(DefaultSettingsPath + ".meta");
                 previousUnityManifest = File.ReadAllBytes("Packages/manifest.json");
-                if (File.Exists("Packages/vpm-manifest.json"))
-                    previousVpmManifest = File.ReadAllBytes("Packages/vpm-manifest.json");
                 originalFiles = Directory.GetFiles(configuration.upstreamRoot, "*", SearchOption.AllDirectories)
                     .ToDictionary(path => path, File.ReadAllBytes);
                 if (configuration.emptyAssets)
@@ -131,9 +131,13 @@ namespace HierarchyDecoratorCI
             try
             {
                 Type migration = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.UpstreamMigration", true);
-                Require((bool)migration.GetProperty("IsVpmManaged", AnyStatic).GetValue(null) == configuration.vpm,
-                    "VPM ownership was not detected correctly.");
-                CheckSingleSourceEntry(migration);
+                bool hasInstallation = configuration.mode != "settings-only" && configuration.mode != "empty";
+                Require((bool)migration.GetProperty("HasInstallation", AnyStatic).GetValue(null) == hasInstallation,
+                    "Installation detection does not match the fixture.");
+                Checks.Add("installation detection is independent of the selected configuration");
+                CheckSingleSourceEntry();
+                SelectActiveGuid(configuration.activeGuid);
+                previousCurrent = File.Exists(CurrentSettingsPath) ? File.ReadAllBytes(CurrentSettingsPath) : null;
                 var callback = new Action<Exception>(Completed);
                 migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { callback });
             }
@@ -218,38 +222,28 @@ namespace HierarchyDecoratorCI
             }
         }
 
-        private static void CheckSingleSourceEntry(Type migration)
+        private static void SelectActiveGuid(string selection)
         {
-            byte[] previousCurrent = File.Exists(CurrentSettingsPath) ? File.ReadAllBytes(CurrentSettingsPath) : null;
-            foreach (string invalidGuid in new[] { null, "ffffffffffffffffffffffffffffffff", AssetDatabase.AssetPathToGUID(WrongTypePath) })
+            if (selection == "missing")
+                EditorPrefs.DeleteKey(preferenceKey);
+            else
+                EditorPrefs.SetString(preferenceKey, selection == "stale" ? "ffffffffffffffffffffffffffffffff" :
+                    selection == "wrong-type" ? AssetDatabase.AssetPathToGUID(WrongTypePath) : activeGuid);
+        }
+
+        private static void CheckSingleSourceEntry()
+        {
+            Type importer = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.SettingsImport", true);
+            foreach (string selection in new[] { "missing", "stale", "wrong-type" })
             {
-                if (invalidGuid == null)
-                    EditorPrefs.DeleteKey(preferenceKey);
-                else
-                    EditorPrefs.SetString(preferenceKey, invalidGuid);
-                Exception error = null;
-                try
-                {
-                    migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { new Action<Exception>(exception => error = exception) });
-                }
-                catch (TargetInvocationException exception)
-                {
-                    error = exception.InnerException;
-                }
-                Require(error is InvalidDataException,
-                    "The real migration entry must reject a missing, stale or wrong-type active GUID without selecting a fallback: " + error);
-                CheckOriginalInstallation();
-                CheckOldSettingsAndPackageRecords();
-                CheckExcludedSettings();
-                Require(previousCurrent == null ? !File.Exists(CurrentSettingsPath) :
-                    File.ReadAllBytes(CurrentSettingsPath).SequenceEqual(previousCurrent),
-                    "Rejected migration changed the new configuration.");
+                SelectActiveGuid(selection);
+                Require(importer.GetMethod("FindSource", AnyStatic).Invoke(null, null) == null,
+                    "Missing, stale or wrong-type active GUID must return no source without selecting a fallback.");
             }
             EditorPrefs.SetString(preferenceKey, activeGuid);
-            Type importer = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.SettingsImport", true);
             Require((string)importer.GetMethod("FindSource", AnyStatic).Invoke(null, null) == SettingsPath,
                 "The active GUID did not follow the moved and renamed configuration.");
-            Checks.Add("real migration entry rejects missing, stale and wrong-type GUIDs without fallback; valid GUID follows the moved active configuration");
+            Checks.Add("missing, stale and wrong-type GUIDs return no source without fallback; valid GUID follows the moved active configuration");
         }
 
         private static void CheckExcludedSettings()
@@ -277,20 +271,38 @@ namespace HierarchyDecoratorCI
                 }
 
                 Require(error == null, "Migration failed: " + error);
-                Require(File.Exists(CurrentSettingsPath), "New settings were not persisted before cleanup.");
-                CheckSavedSettings();
-                if (configuration.vpm)
+                if (configuration.activeGuid == "valid")
+                {
+                    Require(File.Exists(CurrentSettingsPath), "New settings were not persisted before cleanup.");
+                    CheckSavedSettings();
+                    Checks.Add("successful import persists settings and references before installation cleanup");
+                }
+                else
+                {
+                    Require(previousCurrent == null ? !File.Exists(CurrentSettingsPath) :
+                        File.ReadAllBytes(CurrentSettingsPath).SequenceEqual(previousCurrent),
+                        "Skipping an unavailable configuration modified the new settings.");
+                    Checks.Add("unavailable active configuration is skipped without importing excluded copies");
+                }
+                bool sourceRemoved = configuration.activeGuid == "valid" && SettingsPath.StartsWith("Assets/", StringComparison.Ordinal) ||
+                    configuration.mode == "embedded" && SettingsPath.StartsWith("Packages/", StringComparison.Ordinal);
+                if (sourceRemoved)
+                    Require(!File.Exists(SettingsPath) && !File.Exists(SettingsPath + ".meta"),
+                        "Selected upstream settings remain after successful cleanup.");
+                else
+                    CheckSelectedSettings();
+                Require(Directory.Exists("Assets/MigrationSettings"), "Cleanup deleted the user's settings directory.");
+                if (configuration.mode == "settings-only" || configuration.mode == "empty")
                 {
                     CheckOriginalInstallation();
-                    CheckOldSettingsAndPackageRecords();
-                    Checks.Add("VPM import preserves the old package, both manifests and selected old settings byte-for-byte");
+                    Require(File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest),
+                        "Migration without an old installation changed registered packages.");
+                    Checks.Add(configuration.mode == "settings-only" ?
+                        "settings import succeeds without a recognized old installation; unrelated package is preserved" :
+                        "no source and no old installation completes as a no-op");
                     Finish(true, null);
                     return;
                 }
-                Require(!File.Exists(SettingsPath) && !File.Exists(SettingsPath + ".meta"),
-                    "Selected upstream settings were not removed after successful import.");
-                Require(Directory.Exists("Assets/MigrationSettings"), "Cleanup deleted the user's settings directory.");
-                Checks.Add("successful migration persists settings and references before deleting selected old settings");
                 if (configuration.mode == "assets")
                 {
                     if (configuration.emptyAssets)
@@ -357,11 +369,16 @@ namespace HierarchyDecoratorCI
 
         private static void CheckOldSettingsAndPackageRecords()
         {
+            CheckSelectedSettings();
+            Require(File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest),
+                "The upstream package records changed.");
+        }
+
+        private static void CheckSelectedSettings()
+        {
             Require(File.ReadAllBytes(SettingsPath).SequenceEqual(selectedSettings) &&
-                File.ReadAllBytes(SettingsPath + ".meta").SequenceEqual(selectedSettingsMeta) &&
-                File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest) &&
-                (previousVpmManifest == null || File.ReadAllBytes("Packages/vpm-manifest.json").SequenceEqual(previousVpmManifest)),
-                "The selected upstream settings or package records changed.");
+                File.ReadAllBytes(SettingsPath + ".meta").SequenceEqual(selectedSettingsMeta),
+                "The selected upstream settings changed.");
         }
 
         private static void CheckSavedSettings()
@@ -419,7 +436,8 @@ namespace HierarchyDecoratorCI
                     unityVersion = Application.unityVersion,
                     mode = configuration == null ? "unknown" : configuration.mode,
                     failSave = configuration != null && configuration.failSave,
-                    vpm = configuration != null && configuration.vpm,
+                    activeGuid = configuration == null ? null : configuration.activeGuid,
+                    sourcePath = configuration == null ? null : configuration.sourcePath,
                     passed = passed,
                     checks = Checks.ToArray(),
                     error = error == null ? null : error.ToString()

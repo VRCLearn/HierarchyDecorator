@@ -26,11 +26,8 @@ namespace HierarchyDecorator.Editor
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
             { "Migrate from wooshii", new[] { "wooshii 版から移行", "wooshii 버전에서 마이그레이션", "從 wooshii 版遷移", "从 wooshii 版迁移" } },
-            { "Choosing a preset keeps wooshii installed. Migration imports its current settings, then removes the wooshii installation and the original settings asset.", new[] { "プリセットを選ぶと wooshii 版は残ります。移行すると現在の設定をインポートし、wooshii 版と元の設定アセットを削除します。", "프리셋을 선택하면 wooshii 버전이 유지됩니다. 마이그레이션하면 현재 설정을 가져온 다음 wooshii 설치와 원본 설정 에셋을 제거합니다.", "選擇預設會保留 wooshii 版。遷移會先匯入目前設定，再移除 wooshii 安裝及原始設定資產。", "选择预设会保留 wooshii 版。迁移会先导入当前配置，再移除 wooshii 安装及原始配置资产。" } },
+            { "Choosing a preset keeps wooshii installed. Migration imports its current settings if available, then removes detected old installations. Missing settings or installations are skipped.", new[] { "プリセットを選ぶと wooshii 版は残ります。移行では現在の設定があればインポートし、検出した旧インストールを削除します。設定やインストールがなければスキップします。", "프리셋을 선택하면 wooshii 버전이 유지됩니다. 마이그레이션은 현재 설정이 있으면 가져온 다음 감지된 기존 설치를 제거합니다. 설정이나 설치가 없으면 해당 단계를 건너뜁니다.", "選擇預設會保留 wooshii 版。遷移會在目前設定存在時匯入，再移除偵測到的舊安裝；找不到的設定或安裝會跳過。", "选择预设会保留 wooshii 版。迁移会在当前配置存在时导入，再移除检测到的旧安装；找不到的配置或安装会跳过。" } },
             { "Migrate settings and remove wooshii", new[] { "設定を移行して wooshii 版を削除", "설정 마이그레이션 및 wooshii 제거", "遷移設定並移除 wooshii", "一键迁移并移除 wooshii" } },
-            { "Import settings", new[] { "設定をインポート", "설정 가져오기", "匯入設定", "导入设置" } },
-            { "Import the current wooshii settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package.", new[] { "wooshii 版の現在の設定のみインポートします。wooshii 版と元の設定は残ります。パッケージの削除は VCC または ALCOM で行ってください。", "현재 wooshii 설정만 가져옵니다. wooshii 및 원본 설정은 유지됩니다. 패키지 제거는 VCC 또는 ALCOM에서 진행하세요.", "僅匯入 wooshii 目前設定，保留安裝和原始設定；請使用 VCC 或 ALCOM 移除套件。", "仅导入 wooshii 当前配置，保留安装和原始配置；请使用 VCC 或 ALCOM 移除包。" } },
-            { "Cannot locate the current wooshii settings. Open wooshii settings and try again.", new[] { "wooshii 版の現在の設定が見つかりません。wooshii 版の設定を開いてから再試行してください。", "현재 wooshii 설정을 찾을 수 없습니다. wooshii 설정을 연 후 다시 시도하세요.", "找不到 wooshii 目前配置。請開啟 wooshii 設定後重試。", "找不到 wooshii 当前配置。请打开 wooshii 设置后重试。" } },
             { "Migrating...", new[] { "移行中…", "마이그레이션 중…", "遷移中…", "正在迁移…" } },
             { "Choose a preset style", new[] { "プリセットスタイルを選択", "프리셋 스타일 선택", "選擇預設樣式", "选择预设样式" } },
             { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },

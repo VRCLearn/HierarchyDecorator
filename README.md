@@ -63,14 +63,15 @@ installed, or migrate wooshii's current configuration into
 `UserSettings/Settings.asset`. Reopen the chooser from
 **Tools > HierarchyDecorator > Choose Preset**.
 
-Migration handles the old installation according to how it was installed:
+Migration first imports the current configuration when available, then cleans up
+any recognized old installation. Either step can run when the other has nothing
+to process:
 
-| wooshii installation | What happens after settings are saved |
+| wooshii installation | Cleanup |
 | --- | --- |
-| UnityPackage or files under `Assets` | Remove recognized upstream files, the current source settings asset, and empty plugin directories. Other user files and other settings assets are retained. |
+| UnityPackage or files under `Assets` | Remove recognized upstream files and empty plugin directories. Other user files and other settings assets are retained. |
 | UPM Git, registry, or local-path dependency | Remove the dependency through Unity Package Manager. External source directories are retained. |
 | Embedded package under `Packages` | Remove the identified embedded package directory inside this project. |
-| VPM / VCC / ALCOMD | Import settings only. The old installation, current source settings asset, `Packages/manifest.json` and `Packages/vpm-manifest.json` remain unchanged. Remove wooshii through VCC/ALCOMD after importing if desired. |
 
 Assets cleanup recognizes the default `Assets/HierarchyDecorator` directory and
 its nested `HierarchyDecorator` distribution layout. It also locates renamed
@@ -80,8 +81,9 @@ regenerated; extra user files and other settings assets are kept.
 
 If importing or saving fails, cleanup does not start. If cleanup fails after
 saving, the window reports that the settings were imported but removal did not
-finish. VPM settings import does not need a Resolver API and does not change
-package records or check dependencies for removal.
+finish. Successfully imported source settings under `Assets` are removed; external
+sources and settings in other packages are retained. Settings inside a removed
+embedded package are removed with that package.
 
 ### Other installation methods
 
@@ -104,9 +106,9 @@ You can also install this via git by adding the following to your **manifest.jso
 "com.vrclearn.hierarchydecorator" : "https://github.com/VRCLearn/HierarchyDecorator.git"
 ```
 
-Use the preset chooser to migrate wooshii settings; VPM installations remain
-managed by VCC/ALCOMD. Keep both distinct package IDs to use both plugins. Install
-only one distribution of the VRCLearn package per project.
+Use the preset chooser to migrate wooshii settings. Keep both distinct package
+IDs to use both plugins. Install only one distribution of the VRCLearn package
+per project.
 
 ## Features
 
@@ -141,20 +143,21 @@ New configurations open the `HierarchyDecorator` preset window with image previe
 
 Migration uses only the current settings GUID recorded by wooshii in its editor
 preference (`Application.productName + "_HD_GUID"`). It does not search for other
-settings assets, fall back to a default path, or combine configurations. If
-wooshii is installed but that reference is missing or invalid, restore its current
-configuration reference in the old plugin before migrating. The migration reads
-the reference again when clicked, so it imports the configuration currently in
-use rather than a cached source.
+settings assets, fall back to a default path, or combine configurations. A missing
+record, stale GUID or reference to another asset type skips configuration transfer
+without preventing installation cleanup. The migration reads the reference again
+when clicked rather than using a cached source. A configuration can be transferred
+without a recognized old installation, and an installation can be cleaned up
+without a current configuration.
 
 Only clicking the migration action copies the current wooshii configuration over
 the new settings. Styles, component groups, fonts and script references are
-preserved. For non-VPM installations, the current source settings asset is removed
-after saving. VPM import retains that asset and the old installation. Other user
-files and settings assets remain untouched. The new settings object is named
-`Settings`, and the independent local file is the only settings
-file used during normal operation. The original plugin must still be installed
-so its current configuration can be loaded.
+preserved. Reading or saving a found configuration must succeed before cleanup
+starts. Deletion checks apply only to cleanup; a cleanup failure does not undo
+saved settings. Other user files and settings assets remain untouched. The new
+settings object is named `Settings`, and the independent local file is the only
+settings file used during normal operation. The original Settings type must be
+available to load a source configuration.
 
 The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > HierarchyDecorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 

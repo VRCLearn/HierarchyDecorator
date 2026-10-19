@@ -40,32 +40,32 @@ or menu group.
 Migration resolves exactly one source: the current Settings GUID recorded in
 wooshii's `EditorPrefs` key `Application.productName + "_HD_GUID"`. Do not scan
 `Assets` for settings, fall back to default settings paths, present a candidate
-list, select another copy, or merge configurations. If wooshii is installed but
-its recorded current reference is invalid, prompt the user to restore that
-reference through the old plugin. The migration entry point re-reads the current
-reference when invoked rather than trusting a cached UI path. Only the explicit
-migration action copies this source over the new local settings. No compatibility
-lookup for former VRCLearn local settings paths is added.
+list, select another copy, or merge configurations. A missing record, stale GUID or
+reference to another asset type skips configuration transfer. The migration entry
+point re-reads the current reference when invoked rather than trusting a cached UI
+path. Only the explicit migration action copies this source over the new local
+settings. No compatibility lookup for former VRCLearn local settings paths is added.
 
-Migration copies the current source settings and saves before any cleanup. Non-VPM
+Configuration transfer and installation cleanup are independent steps: a source
+configuration does not require a recognized installation, and cleanup does not
+require a current configuration. When a configuration is found, reading and saving
+must succeed before cleanup starts. Deletion checks apply only to cleanup and
+cannot prevent configuration transfer or undo saved settings.
+
 Assets cleanup locates the known `Assets/HierarchyDecorator` root and the nested
 `Assets/HierarchyDecorator/HierarchyDecorator` layout, plus renamed roots
 identified by known folder or distributed file GUIDs. It uses the distributed
 relative file paths within identified roots as well as known file GUIDs, so
 regenerated file GUIDs do not leave the original scripts behind. Cleanup removes
-recognized distribution files, the current source settings asset and empty plugin
-directories within identified installation roots. Empty user-owned parent folders
+recognized distribution files and empty plugin directories within identified
+installation roots. Empty user-owned parent folders
 and their metadata are retained, along with extra user files and other settings
-assets. UPM dependencies use `Client.Remove` and retain external source directories. Embedded packages are
-removed only from the confirmed project-local package directory. Import/save
-failures prevent cleanup; later cleanup failures are reported as incomplete
-migration.
-
-For a VPM-managed wooshii installation, migration imports settings only. Keep the
-old package installation, current source settings asset, `Packages/manifest.json`
-and `Packages/vpm-manifest.json` unchanged. The user can remove wooshii through
-VCC/ALCOMD after importing. The tool must not invoke Resolver APIs, edit package
-records, or preflight package dependencies for VPM removal.
+assets. UPM dependencies use `Client.Remove` and retain external source directories.
+Embedded packages are removed only from the confirmed project-local package
+directory. Successfully imported source settings under Assets are removed;
+external sources and settings in other packages are retained. Settings inside a
+removed embedded package are removed with that package. Absent installations are
+skipped; cleanup failures are reported as incomplete migration.
 
 ## Validate and build
 
@@ -137,10 +137,9 @@ python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project
 `HierarchyDecoratorCI.CompileCheck.Run` also verifies the two assemblies and
 Settings types when the old package is present. `CoexistenceProbe.cs` exercises
 independent settings, menus, callbacks and settings copies in an isolated
-project. The migration probes cover explicit removal for non-VPM installations,
-retention of unrelated files, and settings-only import with unchanged VPM
-installation and manifest files. Never run these fixture-producing
-probes against a user project.
+project. The migration probes cover configuration transfer and installation
+cleanup independently, retention of unrelated files, and failure handling.
+Never run these fixture-producing probes against a user project.
 
 To run the migration probe, prepare a fresh disposable project and launch its Editor:
 
@@ -149,16 +148,20 @@ python .github/unity-ci/prepare_migration_project.py --unity-version 2022.3.22f1
 & "<path-to-Unity.exe>" -batchmode -nographics -projectPath "$PWD/.unity-ci~/migration-assets" -executeMethod HierarchyDecoratorCI.MigrationProbe.Run -logFile "$PWD/.unity-ci~/migration-assets/editor.log"
 ```
 
-Use `--mode local`, `--mode embedded`, or `--mode vpm` with a fresh project path
-to exercise the other installation routes. VPM mode verifies settings import
-while retaining the old installation, current source settings and both manifest files;
-it does not require a Resolver package. The preparation script uses local packages
+Use `--mode local` or `--mode embedded` with a fresh project path
+to exercise the other installation routes. The preparation script uses local packages
 and does not download them. Do not add `-quit`: the probe waits for asynchronous
 package operations where needed and exits when finished. Read
 `Logs/migration-result.json` inside the disposable project for the result.
 
 Use `--mode assets --empty-assets-installation` to verify cleanup removes an empty
 identified installation but retains its now-empty user-owned parent and metadata.
+Use `--active-guid missing`, `stale`, or `wrong-type` to verify cleanup without a
+current configuration. Use `--source-in-package` with `--mode embedded` to verify
+package-local settings are imported before removal, or with `--mode settings-only`
+to verify import without an identified installation and retention of the source
+package. `--mode empty` verifies that absent configurations and installations are
+both skipped. `--fail-save` verifies that a failed import save prevents cleanup.
 
 ## Windows settings-save regression
 

@@ -16,7 +16,7 @@ namespace HierarchyDecorator.Editor
         private string importSource;
         private Vector2 scrollPosition;
         private string importError;
-        private bool vpmManaged;
+        private bool hasInstallation;
 
         internal static void Open(bool allowReselection = false)
         {
@@ -46,12 +46,13 @@ namespace HierarchyDecorator.Editor
 
         private void RefreshImport()
         {
-            vpmManaged = UpstreamMigration.IsVpmManaged;
             importSource = null;
+            hasInstallation = false;
             importError = null;
             try
             {
                 importSource = SettingsImport.FindSource();
+                hasInstallation = UpstreamMigration.HasInstallation;
             }
             catch (Exception exception)
             {
@@ -136,24 +137,22 @@ namespace HierarchyDecorator.Editor
 
         private bool DrawImport()
         {
-            if (importSource == null && importError == null)
+            if (importSource == null && !hasInstallation && importError == null)
                 return false;
 
             GUILayout.Space(12f);
             EditorGUILayout.LabelField(SettingsLocalization.Text("Migrate from wooshii"), EditorStyles.boldLabel);
             if (!string.IsNullOrEmpty(importError))
                 EditorGUILayout.HelpBox(SettingsLocalization.Text(importError), MessageType.Error);
-            if (importSource == null)
+            if (importSource == null && !hasInstallation)
                 return false;
 
-            EditorGUILayout.HelpBox(SettingsLocalization.Text(vpmManaged
-                ? "Import the current wooshii settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package."
-                : "Choosing a preset keeps wooshii installed. Migration imports its current settings, then removes the wooshii installation and the original settings asset."), MessageType.Info);
+            EditorGUILayout.HelpBox(SettingsLocalization.Text("Choosing a preset keeps wooshii installed. Migration imports its current settings if available, then removes detected old installations. Missing settings or installations are skipped."), MessageType.Info);
             bool migration = false;
             using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode))
             {
                 if (GUILayout.Button(SettingsLocalization.Text(UpstreamMigration.IsRunning ? "Migrating..."
-                    : vpmManaged ? "Import settings" : "Migrate settings and remove wooshii"), GUILayout.Height(30f)))
+                    : "Migrate settings and remove wooshii"), GUILayout.Height(30f)))
                 {
                     importError = null;
                     migration = true;

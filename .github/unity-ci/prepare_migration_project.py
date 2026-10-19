@@ -13,26 +13,25 @@ def main():
     parser.add_argument("--unity-version", required=True)
     parser.add_argument("--project-path", required=True, type=Path)
     parser.add_argument("--upstream-package", required=True, type=Path)
-    parser.add_argument("--mode", required=True, choices=("assets", "local", "embedded", "vpm"))
+    parser.add_argument("--mode", required=True, choices=("assets", "local", "embedded", "settings-only", "empty"))
     parser.add_argument("--fail-save", action="store_true")
+    parser.add_argument("--active-guid", choices=("valid", "missing", "stale", "wrong-type"), default="valid")
+    parser.add_argument("--source-in-package", action="store_true", help="Store the selected settings inside the fixture package.")
     parser.add_argument("--assets-default-path", action="store_true", help="Install Assets fixtures at the upstream default path instead of a renamed folder.")
     parser.add_argument("--empty-assets-installation", action="store_true", help="Place an Assets installation without user content under a user-owned parent folder.")
     parser.add_argument("--regenerate-all-guids", action="store_true", help="Regenerate all Assets distribution and root folder GUIDs to isolate default-path detection.")
-    parser.add_argument("--vpm-resolver", type=Path, help="Use an already downloaded official resolver package; no download is performed.")
-    parser.add_argument("--vpm-dependent", action="store_true", help="Add a VPM consumer to verify settings import preserves required packages.")
     args = parser.parse_args()
     if not re.fullmatch(r"\d+\.\d+\.\d+[abfp]\d+", args.unity_version):
         parser.error("Expected a complete Unity Editor version.")
     upstream = args.upstream_package.resolve()
     if json.loads((upstream / "package.json").read_text(encoding="utf-8"))["name"] != "com.wooshii.hierarchydecorator":
         parser.error("Expected the upstream com.wooshii.hierarchydecorator package.")
-    resolver_manifest = None
-    if args.vpm_resolver:
-        resolver_manifest = json.loads((args.vpm_resolver / "package.json").read_text(encoding="utf-8"))
-        if resolver_manifest["name"] != "com.vrchat.core.vpm-resolver":
-            parser.error("Expected an official com.vrchat.core.vpm-resolver package.")
-    if args.mode != "vpm" and (args.vpm_resolver or args.vpm_dependent):
-        parser.error("VPM options require --mode vpm.")
+    if args.mode == "empty":
+        args.active_guid = "missing"
+    if args.fail_save and args.active_guid != "valid":
+        parser.error("--fail-save requires a valid active configuration.")
+    if args.source_in_package and args.mode not in ("embedded", "settings-only"):
+        parser.error("--source-in-package requires --mode embedded or settings-only.")
     if args.assets_default_path and args.mode != "assets":
         parser.error("--assets-default-path requires --mode assets.")
     if args.empty_assets_installation and (args.mode != "assets" or args.assets_default_path):
@@ -74,45 +73,30 @@ def main():
             if metadata == script_metadata:
                 regenerated_guid = new_guid
         regenerated_asset = regenerated.relative_to(project).as_posix()
-    elif args.mode in ("embedded", "vpm"):
-        old_root = packages / "com.wooshii.hierarchydecorator"
+    elif args.mode in ("embedded", "settings-only", "empty"):
+        package_id = "com.wooshii.hierarchydecorator" if args.mode == "embedded" else "dev.vrclearn.migration-source"
+        old_root = packages / package_id
         shutil.copytree(upstream, old_root)
+        if args.mode != "embedded":
+            # Supply the old Settings type without identifying an installation to remove.
+            manifest_path = old_root / "package.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["name"] = package_id
+            manifest_path.write_text(json.dumps(manifest, indent=4) + "\n", encoding="utf-8")
     else:
         # A separate source fixture outside Assets/Packages ensures Client.Remove must not delete it.
         old_root = project / "ExternalSource~"
         shutil.copytree(upstream, old_root)
         dependencies["com.wooshii.hierarchydecorator"] = "file:" + os.path.relpath(old_root, packages).replace(os.sep, "/")
-    if args.mode == "vpm":
-        version = json.loads((upstream / "package.json").read_text(encoding="utf-8"))["version"]
-        vpm = {
-            "dependencies": {"com.wooshii.hierarchydecorator": {"version": version}},
-            "locked": {"com.wooshii.hierarchydecorator": {"version": version, "dependencies": {}}},
-        }
-        if resolver_manifest:
-            resolver_id = resolver_manifest["name"]
-            shutil.copytree(args.vpm_resolver.resolve(), packages / resolver_id)
-            vpm["dependencies"][resolver_id] = {"version": resolver_manifest["version"]}
-            vpm["locked"][resolver_id] = {"version": resolver_manifest["version"], "dependencies": {}}
-        if args.vpm_dependent:
-            consumer_id = "dev.vrclearn.migration-consumer"
-            consumer = packages / consumer_id
-            consumer.mkdir()
-            (consumer / "package.json").write_text(json.dumps({
-                "name": consumer_id,
-                "version": "0.0.1",
-                "vpmDependencies": {"com.wooshii.hierarchydecorator": version},
-            }, indent=4) + "\n", encoding="utf-8")
-            vpm["dependencies"][consumer_id] = {"version": "0.0.1"}
-            vpm["locked"][consumer_id] = {"version": "0.0.1", "dependencies": {"com.wooshii.hierarchydecorator": version}}
-        (packages / "vpm-manifest.json").write_text(json.dumps(vpm, indent=4) + "\n", encoding="utf-8")
     (packages / "manifest.json").write_text(json.dumps({"dependencies": dependencies}, indent=4) + "\n", encoding="utf-8")
     (settings / "ProjectVersion.txt").write_text("m_EditorVersion: " + args.unity_version + "\n", encoding="utf-8")
     (settings / "MigrationProbe.enabled").write_text(json.dumps({
-        "mode": "embedded" if args.mode == "vpm" else args.mode,
+        "mode": args.mode,
         "upstreamRoot": str(old_root),
         "failSave": args.fail_save,
         "emptyAssets": args.empty_assets_installation,
-        "vpm": args.mode == "vpm",
+        "activeGuid": args.active_guid,
+        "sourcePath": (old_root.relative_to(project) / "CurrentSettings.asset").as_posix() if args.source_in_package else "Assets/MigrationSettings/CurrentRenamed.asset",
         "regeneratedAsset": regenerated_asset,
         "regeneratedGuid": regenerated_guid,
         "regeneratedAllGuids": args.regenerate_all_guids,

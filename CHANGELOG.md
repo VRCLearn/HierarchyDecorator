@@ -11,15 +11,17 @@
 - Allow the maintained package and wooshii to coexist. Installation, choosing a
   fresh preset, or closing the preset chooser leaves wooshii installed.
 - Add optional migration to the first-run preset chooser. Read only the current
-  Settings GUID recorded by wooshii, re-reading it when migration starts; an invalid
-  reference must be restored through wooshii before migration. Do not scan Assets
-  for configurations, fall back to another path, select another copy, or merge settings.
-- For non-VPM installations, explicit migration imports and saves settings before
-  removing the old Assets, UPM or embedded installation and current source settings
-  asset. Retain unrelated files, other settings assets and external UPM sources;
-  report incomplete cleanup instead of reporting success.
-- VPM installations import settings only, preserving the old installation, current
-  source settings asset and both package manifests. Leave removal to VCC/ALCOMD.
+  Settings GUID recorded by wooshii, re-reading it when migration starts. Missing
+  or invalid references skip configuration transfer. Do not scan Assets for
+  configurations, fall back to another path, select another copy, or merge settings.
+- Separate configuration transfer from installation cleanup: import and save any
+  current configuration, then remove recognized old Assets, UPM or embedded
+  installations. Skip absent configurations or installations independently.
+  Reading or saving a found configuration must succeed before cleanup starts;
+  cleanup failures retain saved settings and report incomplete removal.
+- Remove successfully imported source settings under Assets; retain external
+  sources, settings in other packages, unrelated files and other settings assets.
+  Settings inside a removed embedded package are removed with that package.
 - Save personal settings at `UserSettings/Settings.asset`, retaining the original
   `Settings.asset` file name, `Settings` object name and font/script references.
 - Add settings UI localization for English, Japanese, Korean, Traditional Chinese,

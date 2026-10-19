@@ -14,17 +14,15 @@ namespace HierarchyDecorator.Editor
     {
         internal const string PackageId = "com.wooshii.hierarchydecorator";
         internal static bool IsRunning { get; private set; }
-        internal static bool IsVpmManaged => File.Exists("Packages/vpm-manifest.json") &&
-            File.ReadAllText("Packages/vpm-manifest.json").Contains("\"" + PackageId + "\"");
+        internal static bool HasInstallation => PackageInfo.GetAllRegisteredPackages().Any(item => item.name == PackageId)
+            || UpstreamAssets.FindFiles(out _).Count != 0;
 
         private static RemoveRequest request;
         private static Action<Exception> completion;
-        private static string settingsPath;
         private static List<string> assets;
         private static HashSet<string> folders;
         private static bool resolvePackages;
         private static bool imported;
-        private static bool removeInstallation;
 
         internal static void Start(Action<Exception> completed)
         {
@@ -32,42 +30,36 @@ namespace HierarchyDecorator.Editor
                 throw new InvalidOperationException("A wooshii migration is already running.");
 
             string sourcePath = SettingsImport.FindSource();
-            if (sourcePath == null)
-                throw new InvalidOperationException("The wooshii installation could not be identified.");
-
-            // Validate the removal route before changing settings or deleting files.
-            bool vpmManaged = IsVpmManaged;
-            PackageInfo package = vpmManaged ? null : PackageInfo.GetAllRegisteredPackages().FirstOrDefault(item => item.name == PackageId);
-            if (package != null)
-            {
-                foreach (PackageInfo dependent in PackageInfo.GetAllRegisteredPackages())
-                {
-                    if (dependent.name != PackageId && dependent.dependencies.Any(item => item.name == PackageId))
-                        throw new InvalidOperationException("Cannot remove wooshii while required by " + dependent.name + ".");
-                }
-                if (package.source == PackageSource.Embedded)
-                    RequireProjectPackage(package.resolvedPath);
-            }
-
-            folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            assets = vpmManaged ? new List<string>() : UpstreamAssets.FindFiles(out folders);
-            settingsPath = sourcePath;
-            RequireAssetPath(sourcePath);
-            foreach (string path in assets)
-                RequireAssetPath(path);
-            if (!vpmManaged && package == null && assets.Count == 0)
-                throw new InvalidOperationException("The wooshii installation could not be identified.");
-
             IsRunning = true;
             completion = completed;
-            resolvePackages = package?.source == PackageSource.Embedded;
-            removeInstallation = !vpmManaged;
+            resolvePackages = false;
             imported = false;
             EditorApplication.LockReloadAssemblies();
             try
             {
-                HierarchyDecorator.ImportSettings(sourcePath);
-                imported = true;
+                if (sourcePath != null)
+                {
+                    HierarchyDecorator.ImportSettings(sourcePath);
+                    imported = true;
+                }
+
+                // Cleanup is independent of configuration discovery. Validate only what will be removed.
+                PackageInfo[] packages = PackageInfo.GetAllRegisteredPackages();
+                PackageInfo package = packages.FirstOrDefault(item => item.name == PackageId);
+                if (package != null)
+                {
+                    foreach (PackageInfo dependent in packages)
+                    {
+                        if (dependent.name != PackageId && dependent.dependencies.Any(item => item.name == PackageId))
+                            throw new InvalidOperationException("Cannot remove wooshii while required by " + dependent.name + ".");
+                    }
+                }
+                assets = UpstreamAssets.FindFiles(out folders);
+                if (sourcePath != null && sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+                    assets.Add(sourcePath);
+                foreach (string path in assets)
+                    RequireAssetPath(path);
+
                 if (package == null)
                 {
                     Finish(null);
@@ -75,6 +67,7 @@ namespace HierarchyDecorator.Editor
                 else if (package.source == PackageSource.Embedded)
                 {
                     Directory.Delete(RequireProjectPackage(package.resolvedPath), true);
+                    resolvePackages = true;
                     RemovePackageReferenceOrFinish();
                 }
                 else
@@ -117,12 +110,12 @@ namespace HierarchyDecorator.Editor
             Action<Exception> completed = completion;
             try
             {
-                if (error == null && removeInstallation)
+                if (error == null && assets.Count != 0)
                 {
                     AssetDatabase.StartAssetEditing();
                     try
                     {
-                        foreach (string path in assets.Concat(new[] { settingsPath }).Distinct())
+                        foreach (string path in assets.Distinct())
                         {
                             if (File.Exists(path) && !AssetDatabase.DeleteAsset(path))
                                 throw new IOException("Cannot remove wooshii asset: " + path);
