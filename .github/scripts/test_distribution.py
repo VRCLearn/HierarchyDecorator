@@ -58,7 +58,7 @@ class DistributionTests(unittest.TestCase):
         manifest = json.loads(Path(result["manifest"]).read_bytes())
         self.assertEqual(manifest["sourceRevision"], "ab" * 20)
         self.assertEqual(manifest["repository"]["revision"], "ab" * 20)
-        self.assertEqual(manifest["legacyPackages"], [])
+        self.assertEqual(manifest["legacyPackages"], ["com.wooshii.hierarchydecorator"])
         self.assertEqual(manifest["legacyFolders"], {builder.UNITY_ROOT: builder.ROOT_GUID})
         self.assertNotIn("zipSHA256", manifest)
         zipped = builder.validate_zip(Path(result["archive"]), manifest)
@@ -112,7 +112,7 @@ class DistributionTests(unittest.TestCase):
         cases = ({"name": "another.package"}, {"license": "unlicensed"}, {"version": "v1.0.0"},
                  {"vpmDependencies": {"com.vrchat.avatars": "1.0.0"}},
                  {"legacyPackages": ["another.package"]},
-                 {"legacyPackages": ["com.wooshii.hierarchydecorator"]}, {"zipSHA256": "a" * 64},
+                 {"legacyPackages": []}, {"zipSHA256": "a" * 64},
                  {"legacyFolders": {"Assets/HierarchyDecorator": "a" * 32}},
                  {"url": "https://example.test/other.zip"})
         for override in cases:
@@ -179,7 +179,7 @@ class DistributionTests(unittest.TestCase):
                 if reference.startswith("GUID:"):
                     self.assertIn(reference.removeprefix("GUID:"), current_guids,
                                   "Internal assembly references must resolve within this standalone package")
-        self.assertNotIn(fixture["packageName"], self.manifest["legacyPackages"])
+        self.assertEqual(self.manifest["legacyPackages"], [fixture["packageName"]])
 
     def test_csharp_namespaces_do_not_export_upstream_types(self):
         for source in (builder.ROOT / "HierarchyDecorator").rglob("*.cs"):

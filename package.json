@@ -29,7 +29,9 @@
   "vpmDependencies": {},
   "changelogUrl": "https://github.com/VRCLearn/HierarchyDecorator/blob/main/CHANGELOG.md",
   "url": "https://github.com/VRCLearn/HierarchyDecorator/releases/download/1.0.0/com.vrclearn.hierarchydecorator-1.0.0.zip",
-  "legacyPackages": [],
+  "legacyPackages": [
+    "com.wooshii.hierarchydecorator"
+  ],
   "legacyFolders": {
     "Assets/VRCLearn/HierarchyDecorator": "dcbe82a2298156a6827faa55e44e9bd5"
   }

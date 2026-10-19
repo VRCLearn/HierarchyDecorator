@@ -1,8 +1,5 @@
 ## Unreleased
 
-- Remove the former `com.wooshii.hierarchydecorator` package from the VPM index;
-  list only `com.vrclearn.hierarchydecorator`.
-
 ## [1.0.0] - 2026-10-19
 
 ### Added
@@ -10,9 +7,10 @@
 - Publish the independently maintained VRCLearn package as
   `com.vrclearn.hierarchydecorator` through VPM, with an official-template installation
   page, versioned release archives, checksums, and automatic repository updates.
-- Preserve the existing repository URL, repository ID, and historical 0.12.1 listing.
-- Allow the maintained package and wooshii to coexist. Installation, choosing a
-  fresh preset, or closing the preset chooser leaves wooshii installed.
+- Preserve the existing repository URL and repository ID; list only
+  `com.vrclearn.hierarchydecorator` in the VPM repository.
+- Allow the maintained package and wooshii to coexist with other installation
+  methods. Choosing a fresh preset or closing the preset chooser leaves wooshii installed.
 - Add optional migration to the first-run preset chooser. Read only the current
   Settings GUID recorded by wooshii, re-reading it when migration starts. Missing
   or invalid references skip configuration transfer. Do not scan Assets for
@@ -45,7 +43,9 @@
   `HierarchyDecorator.Editor` namespace, `Tools > HierarchyDecorator` and
   `Preferences > HierarchyDecorator`, with the preset window titled `HierarchyDecorator`.
 - Install UnityPackage assets under `Assets/VRCLearn/HierarchyDecorator`.
-  VPM installation rules target only this maintained distribution, not wooshii.
+  VPM folder replacement targets only this maintained distribution.
+- Declare `com.wooshii.hierarchydecorator` in `legacyPackages` so VCC/ALCOMD
+  removes the former package during installation, before Unity opens.
 - Identify old Assets installations by known directory layouts and folder/file
   GUIDs, then match distributed relative file paths within identified roots to
   handle regenerated file GUIDs.
