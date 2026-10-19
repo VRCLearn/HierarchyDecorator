@@ -46,6 +46,14 @@ point re-reads the current reference when invoked rather than trusting a cached 
 path. Only the explicit migration action copies this source over the new local
 settings. No compatibility lookup for former VRCLearn local settings paths is added.
 
+If the original Settings script has already been removed, recognize its script
+binding and configuration fields in that same recorded asset. Rebind only the
+script GUID in an operating-system temporary copy, then let Unity deserialize the
+text or binary settings and their asset references. Never modify the source asset
+or its metadata during reading, restore the old assembly, or search for another
+configuration. Destroy temporary objects and delete the temporary file on success
+or failure. Unrecognized or damaged configuration files stop cleanup.
+
 Configuration transfer and installation cleanup are independent steps: a source
 configuration does not require a recognized installation, and cleanup does not
 require a current configuration. When a configuration is found, reading and saving
@@ -162,6 +170,18 @@ package-local settings are imported before removal, or with `--mode settings-onl
 to verify import without an identified installation and retention of the source
 package. `--mode empty` verifies that absent configurations and installations are
 both skipped. `--fail-save` verifies that a failed import save prevents cleanup.
+
+Use `--mode orphan` for the missing-script regression. First run
+`HierarchyDecoratorCI.MigrationProbe.ExportOrphan` with the old fixture package
+installed. After that Editor exits, remove only the disposable fixture's old
+`Packages/com.wooshii.hierarchydecorator` directory and run
+`HierarchyDecoratorCI.MigrationProbe.Run` with a fresh Library cache in that
+disposable fixture so cached assemblies cannot satisfy the test. The second stage requires the old
+assembly, script GUID and package to be absent, then checks configuration values,
+font/script references, unchanged source bytes during reading and temporary-file
+cleanup. Add `--binary-settings` to exercise an actual binary asset, or
+`--fail-save` to verify retention when saving fails. Reports distinguish the
+export and migration stages.
 
 ## Windows settings-save regression
 

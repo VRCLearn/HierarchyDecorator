@@ -24,6 +24,9 @@
   Settings inside a removed embedded package are removed with that package.
 - Save personal settings at `UserSettings/Settings.asset`, retaining the original
   `Settings.asset` file name, `Settings` object name and font/script references.
+- Import the recorded configuration even when the old Settings script and assembly
+  have been removed. Read text and binary assets using a temporary copy outside the
+  project, retaining source contents and asset references during import.
 - Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
   and Simplified Chinese, with a language selector saved as a local editor preference.
 - Add Auto to the language selector and Tools menu, following the operating system
@@ -47,9 +50,9 @@
 
 ### Fixed
 
-- Save local settings through Unity's native file writer without a second file
-  replacement, which could fail intermittently on Windows. Treat native save
-  errors as failures and retain the upstream installation when migration cannot save.
+- Save local settings reliably through Unity's native file writer on Windows.
+  Report native save errors, retain unsaved changes and keep the old installation
+  when migration cannot save.
 - Limit empty-directory cleanup to identified plugin roots and their contents,
   preserving user-owned parent directories and their metadata even when empty.
 

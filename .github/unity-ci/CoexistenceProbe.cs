@@ -180,28 +180,20 @@ namespace HierarchyDecoratorCI
             File.WriteAllText(wrongTypePath, "Not a settings asset.");
             AssetDatabase.ImportAsset(wrongTypePath);
             EditorPrefs.DeleteKey(preferenceKey);
-            ExpectInvalidSource(importer);
+            ExpectMissingSource(importer);
             EditorPrefs.SetString(preferenceKey, "ffffffffffffffffffffffffffffffff");
-            ExpectInvalidSource(importer);
+            ExpectMissingSource(importer);
             EditorPrefs.SetString(preferenceKey, AssetDatabase.AssetPathToGUID(wrongTypePath));
-            ExpectInvalidSource(importer);
+            ExpectMissingSource(importer);
             EditorPrefs.SetString(preferenceKey, guid);
             FindSource(importer, AssetPath);
-            Checks.Add("only the recorded active configuration is used after moving; missing, stale and wrong-type GUIDs fail despite default and copied settings");
+            Checks.Add("only the recorded active configuration is used after moving; missing, stale and wrong-type GUIDs return no source despite default and copied settings");
         }
 
-        private static void ExpectInvalidSource(Type importer)
+        private static void ExpectMissingSource(Type importer)
         {
-            try
-            {
-                importer.GetMethod("FindSource", AnyStatic).Invoke(null, null);
-            }
-            catch (TargetInvocationException exception)
-            {
-                Require(exception.InnerException is InvalidDataException, "Invalid active configuration reported an unexpected error: " + exception);
-                return;
-            }
-            throw new InvalidOperationException("Source discovery searched for a fallback instead of rejecting the invalid active configuration.");
+            Require(importer.GetMethod("FindSource", AnyStatic).Invoke(null, null) == null,
+                "Missing, stale or wrong-type active GUID selected a fallback configuration.");
         }
 
         private static void CheckImportAndSave(Type importer, ScriptableObject source, Type newType, MonoScript originalScript,
@@ -223,7 +215,6 @@ namespace HierarchyDecoratorCI
             owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new object[] { FindSource(importer, AssetPath) });
             Require((ScriptableObject)currentProperty.GetValue(null) == current, "Import replaced the current Settings instance.");
             CheckImported(source, current, newType, originalScript, font);
-            CheckImportState(current);
             Require(File.Exists(currentPath) && Path.GetFullPath(currentPath) != Path.GetFullPath(AssetPath),
                 "Imported settings were not saved to their independent local file.");
             Require(!File.Exists(currentPath + ".tmp"), "Saving imported settings leaked its temporary file.");
@@ -233,7 +224,6 @@ namespace HierarchyDecoratorCI
                 Require(persisted != null && persisted.Length == 1 && persisted[0].GetType() == newType,
                     "Saved settings could not be loaded with the new Settings type.");
                 CheckImported(source, (ScriptableObject)persisted[0], newType, originalScript, font);
-                CheckImportState(persisted[0]);
             }
             finally
             {
@@ -250,7 +240,7 @@ namespace HierarchyDecoratorCI
                 originalMeta.SequenceEqual(File.ReadAllBytes(AssetPath + ".meta")) &&
                 sourceValues == EditorJsonUtility.ToJson(source),
                 "The complete import/save flow modified original settings.");
-            Checks.Add("complete import reuses current instance, clears setup and persists independently");
+            Checks.Add("complete import reuses the current instance and persists independently; copy, current and saved settings retain their name, hide flags and cleared setup state");
         }
 
         private static void CheckImportState(Object settings)
@@ -258,6 +248,8 @@ namespace HierarchyDecoratorCI
             using (var serialized = new SerializedObject(settings))
             {
                 Require(settings.name == "Settings", "Imported configuration object has an unexpected name.");
+                Require(settings.hideFlags == (HideFlags.HideAndDontSave & ~HideFlags.NotEditable),
+                    "Imported configuration object has unexpected hide flags.");
                 Require(!serialized.FindProperty("needsPresetSelection").boolValue,
                     "Import did not clear the initial preset selection marker.");
             }
@@ -266,6 +258,7 @@ namespace HierarchyDecoratorCI
         private static void CheckImported(ScriptableObject source, ScriptableObject copy, Type newType, MonoScript oldScript, Font font)
         {
             Require(copy != null && copy.GetType() == newType && copy != source, "Importer did not create independent new settings.");
+            CheckImportState(copy);
             using (var actual = new SerializedObject(copy))
             {
                 Require(!actual.FindProperty("globalData.showAllComponents").boolValue &&

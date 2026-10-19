@@ -17,20 +17,22 @@ namespace HierarchyDecorator.Editor
         private Vector2 scrollPosition;
         private string importError;
         private bool hasInstallation;
+        private bool refreshImport;
 
         internal static void Open(bool allowReselection = false)
         {
             var window = GetWindow<InitialSetupWindow>(true, "HierarchyDecorator", true);
             window.allowReselection = allowReselection;
             window.minSize = new Vector2(760f, 340f);
-            window.RefreshImport();
+            window.refreshImport = true;
+            window.Repaint();
         }
 
         private void OnEnable()
         {
             detailedPreview = LoadPreview(DetailedPreviewGuid);
             minimalPreview = LoadPreview(MinimalPreviewGuid);
-            RefreshImport();
+            refreshImport = true;
             SettingsLocalization.LanguageChanged += Repaint;
         }
 
@@ -66,6 +68,12 @@ namespace HierarchyDecorator.Editor
             {
                 Close();
                 return;
+            }
+
+            if (refreshImport)
+            {
+                refreshImport = false;
+                RefreshImport();
             }
 
             SettingsPreset? selected = null;

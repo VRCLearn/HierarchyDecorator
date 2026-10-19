@@ -85,6 +85,11 @@ finish. Successfully imported source settings under `Assets` are removed; extern
 sources and settings in other packages are retained. Settings inside a removed
 embedded package are removed with that package.
 
+The recorded configuration can also be imported after the old Settings script has
+been removed. Text and binary assets are read through a temporary copy outside
+the project, preserving their values and asset references. Reading does not change
+the source asset or its metadata; the temporary copy is deleted afterward.
+
 ### Other installation methods
 
 The [Releases page](https://github.com/VRCLearn/HierarchyDecorator/releases) provides

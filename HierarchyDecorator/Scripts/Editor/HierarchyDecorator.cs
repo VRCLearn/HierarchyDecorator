@@ -11,7 +11,6 @@ namespace HierarchyDecorator.Editor
     {
         public static event Action OnSettings;
 
-        public const string SETTINGS_TYPE_STRING = "Settings";
         private const string SettingsSessionKey = "com.vrclearn.hierarchydecorator.settings.instance";
         private static double s_NextSaveTime;
         private static bool s_SaveErrorReported;
@@ -94,9 +93,6 @@ namespace HierarchyDecorator.Editor
             try
             {
                 EditorUtility.CopySerialized(imported, current);
-                current.name = "Settings";
-                current.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
-                current.NeedsPresetSelection = false;
                 current.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
                 OnSettings?.Invoke();
                 if (!SaveSettings(current))

@@ -13,10 +13,11 @@ def main():
     parser.add_argument("--unity-version", required=True)
     parser.add_argument("--project-path", required=True, type=Path)
     parser.add_argument("--upstream-package", required=True, type=Path)
-    parser.add_argument("--mode", required=True, choices=("assets", "local", "embedded", "settings-only", "empty"))
+    parser.add_argument("--mode", required=True, choices=("assets", "local", "embedded", "settings-only", "empty", "orphan"))
     parser.add_argument("--fail-save", action="store_true")
     parser.add_argument("--active-guid", choices=("valid", "missing", "stale", "wrong-type"), default="valid")
     parser.add_argument("--source-in-package", action="store_true", help="Store the selected settings inside the fixture package.")
+    parser.add_argument("--binary-settings", action="store_true", help="Export an orphan configuration using Unity binary serialization.")
     parser.add_argument("--assets-default-path", action="store_true", help="Install Assets fixtures at the upstream default path instead of a renamed folder.")
     parser.add_argument("--empty-assets-installation", action="store_true", help="Place an Assets installation without user content under a user-owned parent folder.")
     parser.add_argument("--regenerate-all-guids", action="store_true", help="Regenerate all Assets distribution and root folder GUIDs to isolate default-path detection.")
@@ -28,6 +29,10 @@ def main():
         parser.error("Expected the upstream com.wooshii.hierarchydecorator package.")
     if args.mode == "empty":
         args.active_guid = "missing"
+    if args.binary_settings and args.mode != "orphan":
+        parser.error("--binary-settings requires --mode orphan.")
+    if args.mode == "orphan" and args.active_guid != "valid":
+        parser.error("--mode orphan requires a valid active configuration.")
     if args.fail_save and args.active_guid != "valid":
         parser.error("--fail-save requires a valid active configuration.")
     if args.source_in_package and args.mode not in ("embedded", "settings-only"):
@@ -73,11 +78,11 @@ def main():
             if metadata == script_metadata:
                 regenerated_guid = new_guid
         regenerated_asset = regenerated.relative_to(project).as_posix()
-    elif args.mode in ("embedded", "settings-only", "empty"):
-        package_id = "com.wooshii.hierarchydecorator" if args.mode == "embedded" else "dev.vrclearn.migration-source"
+    elif args.mode in ("embedded", "settings-only", "empty", "orphan"):
+        package_id = "com.wooshii.hierarchydecorator" if args.mode in ("embedded", "orphan") else "dev.vrclearn.migration-source"
         old_root = packages / package_id
         shutil.copytree(upstream, old_root)
-        if args.mode != "embedded":
+        if args.mode not in ("embedded", "orphan"):
             # Supply the old Settings type without identifying an installation to remove.
             manifest_path = old_root / "package.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -94,6 +99,7 @@ def main():
         "mode": args.mode,
         "upstreamRoot": str(old_root),
         "failSave": args.fail_save,
+        "binarySettings": args.binary_settings,
         "emptyAssets": args.empty_assets_installation,
         "activeGuid": args.active_guid,
         "sourcePath": (old_root.relative_to(project) / "CurrentSettings.asset").as_posix() if args.source_in_package else "Assets/MigrationSettings/CurrentRenamed.asset",

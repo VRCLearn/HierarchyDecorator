@@ -7,6 +7,7 @@ namespace HierarchyDecorator.Editor
 {
     internal static class UpstreamAssets
     {
+        internal const string SettingsScriptGuid = "00668fd727de9bb4081a8a202ce24c3b";
         private const string SourceFolder = "HierarchyDecorator/";
         // Track distributed paths as well as GUIDs: copied sources can have regenerated metadata.
         private static readonly Dictionary<string, string> Files = new Dictionary<string, string>
@@ -44,7 +45,7 @@ namespace HierarchyDecorator.Editor
             { "HierarchyDecorator/Scripts/Editor/Interfaces/IGroup.cs", "0f15848097b702f4392b6cd92d3d3c9f" },
             { "HierarchyDecorator/Scripts/Editor/Preferences/HierarchyDecoratorProvider.cs", "6ea2edb5d16c16a4c91bf62bd9f3a816" },
             { "HierarchyDecorator/Scripts/Editor/Preferences/SettingsPreferences.cs", "5ffb1104eab18d14caf65c56dfe566af" },
-            { "HierarchyDecorator/Scripts/Editor/Settings.cs", "00668fd727de9bb4081a8a202ce24c3b" },
+            { "HierarchyDecorator/Scripts/Editor/Settings.cs", SettingsScriptGuid },
             { "HierarchyDecorator/Scripts/Editor/SettingsEditor.cs", "908d11beccc74d94a9adb814bf8075b6" },
             { "HierarchyDecorator/Scripts/Editor/SettingsLocalization.cs", "2a97b9e4a4a3435785dcf1acb70f0d93" },
             { "HierarchyDecorator/Scripts/Editor/Style.cs", "249019516b184f040b3acc35ff0ee7d9" },

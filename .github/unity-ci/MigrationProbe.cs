@@ -21,6 +21,7 @@ namespace HierarchyDecoratorCI
         private const string WrongTypePath = "Assets/MigrationSettings/NotSettings.txt";
         private const string OtherSettingsPath = "Assets/MigrationSettings/Unselected.asset";
         private const string CurrentSettingsPath = "UserSettings/Settings.asset";
+        private const string OldSettingsScriptGuid = "00668fd727de9bb4081a8a202ce24c3b";
         private const string UserContent = "This file belongs to the user, not the plugin.\n";
         private static readonly List<string> Checks = new List<string>();
         private static Dictionary<string, byte[]> originalFiles;
@@ -37,6 +38,7 @@ namespace HierarchyDecoratorCI
         private static byte[] previousCurrent;
         private static double deadline;
         private static bool finished;
+        private static bool exporting;
         private static string preferenceKey;
         private static string previousPreference;
         private static bool hadPreference;
@@ -52,6 +54,7 @@ namespace HierarchyDecoratorCI
             public string mode;
             public string upstreamRoot;
             public bool failSave;
+            public bool binarySettings;
             public bool emptyAssets;
             public string activeGuid;
             public string sourcePath;
@@ -64,8 +67,10 @@ namespace HierarchyDecoratorCI
         private class Report
         {
             public string unityVersion;
+            public string stage;
             public string mode;
             public bool failSave;
+            public bool binarySettings;
             public string activeGuid;
             public string sourcePath;
             public bool passed;
@@ -77,18 +82,25 @@ namespace HierarchyDecoratorCI
         {
             try
             {
-                Require(Application.isBatchMode && File.Exists(Marker),
-                    "Migration tests require a disposable batch project and explicit marker.");
-                preferenceKey = Application.productName + "_HD_GUID";
-                hadPreference = EditorPrefs.HasKey(preferenceKey);
-                previousPreference = EditorPrefs.GetString(preferenceKey, string.Empty);
-                preferenceCaptured = true;
-                configuration = JsonUtility.FromJson<Configuration>(File.ReadAllText(Marker));
-                Require(new[] { "assets", "local", "embedded", "settings-only", "empty" }.Contains(configuration.mode), "Unknown installation fixture.");
-                Require(Directory.Exists(configuration.upstreamRoot), "Upstream fixture is absent.");
-                Type oldType = Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", true);
-                newSettingsType = Type.GetType("HierarchyDecorator.Editor.Settings, VRCLearn.HierarchyDecorator.Editor", true);
-                CreateSettings(oldType);
+                Initialize();
+                if (configuration.mode == "orphan")
+                {
+                    Require(!Directory.Exists(configuration.upstreamRoot) &&
+                        Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", false) == null &&
+                        string.IsNullOrEmpty(AssetDatabase.GUIDToAssetPath(OldSettingsScriptGuid)),
+                        "Orphan migration must run after removal of the actual old package, Settings type and script GUID.");
+                    activeGuid = AssetDatabase.AssetPathToGUID(SettingsPath);
+                    Require(!string.IsNullOrEmpty(activeGuid), "Exported orphan configuration was not imported.");
+                    Checks.Add("the original Settings asset remains after its old package, Settings type and script GUID are removed");
+                }
+                else
+                {
+                    Require(Directory.Exists(configuration.upstreamRoot), "Upstream fixture is absent.");
+                    Type oldType = Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", true);
+                    CreateSettings(oldType);
+                    Require(AssetDatabase.LoadAssetAtPath(SettingsPath, oldType) != null, "Settings fixture was not imported.");
+                    Checks.Add("both plugins load and the selected upstream Settings asset is available");
+                }
                 selectedSettings = File.ReadAllBytes(SettingsPath);
                 selectedSettingsMeta = File.ReadAllBytes(SettingsPath + ".meta");
                 otherSettings = File.ReadAllBytes(OtherSettingsPath);
@@ -96,16 +108,14 @@ namespace HierarchyDecoratorCI
                 defaultSettings = File.ReadAllBytes(DefaultSettingsPath);
                 defaultSettingsMeta = File.ReadAllBytes(DefaultSettingsPath + ".meta");
                 previousUnityManifest = File.ReadAllBytes("Packages/manifest.json");
-                originalFiles = Directory.GetFiles(configuration.upstreamRoot, "*", SearchOption.AllDirectories)
-                    .ToDictionary(path => path, File.ReadAllBytes);
+                originalFiles = configuration.mode == "orphan" ? new Dictionary<string, byte[]>() :
+                    Directory.GetFiles(configuration.upstreamRoot, "*", SearchOption.AllDirectories).ToDictionary(path => path, File.ReadAllBytes);
                 if (configuration.emptyAssets)
                     installationParentMeta = File.ReadAllBytes(Path.GetDirectoryName(configuration.upstreamRoot) + ".meta");
                 if (!string.IsNullOrEmpty(configuration.externalSource))
                     externalFiles = Directory.GetFiles(configuration.externalSource, "*", SearchOption.AllDirectories)
                         .ToDictionary(path => path, File.ReadAllBytes);
-                Require(originalFiles.Count > 0, "Empty upstream installation fixture.");
-                Require(AssetDatabase.LoadAssetAtPath(SettingsPath, oldType) != null, "Settings fixture was not imported.");
-                Checks.Add("both plugins load and the selected upstream Settings asset is available");
+                Require(configuration.mode == "orphan" || originalFiles.Count > 0, "Empty upstream installation fixture.");
 
                 if (configuration.failSave)
                 {
@@ -126,17 +136,64 @@ namespace HierarchyDecoratorCI
             }
         }
 
+        public static void ExportOrphan()
+        {
+            try
+            {
+                exporting = true;
+                Initialize();
+                Require(configuration.mode == "orphan", "Orphan export requires --mode orphan.");
+                Type oldType = Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", true);
+                // Keep the requested mode through shutdown: saving dirty fixtures must not revert binary to text.
+                EditorSettings.serializationMode = configuration.binarySettings ? SerializationMode.ForceBinary : SerializationMode.ForceText;
+                CreateSettings(oldType);
+                AssetDatabase.ForceReserializeAssets(new[] { SettingsPath }, ForceReserializeAssetsOptions.ReserializeAssets);
+                byte[] exported = File.ReadAllBytes(SettingsPath);
+                Require(exported.Length > 0 && (exported[0] != '%') == configuration.binarySettings,
+                    "The exported configuration does not use the requested serialization format.");
+                Checks.Add("exported the original configuration with Unity-native serialization and retained source metadata and excluded copies");
+                Finish(true, null);
+            }
+            catch (Exception exception)
+            {
+                Finish(false, exception);
+            }
+        }
+
+        private static void Initialize()
+        {
+            Require(Application.isBatchMode && File.Exists(Marker),
+                "Migration tests require a disposable batch project and explicit marker.");
+            preferenceKey = Application.productName + "_HD_GUID";
+            hadPreference = EditorPrefs.HasKey(preferenceKey);
+            previousPreference = EditorPrefs.GetString(preferenceKey, string.Empty);
+            preferenceCaptured = true;
+            configuration = JsonUtility.FromJson<Configuration>(File.ReadAllText(Marker));
+            Require(new[] { "assets", "local", "embedded", "settings-only", "empty", "orphan" }.Contains(configuration.mode), "Unknown installation fixture.");
+            newSettingsType = Type.GetType("HierarchyDecorator.Editor.Settings, VRCLearn.HierarchyDecorator.Editor", true);
+            var independent = ScriptableObject.CreateInstance(newSettingsType);
+            fixtureScript = MonoScript.FromScriptableObject(independent);
+            Object.DestroyImmediate(independent);
+#if UNITY_2022_2_OR_NEWER
+            fixtureFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+#else
+            fixtureFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+#endif
+            Require(fixtureFont != null && fixtureScript != null, "Reference fixtures are missing.");
+        }
+
         private static void BeginMigration()
         {
             try
             {
                 Type migration = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.UpstreamMigration", true);
-                bool hasInstallation = configuration.mode != "settings-only" && configuration.mode != "empty";
+                bool hasInstallation = configuration.mode != "settings-only" && configuration.mode != "empty" && configuration.mode != "orphan";
                 Require((bool)migration.GetProperty("HasInstallation", AnyStatic).GetValue(null) == hasInstallation,
                     "Installation detection does not match the fixture.");
                 Checks.Add("installation detection is independent of the selected configuration");
                 CheckSingleSourceEntry();
                 SelectActiveGuid(configuration.activeGuid);
+                CheckReadOnlyImport();
                 previousCurrent = File.Exists(CurrentSettingsPath) ? File.ReadAllBytes(CurrentSettingsPath) : null;
                 var callback = new Action<Exception>(Completed);
                 migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { callback });
@@ -166,15 +223,6 @@ namespace HierarchyDecoratorCI
             EditorPrefs.SetString(preferenceKey, activeGuid);
             Require(string.IsNullOrEmpty(AssetDatabase.MoveAsset(InitialSettingsPath, SettingsPath)),
                 "Could not move and rename the active configuration fixture.");
-            var independent = ScriptableObject.CreateInstance(newSettingsType);
-            fixtureScript = MonoScript.FromScriptableObject(independent);
-            Object.DestroyImmediate(independent);
-#if UNITY_2022_2_OR_NEWER
-            fixtureFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-#else
-            fixtureFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-#endif
-            Require(fixtureFont != null && fixtureScript != null, "Reference fixtures are missing.");
             object components = oldType.GetProperty("Components").GetValue(source);
             components.GetType().GetMethod("AddCustomGroup").Invoke(components, new object[] { "Migration fixture group" });
             var groups = (Array)components.GetType().GetProperty("CustomGroups").GetValue(components);
@@ -255,6 +303,73 @@ namespace HierarchyDecoratorCI
                 "Import or cleanup modified excluded configuration copies.");
         }
 
+        private static void CheckReadOnlyImport()
+        {
+            Type importer = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.SettingsImport", true);
+            var temporaryFiles = new HashSet<string>(Directory.GetFiles(Path.GetTempPath(), "HierarchyDecorator-*.asset"));
+            Object copy = null;
+            try
+            {
+                copy = (Object)importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { SettingsPath });
+                CheckImportedSettings(copy);
+                CheckSelectedSettings();
+            }
+            finally
+            {
+                if (copy != null)
+                    Object.DestroyImmediate(copy);
+                Require(temporaryFiles.SetEquals(Directory.GetFiles(Path.GetTempPath(), "HierarchyDecorator-*.asset")),
+                    "Successful settings read leaked a temporary asset.");
+            }
+            bool rejected = false;
+            try
+            {
+                importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { WrongTypePath });
+            }
+            catch (TargetInvocationException exception)
+            {
+                Require(exception.InnerException is InvalidDataException, "Wrong-type read reported an unexpected error: " + exception);
+                rejected = true;
+            }
+            Require(rejected && temporaryFiles.SetEquals(Directory.GetFiles(Path.GetTempPath(), "HierarchyDecorator-*.asset")),
+                "Failed settings read was accepted or leaked a temporary asset.");
+            if (configuration.mode == "orphan")
+                CheckUnreadableSource(importer, temporaryFiles);
+            CheckSelectedSettings();
+            CheckExcludedSettings();
+            Checks.Add("read-only import retains selected source bytes and metadata, preserves references, rejects wrong types and leaves no temporary assets");
+        }
+
+        private static void CheckUnreadableSource(Type importer, HashSet<string> temporaryFiles)
+        {
+            string path = Path.Combine(Path.GetTempPath(), "Unreadable-" + Guid.NewGuid().ToString("N") + ".asset");
+            try
+            {
+                File.WriteAllText(path, "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!114 &1\nMonoBehaviour:\n" +
+                    "  m_Script: {fileID: 11500000, guid: " + OldSettingsScriptGuid + ", type: 3}\n" +
+                    "  globalData:\n    depthMode: [\n  styleData:\n  components:\n");
+                bool rejected = false;
+                try
+                {
+                    importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { path });
+                }
+                catch (TargetInvocationException exception)
+                {
+                    Require(exception.InnerException is InvalidDataException,
+                        "Unreadable settings reported an unexpected error: " + exception);
+                    rejected = true;
+                }
+                Require(rejected, "Malformed settings were imported as defaults.");
+            }
+            finally
+            {
+                File.Delete(path);
+                Require(temporaryFiles.SetEquals(Directory.GetFiles(Path.GetTempPath(), "HierarchyDecorator-*.asset")),
+                    "Native settings load failure leaked a temporary asset.");
+            }
+            Checks.Add("native load failure rejects malformed data and removes its temporary asset");
+        }
+
         private static void Completed(Exception error)
         {
             try
@@ -292,12 +407,14 @@ namespace HierarchyDecoratorCI
                 else
                     CheckSelectedSettings();
                 Require(Directory.Exists("Assets/MigrationSettings"), "Cleanup deleted the user's settings directory.");
-                if (configuration.mode == "settings-only" || configuration.mode == "empty")
+                if (configuration.mode == "settings-only" || configuration.mode == "empty" || configuration.mode == "orphan")
                 {
                     CheckOriginalInstallation();
                     Require(File.ReadAllBytes("Packages/manifest.json").SequenceEqual(previousUnityManifest),
                         "Migration without an old installation changed registered packages.");
-                    Checks.Add(configuration.mode == "settings-only" ?
+                    Checks.Add(configuration.mode == "orphan" ?
+                        "configuration imports after removal of its real old scripts, preserves references and excluded copies, then removes only the selected source" :
+                        configuration.mode == "settings-only" ?
                         "settings import succeeds without a recognized old installation; unrelated package is preserved" :
                         "no source and no old installation completes as a no-op");
                     Finish(true, null);
@@ -362,6 +479,8 @@ namespace HierarchyDecoratorCI
 
         private static void CheckOriginalInstallation()
         {
+            if (configuration.mode == "orphan")
+                Require(!Directory.Exists(configuration.upstreamRoot), "Migration restored the absent old package.");
             foreach (var pair in originalFiles)
                 Require(File.Exists(pair.Key) && pair.Value.SequenceEqual(File.ReadAllBytes(pair.Key)),
                     "Original installation changed: " + pair.Key);
@@ -386,19 +505,8 @@ namespace HierarchyDecoratorCI
             Object[] loaded = InternalEditorUtility.LoadSerializedFileAndForget(CurrentSettingsPath);
             try
             {
-                Require(loaded != null && loaded.Length == 1 && loaded[0].GetType() == newSettingsType &&
-                    loaded[0].name == "Settings",
-                    "Persisted settings have the wrong identity.");
-                using (var serialized = new SerializedObject(loaded[0]))
-                {
-                    Require(!serialized.FindProperty("globalData.showAllComponents").boolValue &&
-                        serialized.FindProperty("globalData.depthMode").intValue == 3 &&
-                        serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue == "::migration::" &&
-                        serialized.FindProperty("styleData.styles.Array.data[0].font").objectReferenceValue == fixtureFont &&
-                        serialized.FindProperty("components.customGroups.Array.data[0].components.Array.data[0].script").objectReferenceValue == fixtureScript &&
-                        !serialized.FindProperty("needsPresetSelection").boolValue,
-                        "Imported setting values, references or setup state were not preserved.");
-                }
+                Require(loaded != null && loaded.Length == 1, "Persisted settings have the wrong object count.");
+                CheckImportedSettings(loaded[0]);
             }
             finally
             {
@@ -406,6 +514,23 @@ namespace HierarchyDecoratorCI
                     foreach (Object item in loaded)
                         if (item != null)
                             Object.DestroyImmediate(item);
+            }
+        }
+
+        private static void CheckImportedSettings(Object settings)
+        {
+            Require(settings != null && settings.GetType() == newSettingsType && settings.name == "Settings" &&
+                settings.hideFlags == (HideFlags.HideAndDontSave & ~HideFlags.NotEditable),
+                "Imported settings have the wrong identity or hide flags.");
+            using (var serialized = new SerializedObject(settings))
+            {
+                Require(!serialized.FindProperty("globalData.showAllComponents").boolValue &&
+                    serialized.FindProperty("globalData.depthMode").intValue == 3 &&
+                    serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue == "::migration::" &&
+                    serialized.FindProperty("styleData.styles.Array.data[0].font").objectReferenceValue == fixtureFont &&
+                    serialized.FindProperty("components.customGroups.Array.data[0].components.Array.data[0].script").objectReferenceValue == fixtureScript &&
+                    !serialized.FindProperty("needsPresetSelection").boolValue,
+                    "Imported setting values, references or setup state were not preserved.");
             }
         }
 
@@ -434,8 +559,10 @@ namespace HierarchyDecoratorCI
                 File.WriteAllText("Logs/migration-result.json", JsonUtility.ToJson(new Report
                 {
                     unityVersion = Application.unityVersion,
+                    stage = exporting ? "export" : "migration",
                     mode = configuration == null ? "unknown" : configuration.mode,
                     failSave = configuration != null && configuration.failSave,
+                    binarySettings = configuration != null && configuration.binarySettings,
                     activeGuid = configuration == null ? null : configuration.activeGuid,
                     sourcePath = configuration == null ? null : configuration.sourcePath,
                     passed = passed,
@@ -445,7 +572,7 @@ namespace HierarchyDecoratorCI
                 if (error != null)
                     Debug.LogException(error);
                 else
-                    Debug.Log("HIERARCHY_DECORATOR_MIGRATION_OK");
+                    Debug.Log(exporting ? "HIERARCHY_DECORATOR_ORPHAN_EXPORT_OK" : "HIERARCHY_DECORATOR_MIGRATION_OK");
             }
             finally
             {
