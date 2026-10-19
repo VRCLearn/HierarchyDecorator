@@ -18,11 +18,7 @@ def release_notes(version: str) -> str:
         changelog, re.MULTILINE | re.DOTALL)
     if match is None or not match.group(1).strip():
         raise ValueError("Changelog must contain release notes for the exact package version.")
-    return (f"Hierarchy Decorator {version}\n\n" + match.group(1).strip() +
-            "\n\nInstall from the [VRCLearn VPM repository](https://vrclearn.github.io/HierarchyDecorator/). "
-            "Select **HierarchyDecorator** (`com.vrclearn.hierarchydecorator`) in VCC/ALCOMD. "
-            "VPM installation replaces the former wooshii package before Unity opens; importing previous settings is optional.\n\n"
-            f"[Installation and migration instructions](https://github.com/{REPOSITORY}#installation).\n")
+    return f"Hierarchy Decorator {version}\n\n" + match.group(1).strip() + "\n"
 
 
 def prepare(output: Path, tag: str, repository: str, revision: str) -> dict:
