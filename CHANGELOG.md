@@ -4,60 +4,23 @@
 
 ### Added
 
-- Publish the independently maintained VRCLearn package as
-  `com.vrclearn.hierarchydecorator` through VPM, with an official-template installation
-  page, versioned release archives, checksums, and automatic repository updates.
-- Preserve the existing repository URL and repository ID; list only
-  `com.vrclearn.hierarchydecorator` in the VPM repository.
-- Allow the maintained package and wooshii to coexist with other installation
-  methods. Choosing a fresh preset or closing the preset chooser leaves wooshii installed.
-- Add optional migration to the first-run preset chooser. Read only the current
-  Settings GUID recorded by wooshii, re-reading it when migration starts. Missing
-  or invalid references skip configuration transfer. Do not scan Assets for
-  configurations, fall back to another path, select another copy, or merge settings.
-- Separate configuration transfer from installation cleanup: import and save any
-  current configuration, then remove recognized old Assets, UPM or embedded
-  installations. Skip absent configurations or installations independently.
-  Reading or saving a found configuration must succeed before cleanup starts;
-  cleanup failures retain saved settings and report incomplete removal.
-- Remove successfully imported source settings under Assets; retain external
-  sources, settings in other packages, unrelated files and other settings assets.
-  Settings inside a removed embedded package are removed with that package.
-- Save personal settings at `UserSettings/Settings.asset`, retaining the original
-  `Settings.asset` file name, `Settings` object name and font/script references.
-- Import the recorded configuration even when the old Settings script and assembly
-  have been removed. Read text and binary assets using a temporary copy outside the
-  project, retaining source contents and asset references during import.
-- Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
-  and Simplified Chinese, with a language selector saved as a local editor preference.
-- Add Auto to the language selector and Tools menu, following the operating system
-  language by default for new preferences and falling back to English when unsupported.
-- Offer Detailed and Minimal presets with image previews on first use, and reopen
-  the chooser from the Tools menu.
-- Open Preferences and switch settings languages directly from the Tools menu.
+- Settings localization for English, Japanese, Korean, Traditional Chinese, and
+  Simplified Chinese, with Auto following the operating system language.
+- Detailed and Minimal presets on first use, with Tools menu commands for presets,
+  settings and language selection.
+- Optional migration of wooshii's current settings and removal of its old Unity installation.
 
 ### Changed
 
-- Isolate assembly, C# namespaces, asset GUIDs, menu paths and local settings from
-  the upstream plugin. Use the `VRCLearn.HierarchyDecorator.Editor` assembly,
-  `HierarchyDecorator.Editor` namespace, `Tools > HierarchyDecorator` and
-  `Preferences > HierarchyDecorator`, with the preset window titled `HierarchyDecorator`.
+- Separate asset GUIDs, assemblies, namespaces, menus and settings to support coexistence in Unity.
+- Store personal settings at `UserSettings/Settings.asset`.
 - Install UnityPackage assets under `Assets/VRCLearn/HierarchyDecorator`.
-  VPM folder replacement targets only this maintained distribution.
-- Declare `com.wooshii.hierarchydecorator` in `legacyPackages` so VCC/ALCOMD
-  removes the former package during installation, before Unity opens.
-- Identify old Assets installations by known directory layouts and folder/file
-  GUIDs, then match distributed relative file paths within identified roots to
-  handle regenerated file GUIDs.
-- Verify independent asset identities and both editor assemblies in coexistence checks.
 
 ### Fixed
 
-- Save local settings reliably through Unity's native file writer on Windows.
-  Report native save errors, retain unsaved changes and keep the old installation
-  when migration cannot save.
-- Limit empty-directory cleanup to identified plugin roots and their contents,
-  preserving user-owned parent directories and their metadata even when empty.
+- Save settings reliably on Windows and report failures before migration cleanup.
+- Import settings even when the original Settings script has been removed.
+- Limit cleanup to the old installation and preserve unrelated user files.
 
 ## v0.12.0
 

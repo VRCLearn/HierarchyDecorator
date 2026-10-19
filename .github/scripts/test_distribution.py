@@ -132,20 +132,16 @@ class DistributionTests(unittest.TestCase):
 
     def test_release_uses_exact_version_notes_and_rejects_other_tags(self):
         version = self.manifest["version"]
+        release_text = "### Changes\n\n- Replace the former settings layout.\n- Keep custom icons."
+        (self.package / "CHANGELOG.md").write_text(
+            "## Unreleased\n\n- Future work.\n\n## [" + version + "] - 2026-10-19\n\n" +
+            release_text + "\n\n## [0.0.1]\n\n- Previous release.\n", encoding="utf-8")
         for tag in ("v" + version, "0.12.1", "main", None):
             with self.subTest(tag=tag), self.assertRaisesRegex(ValueError, "tag"):
                 prepare_release.prepare(self.root / "release", tag, builder.REPOSITORY, "ab" * 20)
         prepare_release.prepare(self.root / "release", version, builder.REPOSITORY, "ab" * 20)
         notes = (self.root / "release/release-notes.md").read_text(encoding="utf-8")
-        self.assertIn("### Added", notes)
-        self.assertIn("com.vrclearn.hierarchydecorator", notes)
-        self.assertIn("Separate configuration transfer from installation cleanup", notes)
-        self.assertIn("Skip absent configurations or installations independently", notes)
-        self.assertIn("Settings GUID recorded by wooshii", notes)
-        self.assertNotIn("Replace the former", notes)
-        self.assertNotIn("while preserving the originals", notes)
-        self.assertNotIn("## Unreleased", notes)
-        self.assertNotIn("## v0.12.0", notes)
+        self.assertEqual(notes, f"Hierarchy Decorator {version}\n\n" + release_text + "\n")
         (self.package / "CHANGELOG.md").write_text("## Unreleased\n\n- Future work.\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "Changelog"):
             prepare_release.prepare(self.root / "missing-notes", version, builder.REPOSITORY, "ab" * 20)
