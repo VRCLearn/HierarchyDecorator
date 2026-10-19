@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Remove the former `com.wooshii.hierarchydecorator` package from the VPM index;
+  list only `com.vrclearn.hierarchydecorator`.
+
 ## [1.0.0] - 2026-10-19
 
 ### Added

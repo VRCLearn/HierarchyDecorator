@@ -12,8 +12,9 @@ token is required.
 - Repository ID: `io.github.vrclearn.hierarchydecorator` (preserved from the old listing).
 - Maintained package: `com.vrclearn.hierarchydecorator`.
 
-The listing retains the former `com.wooshii.hierarchydecorator` 0.12.1 package and
-its original release assets. The maintained package has an independent assembly
+The listing contains only `com.vrclearn.hierarchydecorator`; historical
+`com.wooshii.hierarchydecorator` releases are excluded from the VPM repository.
+The maintained package has an independent assembly
 `VRCLearn.HierarchyDecorator.Editor`, `HierarchyDecorator.Editor` namespaces,
 asset GUIDs, menus and settings. Do not restore `legacyPackages` replacement of
 upstream: both plugins must be able to remain installed and usable independently.
@@ -112,11 +113,11 @@ distribution tests do not check interactive editor behavior.
    dispatches `vpm-listing.yml` on `main`. Existing releases keep their assets on
    retry. Never overwrite a published release or move its tag as a routine retry.
 5. Verify the public download checksums, manifest and source revision, then verify
-   the live index includes the new version and preserves historical 0.12.1.
+   the live index includes the new version and only the maintained package ID.
 
 ## Listing and Pages
 
-`.github/vpm/source.json` selects both the maintained and historical package IDs.
+`.github/vpm/source.json` selects only the maintained package ID.
 The listing workflow checks out pinned official `template-package` and
 `package-list-action` revisions, applies VRCLearn's banner, **Add to VCC/ALCOMD**
 button sizing and description escaping, and validates the rendered JavaScript.
