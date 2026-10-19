@@ -44,6 +44,7 @@ namespace HierarchyDecoratorCI
         private static string activeGuid;
         private static byte[] defaultSettings;
         private static byte[] defaultSettingsMeta;
+        private static byte[] installationParentMeta;
 
         [Serializable]
         private class Configuration
@@ -51,6 +52,7 @@ namespace HierarchyDecoratorCI
             public string mode;
             public string upstreamRoot;
             public bool failSave;
+            public bool emptyAssets;
             public bool vpm;
             public string externalSource;
             public string regeneratedAsset;
@@ -96,6 +98,8 @@ namespace HierarchyDecoratorCI
                     previousVpmManifest = File.ReadAllBytes("Packages/vpm-manifest.json");
                 originalFiles = Directory.GetFiles(configuration.upstreamRoot, "*", SearchOption.AllDirectories)
                     .ToDictionary(path => path, File.ReadAllBytes);
+                if (configuration.emptyAssets)
+                    installationParentMeta = File.ReadAllBytes(Path.GetDirectoryName(configuration.upstreamRoot) + ".meta");
                 if (!string.IsNullOrEmpty(configuration.externalSource))
                     externalFiles = Directory.GetFiles(configuration.externalSource, "*", SearchOption.AllDirectories)
                         .ToDictionary(path => path, File.ReadAllBytes);
@@ -205,8 +209,9 @@ namespace HierarchyDecoratorCI
             EditorPrefs.SetString(preferenceKey, activeGuid);
             if (configuration.mode == "assets")
             {
-                Require(File.ReadAllText(Path.Combine(configuration.upstreamRoot, "UserNote.txt")).Replace("\r\n", "\n") == UserContent,
-                    "Expected user-owned file in the Assets fixture.");
+                if (!configuration.emptyAssets)
+                    Require(File.ReadAllText(Path.Combine(configuration.upstreamRoot, "UserNote.txt")).Replace("\r\n", "\n") == UserContent,
+                        "Expected user-owned file in the Assets fixture.");
                 Require(File.Exists(configuration.regeneratedAsset) &&
                     AssetDatabase.AssetPathToGUID(configuration.regeneratedAsset).Equals(configuration.regeneratedGuid, StringComparison.OrdinalIgnoreCase),
                     "Regenerated-GUID fixture was not imported with its new identity.");
@@ -288,6 +293,18 @@ namespace HierarchyDecoratorCI
                 Checks.Add("successful migration persists settings and references before deleting selected old settings");
                 if (configuration.mode == "assets")
                 {
+                    if (configuration.emptyAssets)
+                    {
+                        string parent = Path.GetDirectoryName(configuration.upstreamRoot);
+                        Require(!Directory.Exists(configuration.upstreamRoot) && !File.Exists(configuration.upstreamRoot + ".meta"),
+                            "Empty identified installation root remains after cleanup.");
+                        Require(Directory.Exists(parent) && !Directory.EnumerateFileSystemEntries(parent).Any() &&
+                            File.ReadAllBytes(parent + ".meta").SequenceEqual(installationParentMeta),
+                            "Cleanup removed or changed the user's empty parent folder or its metadata.");
+                        Checks.Add("empty installation root is removed while its empty user-owned parent and metadata remain unchanged");
+                        Finish(true, null);
+                        return;
+                    }
                     string userFile = Path.Combine(configuration.upstreamRoot, "UserNote.txt");
                     Require(File.ReadAllBytes(userFile).SequenceEqual(originalFiles[userFile]),
                         "Cleanup deleted user-owned content from the renamed plugin folder.");

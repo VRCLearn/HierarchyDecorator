@@ -54,8 +54,9 @@ identified by known folder or distributed file GUIDs. It uses the distributed
 relative file paths within identified roots as well as known file GUIDs, so
 regenerated file GUIDs do not leave the original scripts behind. Cleanup removes
 recognized distribution files, the current source settings asset and empty plugin
-directories. It retains extra user files and other settings assets. UPM dependencies
-use `Client.Remove` and retain external source directories. Embedded packages are
+directories within identified installation roots. Empty user-owned parent folders
+and their metadata are retained, along with extra user files and other settings
+assets. UPM dependencies use `Client.Remove` and retain external source directories. Embedded packages are
 removed only from the confirmed project-local package directory. Import/save
 failures prevent cleanup; later cleanup failures are reported as incomplete
 migration.
@@ -155,6 +156,9 @@ it does not require a Resolver package. The preparation script uses local packag
 and does not download them. Do not add `-quit`: the probe waits for asynchronous
 package operations where needed and exits when finished. Read
 `Logs/migration-result.json` inside the disposable project for the result.
+
+Use `--mode assets --empty-assets-installation` to verify cleanup removes an empty
+identified installation but retains its now-empty user-owned parent and metadata.
 
 ## Windows settings-save regression
 

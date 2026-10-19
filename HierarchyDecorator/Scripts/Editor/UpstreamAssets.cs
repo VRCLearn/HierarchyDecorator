@@ -64,7 +64,7 @@ namespace HierarchyDecorator.Editor
             { "package.json", "ca218642cb42ab6409e84fe7fdebd3ca" },
         };
 
-        internal static List<string> FindFiles()
+        internal static List<string> FindFiles(out HashSet<string> folders)
         {
             var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var roots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -110,6 +110,26 @@ namespace HierarchyDecorator.Editor
                     string path = root + "/" + file.Substring(SourceFolder.Length);
                     if (File.Exists(path))
                         paths.Add(path);
+                }
+            }
+            // Only prune directories inside identified roots, never their user-owned parents.
+            folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string root in roots)
+            {
+                if (root.Equals("Assets", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                foreach (string path in paths)
+                {
+                    if (!path.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    string parent = Path.GetDirectoryName(path).Replace('\\', '/');
+                    while (true)
+                    {
+                        folders.Add(parent);
+                        if (parent.Equals(root, StringComparison.OrdinalIgnoreCase))
+                            break;
+                        parent = Path.GetDirectoryName(parent).Replace('\\', '/');
+                    }
                 }
             }
             return new List<string>(paths);

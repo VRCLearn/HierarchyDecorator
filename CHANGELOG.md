@@ -1,37 +1,5 @@
 ## Unreleased
 
-### Changed
-
-- Isolate VRCLearn's assembly, C# namespaces, asset GUIDs, menu
-  paths and local settings from the upstream plugin so both can remain installed.
-- Stop automatically removing the upstream VPM package during installation.
-  Choosing a fresh preset keeps both plugins installed.
-- Add optional settings migration to the first-run preset chooser. Non-VPM
-  migration saves settings before removing the old Assets, UPM or embedded
-  installation and current source settings asset. Retain unrelated files and other
-  settings assets; report incomplete cleanup instead of reporting success.
-- For VPM installations, import settings only and keep the old installation,
-  current source settings asset and both package manifests unchanged. Leave removal
-  to VCC/ALCOMD without invoking a Resolver API or checking removal dependencies.
-- Identify Assets installations by known directory layouts and folder/file GUIDs,
-  then match distributed relative file paths to handle regenerated file GUIDs.
-- Migrate only the current configuration referenced by wooshii's recorded Settings
-  GUID, re-reading it when migration starts. Remove settings scans, default-path
-  fallbacks and source selection; require an invalid current reference to be
-  restored through wooshii before migration.
-- Keep the original `Settings.asset` file name and `Settings` object name, saving
-  personal settings at `UserSettings/Settings.asset`. Title the preset window `HierarchyDecorator`.
-  Use `Tools > HierarchyDecorator` and `Preferences > HierarchyDecorator` without
-  a publisher menu group. Keep the `VRCLearn.HierarchyDecorator.Editor` assembly
-  publisher identity and use the `HierarchyDecorator.Editor` namespace.
-- Verify asset identities and both editor assemblies in coexistence checks.
-
-### Fixed
-
-- Save local settings through Unity's native file writer without a second file
-  replacement, which could fail intermittently on Windows. Treat native save
-  errors as failures and retain the upstream installation when migration cannot save.
-
 ## [1.0.0] - 2026-10-19
 
 ### Added
@@ -39,10 +7,21 @@
 - Publish the independently maintained VRCLearn package as
   `com.vrclearn.hierarchydecorator` through VPM, with an official-template installation
   page, versioned release archives, checksums, and automatic repository updates.
-- Replace the former `com.wooshii.hierarchydecorator` VPM package on installation,
-  preserving the existing repository URL, repository ID, and historical 0.12.1 listing.
-- Save project-local personal settings under `UserSettings`, migrating a copy of
-  existing settings assets while preserving the originals and their references.
+- Preserve the existing repository URL, repository ID, and historical 0.12.1 listing.
+- Allow the maintained package and wooshii to coexist. Installation, choosing a
+  fresh preset, or closing the preset chooser leaves wooshii installed.
+- Add optional migration to the first-run preset chooser. Read only the current
+  Settings GUID recorded by wooshii, re-reading it when migration starts; an invalid
+  reference must be restored through wooshii before migration. Do not scan Assets
+  for configurations, fall back to another path, select another copy, or merge settings.
+- For non-VPM installations, explicit migration imports and saves settings before
+  removing the old Assets, UPM or embedded installation and current source settings
+  asset. Retain unrelated files, other settings assets and external UPM sources;
+  report incomplete cleanup instead of reporting success.
+- VPM installations import settings only, preserving the old installation, current
+  source settings asset and both package manifests. Leave removal to VCC/ALCOMD.
+- Save personal settings at `UserSettings/Settings.asset`, retaining the original
+  `Settings.asset` file name, `Settings` object name and font/script references.
 - Add settings UI localization for English, Japanese, Korean, Traditional Chinese,
   and Simplified Chinese, with a language selector saved as a local editor preference.
 - Add Auto to the language selector and Tools menu, following the operating system
@@ -50,6 +29,27 @@
 - Offer Detailed and Minimal presets with image previews on first use, and reopen
   the chooser from the Tools menu.
 - Open Preferences and switch settings languages directly from the Tools menu.
+
+### Changed
+
+- Isolate assembly, C# namespaces, asset GUIDs, menu paths and local settings from
+  the upstream plugin. Use the `VRCLearn.HierarchyDecorator.Editor` assembly,
+  `HierarchyDecorator.Editor` namespace, `Tools > HierarchyDecorator` and
+  `Preferences > HierarchyDecorator`, with the preset window titled `HierarchyDecorator`.
+- Install UnityPackage assets under `Assets/VRCLearn/HierarchyDecorator`.
+  VPM installation rules target only this maintained distribution, not wooshii.
+- Identify old Assets installations by known directory layouts and folder/file
+  GUIDs, then match distributed relative file paths within identified roots to
+  handle regenerated file GUIDs.
+- Verify independent asset identities and both editor assemblies in coexistence checks.
+
+### Fixed
+
+- Save local settings through Unity's native file writer without a second file
+  replacement, which could fail intermittently on Windows. Treat native save
+  errors as failures and retain the upstream installation when migration cannot save.
+- Limit empty-directory cleanup to identified plugin roots and their contents,
+  preserving user-owned parent directories and their metadata even when empty.
 
 ## v0.12.0
 

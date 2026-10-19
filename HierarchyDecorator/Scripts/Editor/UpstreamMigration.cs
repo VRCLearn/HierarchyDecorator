@@ -49,20 +49,12 @@ namespace HierarchyDecorator.Editor
                     RequireProjectPackage(package.resolvedPath);
             }
 
-            assets = vpmManaged ? new List<string>() : UpstreamAssets.FindFiles();
             folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            assets = vpmManaged ? new List<string>() : UpstreamAssets.FindFiles(out folders);
             settingsPath = sourcePath;
             RequireAssetPath(sourcePath);
             foreach (string path in assets)
-            {
                 RequireAssetPath(path);
-                string parent = Path.GetDirectoryName(path).Replace('\\', '/');
-                while (parent != "Assets")
-                {
-                    folders.Add(parent);
-                    parent = Path.GetDirectoryName(parent).Replace('\\', '/');
-                }
-            }
             if (!vpmManaged && package == null && assets.Count == 0)
                 throw new InvalidOperationException("The wooshii installation could not be identified.");
 

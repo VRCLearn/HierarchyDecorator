@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--mode", required=True, choices=("assets", "local", "embedded", "vpm"))
     parser.add_argument("--fail-save", action="store_true")
     parser.add_argument("--assets-default-path", action="store_true", help="Install Assets fixtures at the upstream default path instead of a renamed folder.")
+    parser.add_argument("--empty-assets-installation", action="store_true", help="Place an Assets installation without user content under a user-owned parent folder.")
     parser.add_argument("--regenerate-all-guids", action="store_true", help="Regenerate all Assets distribution and root folder GUIDs to isolate default-path detection.")
     parser.add_argument("--vpm-resolver", type=Path, help="Use an already downloaded official resolver package; no download is performed.")
     parser.add_argument("--vpm-dependent", action="store_true", help="Add a VPM consumer to verify settings import preserves required packages.")
@@ -34,6 +35,8 @@ def main():
         parser.error("VPM options require --mode vpm.")
     if args.assets_default_path and args.mode != "assets":
         parser.error("--assets-default-path requires --mode assets.")
+    if args.empty_assets_installation and (args.mode != "assets" or args.assets_default_path):
+        parser.error("--empty-assets-installation requires --mode assets without --assets-default-path.")
     if args.regenerate_all_guids and args.mode != "assets":
         parser.error("--regenerate-all-guids requires --mode assets.")
     project = args.project_path.resolve()
@@ -51,9 +54,12 @@ def main():
     regenerated_guid = ""
     if args.mode == "assets":
         old_root = project / "Assets" / ("HierarchyDecorator" if args.assets_default_path else "RenamedWooshiiPlugin")
+        if args.empty_assets_installation:
+            old_root = project / "Assets" / "UserTools" / "RenamedWooshiiPlugin"
         shutil.copytree(upstream / "HierarchyDecorator", old_root)
         shutil.copyfile(upstream / "HierarchyDecorator.meta", old_root.with_suffix(".meta"))
-        (old_root / "UserNote.txt").write_text("This file belongs to the user, not the plugin.\n", encoding="utf-8")
+        if not args.empty_assets_installation:
+            (old_root / "UserNote.txt").write_text("This file belongs to the user, not the plugin.\n", encoding="utf-8")
         # The code still compiles, but GUID-only cleanup cannot identify this distributed script.
         regenerated = old_root / "Scripts" / "Editor" / "Util" / "GUIHelper.cs"
         script_metadata = regenerated.with_suffix(".cs.meta")
@@ -105,6 +111,7 @@ def main():
         "mode": "embedded" if args.mode == "vpm" else args.mode,
         "upstreamRoot": str(old_root),
         "failSave": args.fail_save,
+        "emptyAssets": args.empty_assets_installation,
         "vpm": args.mode == "vpm",
         "regeneratedAsset": regenerated_asset,
         "regeneratedGuid": regenerated_guid,
