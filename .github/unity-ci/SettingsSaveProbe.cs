@@ -47,12 +47,12 @@ namespace HierarchyDecoratorCI
                 Require(Application.isBatchMode && File.Exists("ProjectSettings/SettingsSaveProbe.enabled") &&
                     Path.GetFullPath(".").IndexOf(".unity-ci~", StringComparison.OrdinalIgnoreCase) >= 0,
                     "Settings-save tests require an explicitly marked disposable .unity-ci~ batch project.");
-                Type type = Type.GetType("VRCLearn.HierarchyDecorator.Settings, VRCLearn.HierarchyDecorator.Editor", true);
-                Type owner = type.Assembly.GetType("VRCLearn.HierarchyDecorator.HierarchyDecorator", true);
+                Type type = Type.GetType("HierarchyDecorator.Editor.Settings, VRCLearn.HierarchyDecorator.Editor", true);
+                Type owner = type.Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true);
                 settingsProperty = owner.GetProperty("Settings", AnyStatic);
                 saveMethod = owner.GetMethod("SaveSettings", AnyStatic);
                 settings = (ScriptableObject)settingsProperty.GetValue(null);
-                Type paths = type.Assembly.GetType("VRCLearn.HierarchyDecorator.Constants+Paths", true);
+                Type paths = type.Assembly.GetType("HierarchyDecorator.Editor.Constants+Paths", true);
                 settingsPath = (string)paths.GetField("SETTINGS_FILE_PATH", AnyStatic).GetRawConstantValue();
                 Require(Path.GetFullPath(settingsPath).StartsWith(Path.GetFullPath("UserSettings") + Path.DirectorySeparatorChar,
                     StringComparison.OrdinalIgnoreCase), "Unexpected settings file outside UserSettings.");

@@ -1,6 +1,6 @@
 using System;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class RegisterTabAttribute : Attribute
     {

@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     //TODO: [Wooshii] Add comment descriptions for styles.
     internal static class Style

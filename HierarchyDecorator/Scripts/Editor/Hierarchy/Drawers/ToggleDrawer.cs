@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
 #endif
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class ToggleDrawer : HierarchyDrawer
     {

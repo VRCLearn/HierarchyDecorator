@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 using UnityEngine.Experimental.UIElements;
 #endif
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class SettingsPreferences : SettingsProvider
     {
@@ -15,7 +15,7 @@ namespace VRCLearn.HierarchyDecorator
         private static Settings settings;
 
         private static SerializedObject serializedSettings;
-        private static Editor settingsEditor;
+        private static UnityEditor.Editor settingsEditor;
 
         //Constructor
         public SettingsPreferences(string path, SettingsScope scope = SettingsScope.User) : base (path, scope) { }
@@ -64,7 +64,7 @@ namespace VRCLearn.HierarchyDecorator
         {
             if (settingsEditor == null)
             {
-                Editor.CreateCachedEditor (settings, null, ref settingsEditor);
+                UnityEditor.Editor.CreateCachedEditor (settings, null, ref settingsEditor);
                 return;
             }
 

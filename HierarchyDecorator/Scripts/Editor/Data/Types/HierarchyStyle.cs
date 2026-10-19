@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [System.Serializable]
     public class ModeOptions

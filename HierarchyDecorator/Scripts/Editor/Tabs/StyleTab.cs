@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [RegisterTab(1)]
     public class StyleTab : SettingsTab

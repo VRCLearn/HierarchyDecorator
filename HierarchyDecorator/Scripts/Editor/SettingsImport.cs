@@ -1,39 +1,32 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal static class SettingsImport
     {
         private static readonly string[] SettingsFields = { "globalData", "styleData", "components" };
 
-        internal static List<string> FindCandidates()
+        internal static string FindSource()
         {
-            var candidates = new List<string>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            AddCandidate(AssetDatabase.GUIDToAssetPath(
-                EditorPrefs.GetString(Application.productName + "_HD_GUID", string.Empty)));
-            AddCandidate("Assets/HierarchyDecorator/Settings.asset");
-            foreach (string guid in AssetDatabase.FindAssets("t:Settings", new[] { "Assets" }))
-                AddCandidate(AssetDatabase.GUIDToAssetPath(guid));
-            return candidates;
+            if (Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", false) == null)
+                return null;
 
-            void AddCandidate(string path)
-            {
-                if (!string.IsNullOrEmpty(path) && seen.Add(path) && IsSettings(AssetDatabase.LoadMainAssetAtPath(path)))
-                    candidates.Add(path);
-            }
+            string guid = EditorPrefs.GetString(Application.productName + "_HD_GUID", string.Empty);
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrEmpty(path) || !IsSettings(AssetDatabase.LoadMainAssetAtPath(path)))
+                throw new InvalidDataException("Cannot locate the current wooshii settings. Open wooshii settings and try again.");
+            return path;
         }
 
         internal static Settings Read(string path)
         {
             Object source = AssetDatabase.LoadMainAssetAtPath(path);
             if (!IsSettings(source))
-                throw new InvalidDataException("The selected wooshii settings asset is unavailable: " + path);
+                throw new InvalidDataException("The current wooshii settings asset is unavailable: " + path);
             return CopySettings(source);
         }
 
@@ -49,7 +42,7 @@ namespace VRCLearn.HierarchyDecorator
                     {
                         SerializedProperty property = serializedSource.FindProperty(field);
                         if (property == null)
-                            throw new InvalidDataException("The selected settings are missing the " + field + " field.");
+                            throw new InvalidDataException("The current wooshii settings are missing the " + field + " field.");
 
                         SerializedProperty end = property.GetEndProperty();
                         bool enterChildren;
@@ -75,7 +68,7 @@ namespace VRCLearn.HierarchyDecorator
                     serializedCopy.ApplyModifiedPropertiesWithoutUndo();
                 }
 
-                copy.name = "VRCLearn HierarchyDecorator Settings";
+                copy.name = "HierarchyDecorator Settings";
                 copy.NeedsPresetSelection = false;
                 copy.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 return copy;

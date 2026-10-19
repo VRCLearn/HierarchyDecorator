@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class TagLayerInfo : HierarchyInfo
     {

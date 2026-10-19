@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal class InitialSetupWindow : EditorWindow
     {
@@ -14,24 +13,24 @@ namespace VRCLearn.HierarchyDecorator
         private bool allowReselection;
         private Texture2D detailedPreview;
         private Texture2D minimalPreview;
-        private List<string> importCandidates;
-        private int selectedImport;
+        private string importSource;
         private Vector2 scrollPosition;
         private string importError;
         private bool vpmManaged;
 
         internal static void Open(bool allowReselection = false)
         {
-            var window = GetWindow<InitialSetupWindow>(true, "Hierarchy Decorator (VRCLearn)", true);
+            var window = GetWindow<InitialSetupWindow>(true, "HierarchyDecorator", true);
             window.allowReselection = allowReselection;
             window.minSize = new Vector2(760f, 340f);
+            window.RefreshImport();
         }
 
         private void OnEnable()
         {
             detailedPreview = LoadPreview(DetailedPreviewGuid);
             minimalPreview = LoadPreview(MinimalPreviewGuid);
-            RefreshImports();
+            RefreshImport();
             SettingsLocalization.LanguageChanged += Repaint;
         }
 
@@ -45,12 +44,19 @@ namespace VRCLearn.HierarchyDecorator
             return AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(guid));
         }
 
-        private void RefreshImports()
+        private void RefreshImport()
         {
-            importCandidates = SettingsImport.FindCandidates();
             vpmManaged = UpstreamMigration.IsVpmManaged;
-            selectedImport = 0;
+            importSource = null;
             importError = null;
+            try
+            {
+                importSource = SettingsImport.FindSource();
+            }
+            catch (Exception exception)
+            {
+                importError = exception.Message;
+            }
         }
 
         private void OnGUI()
@@ -62,7 +68,7 @@ namespace VRCLearn.HierarchyDecorator
             }
 
             SettingsPreset? selected = null;
-            string migration = null;
+            bool migration = false;
             float previewHeight = Mathf.Min((position.width - 60f) * 0.5f * 270f / 420f, 270f);
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             using (new EditorGUILayout.VerticalScope())
@@ -92,12 +98,12 @@ namespace VRCLearn.HierarchyDecorator
             }
             EditorGUILayout.EndScrollView();
 
-            if (migration != null)
+            if (migration)
             {
                 allowReselection = true;
                 try
                 {
-                    UpstreamMigration.Start(migration, error =>
+                    UpstreamMigration.Start(error =>
                     {
                         if (this == null)
                             return;
@@ -128,27 +134,29 @@ namespace VRCLearn.HierarchyDecorator
             }
         }
 
-        private string DrawImport()
+        private bool DrawImport()
         {
-            if (importCandidates == null || importCandidates.Count == 0)
-                return null;
+            if (importSource == null && importError == null)
+                return false;
 
             GUILayout.Space(12f);
             EditorGUILayout.LabelField(SettingsLocalization.Text("Migrate from wooshii"), EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(SettingsLocalization.Text(vpmManaged
-                ? "Import the selected settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package."
-                : "Choosing a preset keeps wooshii installed. Migration imports the selected settings, then removes the wooshii installation and the selected old settings asset."), MessageType.Info);
-            selectedImport = EditorGUILayout.Popup(SettingsLocalization.Text("Settings source"), selectedImport, importCandidates.ToArray());
             if (!string.IsNullOrEmpty(importError))
-                EditorGUILayout.HelpBox(importError, MessageType.Error);
-            string migration = null;
+                EditorGUILayout.HelpBox(SettingsLocalization.Text(importError), MessageType.Error);
+            if (importSource == null)
+                return false;
+
+            EditorGUILayout.HelpBox(SettingsLocalization.Text(vpmManaged
+                ? "Import the current wooshii settings only. Keep wooshii and its original settings; use VCC or ALCOM to remove the package."
+                : "Choosing a preset keeps wooshii installed. Migration imports its current settings, then removes the wooshii installation and the original settings asset."), MessageType.Info);
+            bool migration = false;
             using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode))
             {
                 if (GUILayout.Button(SettingsLocalization.Text(UpstreamMigration.IsRunning ? "Migrating..."
                     : vpmManaged ? "Import settings" : "Migrate settings and remove wooshii"), GUILayout.Height(30f)))
                 {
                     importError = null;
-                    migration = importCandidates[selectedImport];
+                    migration = true;
                 }
             }
             return migration;

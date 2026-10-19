@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
 
 
@@ -14,12 +14,12 @@ namespace VRCLearn.HierarchyDecorator
             /// <summary>
             /// Path used for showing Hierarchy Decorator settings in Preferences. See <see cref="HierarchyDecoratorProvider"/>.
             /// </summary>
-            public const string SETTINGS_PATH = "VRCLearn/Hierarchy Decorator";
+            public const string SETTINGS_PATH = "HierarchyDecorator";
 
             /// <summary>
             /// Project-local file used to persist personal settings.
             /// </summary>
-            public const string SETTINGS_FILE_PATH = "UserSettings/VRCLearnHierarchyDecoratorSettings.asset";
+            public const string SETTINGS_FILE_PATH = "UserSettings/HierarchyDecoratorSettings.asset";
         }
        
 

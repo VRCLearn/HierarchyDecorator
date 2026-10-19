@@ -8,7 +8,7 @@ using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal static class UpstreamMigration
     {
@@ -26,10 +26,14 @@ namespace VRCLearn.HierarchyDecorator
         private static bool imported;
         private static bool removeInstallation;
 
-        internal static void Start(string sourcePath, Action<Exception> completed)
+        internal static void Start(Action<Exception> completed)
         {
             if (IsRunning)
                 throw new InvalidOperationException("A wooshii migration is already running.");
+
+            string sourcePath = SettingsImport.FindSource();
+            if (sourcePath == null)
+                throw new InvalidOperationException("The wooshii installation could not be identified.");
 
             // Validate the removal route before changing settings or deleting files.
             bool vpmManaged = IsVpmManaged;

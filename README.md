@@ -59,24 +59,24 @@ Existing repository subscriptions keep the same URL and ID.
 
 Existing wooshii installations remain usable alongside this package. The first-run
 preset chooser lets you apply a fresh Detailed or Minimal preset and keep wooshii
-installed, or migrate a selected wooshii settings asset into
-`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. Reopen the chooser from
-**Tools > VRCLearn > Hierarchy Decorator > Choose Preset**.
+installed, or migrate wooshii's current configuration into
+`UserSettings/HierarchyDecoratorSettings.asset`. Reopen the chooser from
+**Tools > HierarchyDecorator > Choose Preset**.
 
 Migration handles the old installation according to how it was installed:
 
 | wooshii installation | What happens after settings are saved |
 | --- | --- |
-| UnityPackage or files under `Assets` | Remove recognized upstream files, the selected settings asset, and empty plugin directories. Other user files and unselected settings assets are retained. |
+| UnityPackage or files under `Assets` | Remove recognized upstream files, the current source settings asset, and empty plugin directories. Other user files and other settings assets are retained. |
 | UPM Git, registry, or local-path dependency | Remove the dependency through Unity Package Manager. External source directories are retained. |
 | Embedded package under `Packages` | Remove the identified embedded package directory inside this project. |
-| VPM / VCC / ALCOMD | Import settings only. The old installation, selected settings asset, `Packages/manifest.json` and `Packages/vpm-manifest.json` remain unchanged. Remove wooshii through VCC/ALCOMD after importing if desired. |
+| VPM / VCC / ALCOMD | Import settings only. The old installation, current source settings asset, `Packages/manifest.json` and `Packages/vpm-manifest.json` remain unchanged. Remove wooshii through VCC/ALCOMD after importing if desired. |
 
 Assets cleanup recognizes the default `Assets/HierarchyDecorator` directory and
 its nested `HierarchyDecorator` distribution layout. It also locates renamed
 installations using known folder and file GUIDs. Within an identified installation,
 distributed relative file paths allow cleanup when file GUIDs have been
-regenerated; extra user files and unselected settings are kept.
+regenerated; extra user files and other settings assets are kept.
 
 If importing or saving fails, cleanup does not start. If cleanup fails after
 saving, the window reports that the settings were imported but removal did not
@@ -87,7 +87,7 @@ package records or check dependencies for removal.
 
 The [Releases page](https://github.com/VRCLearn/HierarchyDecorator/releases) provides
 VPM ZIP, UnityPackage, manifest and checksum files. UnityPackage installs to
-`Assets/VRCLearn/HierarchyDecorator`; VPM can migrate that specific distribution
+`Assets/com.vrclearn.hierarchydecorator`; VPM can migrate that specific distribution
 folder automatically. Install only one VRCLearn distribution format per project; the upstream plugin may remain installed independently.
 
 <p align="center">
@@ -135,21 +135,28 @@ only one distribution of the VRCLearn package per project.
  <img align="center" width="929" alt="chrome_hzlst44Z1X" src="https://user-images.githubusercontent.com/31889435/226493547-3ec3db89-bcdf-4412-b000-c90aa9ee30b7.png">
 </p>
 
-Settings are saved locally for each project in `UserSettings/VRCLearnHierarchyDecoratorSettings.asset` and can be edited from `Preferences > VRCLearn > Hierarchy Decorator`. You can also open this page from `Tools > VRCLearn > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
+Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > HierarchyDecorator`. You can also open this page from `Tools > HierarchyDecorator > Settings`. New installations do not create a settings asset under `Assets`.
 
-New configurations open a preset chooser with image previews for **Detailed** and **Minimal** and optional migration from detected wooshii settings. Choose either image or its button to apply the preset and keep wooshii installed, or migrate its settings using the installation-specific behavior described above. You can reopen the chooser from **Tools > VRCLearn > Hierarchy Decorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference remains unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
+New configurations open the `HierarchyDecorator` preset window with image previews for **Detailed** and **Minimal** and optional migration of wooshii's current configuration. Choose either image or its button to apply the preset and keep wooshii installed, or migrate its settings using the installation-specific behavior described above. You can reopen the chooser from **Tools > HierarchyDecorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference remains unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
 
-The chooser detects the upstream plugin's previously selected settings asset, its
-default settings path, and other loaded wooshii settings assets under `Assets`.
-Migration preserves styles, component groups, fonts and script references. For
-non-VPM installations, it removes the selected old settings asset after saving
-the independent VRCLearn settings. VPM import retains the selected asset as well
-as the old installation. Other settings assets are retained. The separate VRCLearn file is the
-only settings file used during normal operation; upstream preferences are read
-only when discovering migration sources. The original plugin must still be
-installed so its settings can be loaded.
+Migration uses only the current settings GUID recorded by wooshii in its editor
+preference (`Application.productName + "_HD_GUID"`). It does not search for other
+settings assets, fall back to a default path, or combine configurations. If
+wooshii is installed but that reference is missing or invalid, restore its current
+configuration reference in the old plugin before migrating. The migration reads
+the reference again when clicked, so it imports the configuration currently in
+use rather than a cached source.
 
-The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > VRCLearn > Hierarchy Decorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
+Only clicking the migration action copies the current wooshii configuration over
+the new settings. Styles, component groups, fonts and script references are
+preserved. For non-VPM installations, the current source settings asset is removed
+after saving. VPM import retains that asset and the old installation. Other user
+files and settings assets remain untouched. The new settings object is named
+`HierarchyDecorator Settings`, and the independent local file is the only settings
+file used during normal operation. The original plugin must still be installed
+so its current configuration can be loaded.
+
+The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > HierarchyDecorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 
 Setting design may change over time with development to support more features, or keep things looking consistent & clean.
 

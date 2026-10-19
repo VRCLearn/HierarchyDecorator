@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,7 +14,14 @@ namespace HierarchyDecoratorCI
     public static class CoexistenceProbe
     {
         private const BindingFlags AnyStatic = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-        private const string AssetPath = "Assets/HierarchyDecorator/Settings.asset";
+        private const string AssetPath = "Assets/ActiveConfiguration/Renamed.asset";
+        private const string InitialAssetPath = "Assets/ActiveConfiguration/BeforeMove.asset";
+        private const string DefaultAssetPath = "Assets/HierarchyDecorator/Settings.asset";
+        private const string DecoyAssetPath = "Assets/ActiveConfiguration/Unselected.asset";
+        private static string preferenceKey;
+        private static string previousPreference;
+        private static bool hadPreference;
+        private static bool preferenceCaptured;
         private static readonly List<string> Checks = new List<string>();
 
         [Serializable]
@@ -29,21 +35,29 @@ namespace HierarchyDecoratorCI
 
         public static void Run()
         {
+            int exitCode = 1;
             try
             {
                 Require(Application.isBatchMode && File.Exists("ProjectSettings/CoexistenceProbe.enabled"),
                     "The coexistence probe requires a disposable batch project with an explicit marker.");
+                preferenceKey = Application.productName + "_HD_GUID";
+                hadPreference = EditorPrefs.HasKey(preferenceKey);
+                previousPreference = EditorPrefs.GetString(preferenceKey, string.Empty);
+                preferenceCaptured = true;
                 Type oldType = Type.GetType("HierarchyDecorator.Settings, Wooshii.HierarchyDecorator.Editor", true);
-                Type newType = Type.GetType("VRCLearn.HierarchyDecorator.Settings, VRCLearn.HierarchyDecorator.Editor", true);
+                Type newType = Type.GetType("HierarchyDecorator.Editor.Settings, VRCLearn.HierarchyDecorator.Editor", true);
                 Require(oldType != newType && oldType.Assembly != newType.Assembly, "Settings identities overlap.");
                 Checks.Add("independent assemblies and Settings types");
 
                 CheckPaths(oldType.Assembly, newType.Assembly);
                 ScriptableObject source = CreateFixture(oldType);
+                Type importer = newType.Assembly.GetType("HierarchyDecorator.Editor.SettingsImport", true);
+                CheckSingleSource(importer, oldType);
+                byte[] defaultValues = File.ReadAllBytes(DefaultAssetPath);
+                byte[] decoyValues = File.ReadAllBytes(DecoyAssetPath);
                 byte[] originalAsset = File.ReadAllBytes(AssetPath);
                 byte[] originalMeta = File.ReadAllBytes(AssetPath + ".meta");
                 string originalValues = EditorJsonUtility.ToJson(source);
-                Type importer = newType.Assembly.GetType("VRCLearn.HierarchyDecorator.SettingsImport", true);
                 MonoScript originalScript = MonoScript.FromScriptableObject(source);
                 Font font = ReadReference(source, "styleData.styles.Array.data[0].font") as Font;
 
@@ -57,29 +71,40 @@ namespace HierarchyDecoratorCI
                 CheckImportAndSave(importer, source, newType, originalScript, font, originalAsset, originalMeta);
                 CheckCallbacksAndState(oldType.Assembly, newType.Assembly, source, assetCopy);
                 Object.DestroyImmediate(assetCopy);
+                Require(defaultValues.SequenceEqual(File.ReadAllBytes(DefaultAssetPath)) &&
+                    decoyValues.SequenceEqual(File.ReadAllBytes(DecoyAssetPath)), "Import modified excluded configuration copies.");
                 WriteReport(true, null);
                 Debug.Log("HIERARCHY_DECORATOR_COEXISTENCE_OK");
-                EditorApplication.Exit(0);
+                exitCode = 0;
             }
             catch (Exception exception)
             {
                 WriteReport(false, exception.ToString());
                 Debug.LogException(exception);
-                EditorApplication.Exit(1);
-                throw;
             }
+            finally
+            {
+                if (preferenceCaptured)
+                {
+                    if (hadPreference)
+                        EditorPrefs.SetString(preferenceKey, previousPreference);
+                    else
+                        EditorPrefs.DeleteKey(preferenceKey);
+                }
+            }
+            EditorApplication.Exit(exitCode);
         }
 
         private static ScriptableObject CreateFixture(Type type)
         {
-            if (!AssetDatabase.IsValidFolder("Assets/HierarchyDecorator"))
-                AssetDatabase.CreateFolder("Assets", "HierarchyDecorator");
-            var source = AssetDatabase.LoadAssetAtPath(AssetPath, type) as ScriptableObject;
+            if (!AssetDatabase.IsValidFolder("Assets/ActiveConfiguration"))
+                AssetDatabase.CreateFolder("Assets", "ActiveConfiguration");
+            var source = AssetDatabase.LoadAssetAtPath(InitialAssetPath, type) as ScriptableObject;
             if (source == null)
             {
-                Require(!File.Exists(AssetPath), "Unexpected settings type at the fixture path.");
+                Require(!File.Exists(InitialAssetPath) && !File.Exists(AssetPath), "Unexpected existing fixture settings.");
                 source = ScriptableObject.CreateInstance(type);
-                AssetDatabase.CreateAsset(source, AssetPath);
+                AssetDatabase.CreateAsset(source, InitialAssetPath);
             }
             using (var serialized = new SerializedObject(source))
             {
@@ -120,27 +145,70 @@ namespace HierarchyDecoratorCI
 
         private static ScriptableObject Import(Type importer, string path)
         {
-            return (ScriptableObject)importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { FindCandidate(importer, path) });
+            return (ScriptableObject)importer.GetMethod("Read", AnyStatic).Invoke(null, new object[] { FindSource(importer, path) });
         }
 
-        private static string FindCandidate(Type importer, string path)
+        private static string FindSource(Type importer, string expectedPath)
         {
-            var candidates = (IEnumerable)importer.GetMethod("FindCandidates", AnyStatic).Invoke(null, null);
-            string selected = null;
-            foreach (string candidate in candidates)
+            string actual = (string)importer.GetMethod("FindSource", AnyStatic).Invoke(null, null);
+            Require(actual == expectedPath, "Source selection did not use the recorded active configuration: " + actual);
+            return actual;
+        }
+
+        private static void CheckSingleSource(Type importer, Type oldType)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(InitialAssetPath);
+            EditorPrefs.SetString(preferenceKey, guid);
+            Require(string.IsNullOrEmpty(AssetDatabase.MoveAsset(InitialAssetPath, AssetPath)), "Could not move the active configuration fixture.");
+            if (!AssetDatabase.IsValidFolder("Assets/HierarchyDecorator"))
+                AssetDatabase.CreateFolder("Assets", "HierarchyDecorator");
+            foreach (string path in new[] { DefaultAssetPath, DecoyAssetPath })
             {
-                if (Path.GetFullPath(candidate) == Path.GetFullPath(path))
-                    selected = candidate;
+                if (!File.Exists(path))
+                    Require(AssetDatabase.CopyAsset(AssetPath, path), "Could not create excluded configuration fixture.");
+                var decoy = AssetDatabase.LoadAssetAtPath(path, oldType);
+                Require(decoy != null, "Excluded configuration fixture has an unexpected type.");
+                using (var serialized = new SerializedObject(decoy))
+                {
+                    serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue = "::excluded::";
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+                EditorUtility.SetDirty(decoy);
             }
-            Require(selected != null, "Import candidate was not detected: " + path);
-            return selected;
+            AssetDatabase.SaveAssets();
+            const string wrongTypePath = "Assets/ActiveConfiguration/NotSettings.txt";
+            File.WriteAllText(wrongTypePath, "Not a settings asset.");
+            AssetDatabase.ImportAsset(wrongTypePath);
+            EditorPrefs.DeleteKey(preferenceKey);
+            ExpectInvalidSource(importer);
+            EditorPrefs.SetString(preferenceKey, "ffffffffffffffffffffffffffffffff");
+            ExpectInvalidSource(importer);
+            EditorPrefs.SetString(preferenceKey, AssetDatabase.AssetPathToGUID(wrongTypePath));
+            ExpectInvalidSource(importer);
+            EditorPrefs.SetString(preferenceKey, guid);
+            FindSource(importer, AssetPath);
+            Checks.Add("only the recorded active configuration is used after moving; missing, stale and wrong-type GUIDs fail despite default and copied settings");
+        }
+
+        private static void ExpectInvalidSource(Type importer)
+        {
+            try
+            {
+                importer.GetMethod("FindSource", AnyStatic).Invoke(null, null);
+            }
+            catch (TargetInvocationException exception)
+            {
+                Require(exception.InnerException is InvalidDataException, "Invalid active configuration reported an unexpected error: " + exception);
+                return;
+            }
+            throw new InvalidOperationException("Source discovery searched for a fallback instead of rejecting the invalid active configuration.");
         }
 
         private static void CheckImportAndSave(Type importer, ScriptableObject source, Type newType, MonoScript originalScript,
             Font font, byte[] originalAsset, byte[] originalMeta)
         {
-            const string currentPath = "UserSettings/VRCLearnHierarchyDecoratorSettings.asset";
-            Type owner = newType.Assembly.GetType("VRCLearn.HierarchyDecorator.HierarchyDecorator", true);
+            const string currentPath = "UserSettings/HierarchyDecoratorSettings.asset";
+            Type owner = newType.Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true);
             PropertyInfo currentProperty = owner.GetProperty("Settings", AnyStatic);
             var current = (ScriptableObject)currentProperty.GetValue(null);
             using (var serialized = new SerializedObject(current))
@@ -152,7 +220,7 @@ namespace HierarchyDecoratorCI
             Require((bool)owner.GetMethod("SaveSettings", AnyStatic).Invoke(null, new object[] { current }),
                 "Could not save the pre-import current settings fixture.");
             string sourceValues = EditorJsonUtility.ToJson(source);
-            owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new object[] { FindCandidate(importer, AssetPath) });
+            owner.GetMethod("ImportSettings", AnyStatic).Invoke(null, new object[] { FindSource(importer, AssetPath) });
             Require((ScriptableObject)currentProperty.GetValue(null) == current, "Import replaced the current Settings instance.");
             CheckImported(source, current, newType, originalScript, font);
             CheckImportState(current);
@@ -189,6 +257,7 @@ namespace HierarchyDecoratorCI
         {
             using (var serialized = new SerializedObject(settings))
             {
+                Require(settings.name == "HierarchyDecorator Settings", "Imported configuration object has an unexpected name.");
                 Require(!serialized.FindProperty("needsPresetSelection").boolValue,
                     "Import did not clear the initial preset selection marker.");
             }
@@ -236,21 +305,21 @@ namespace HierarchyDecoratorCI
             HashSet<string> oldMenus = menus(oldAssembly);
             HashSet<string> newMenus = menus(newAssembly);
             Require(newMenus.Count > 0 && !newMenus.Overlaps(oldMenus) &&
-                newMenus.All(path => path.StartsWith("Tools/VRCLearn/", StringComparison.Ordinal)), "Tools menu paths overlap.");
+                newMenus.All(path => path.StartsWith("Tools/HierarchyDecorator/", StringComparison.Ordinal)), "Tools menu paths overlap.");
             Func<Assembly, string, string[]> preferences = (assembly, prefix) =>
                 ((SettingsProvider[])assembly.GetType(prefix + ".HierarchyDecoratorProvider", true)
                     .GetMethod("Load", AnyStatic).Invoke(null, null)).Select(provider => provider.settingsPath).ToArray();
             string[] oldPaths = preferences(oldAssembly, "HierarchyDecorator");
-            string[] newPaths = preferences(newAssembly, "VRCLearn.HierarchyDecorator");
+            string[] newPaths = preferences(newAssembly, "HierarchyDecorator.Editor");
             Require(oldPaths.Length > 0 && newPaths.Length > 0 && !oldPaths.Intersect(newPaths).Any() &&
-                newPaths.All(path => path.StartsWith("VRCLearn/", StringComparison.Ordinal)), "Preferences paths overlap.");
+                newPaths.All(path => path == "HierarchyDecorator"), "Preferences paths overlap.");
             Checks.Add("independent Tools menus and Preferences paths");
         }
 
         private static void CheckCallbacksAndState(Assembly oldAssembly, Assembly newAssembly, ScriptableObject oldSettings, ScriptableObject newSettings)
         {
             Type oldManager = oldAssembly.GetType("HierarchyDecorator.HierarchyManager", true);
-            Type newManager = newAssembly.GetType("VRCLearn.HierarchyDecorator.HierarchyManager", true);
+            Type newManager = newAssembly.GetType("HierarchyDecorator.Editor.HierarchyManager", true);
             oldManager.GetMethod("Initialize").Invoke(null, null);
             newManager.GetMethod("Initialize").Invoke(null, null);
             newManager.GetMethod("Initialize").Invoke(null, null);
@@ -262,7 +331,7 @@ namespace HierarchyDecoratorCI
                     "Both managers must retain exactly one independent callback: " + callback);
             }
             oldAssembly.GetType("HierarchyDecorator.HierarchyDecorator", true).GetField("s_Settings", AnyStatic).SetValue(null, oldSettings);
-            newAssembly.GetType("VRCLearn.HierarchyDecorator.HierarchyDecorator", true).GetField("s_Settings", AnyStatic).SetValue(null, newSettings);
+            newAssembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true).GetField("s_Settings", AnyStatic).SetValue(null, newSettings);
             using (var oldSerialized = new SerializedObject(oldSettings))
             using (var newSerialized = new SerializedObject(newSettings))
             {

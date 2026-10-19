@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal enum SettingsPreset { Detailed, Minimal }
 

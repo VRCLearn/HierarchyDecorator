@@ -182,8 +182,8 @@ class DistributionTests(unittest.TestCase):
             namespaces = re.findall(r"^\s*namespace\s+([\w.]+)", source.read_text(encoding="utf-8-sig"), re.MULTILINE)
             with self.subTest(source=source.relative_to(builder.ROOT).as_posix()):
                 self.assertTrue(namespaces, "Each package source must use an explicit namespace")
-                self.assertTrue(all(name == "VRCLearn.HierarchyDecorator" or
-                                    name.startswith("VRCLearn.HierarchyDecorator.") for name in namespaces), namespaces)
+                self.assertTrue(all(name == "HierarchyDecorator.Editor" or
+                                    name.startswith("HierarchyDecorator.Editor.") for name in namespaces), namespaces)
 
     def test_unity_project_can_include_both_local_packages_without_replacement(self):
         # Relative Unity package paths require the project and repository to be

@@ -1,4 +1,4 @@
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public interface IDrawable
     {

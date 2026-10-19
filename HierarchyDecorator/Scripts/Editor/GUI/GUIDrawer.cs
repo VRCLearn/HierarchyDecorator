@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// A class for drawing GUI elements.

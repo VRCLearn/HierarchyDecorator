@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [InitializeOnLoad]
     internal static class HierarchyDecorator
@@ -94,7 +94,7 @@ namespace VRCLearn.HierarchyDecorator
             try
             {
                 EditorUtility.CopySerialized(imported, current);
-                current.name = "VRCLearn Hierarchy Decorator Settings";
+                current.name = "HierarchyDecorator Settings";
                 current.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 current.NeedsPresetSelection = false;
                 current.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
@@ -154,7 +154,7 @@ namespace VRCLearn.HierarchyDecorator
             else
             {
                 settings = ScriptableObject.CreateInstance<Settings>();
-                settings.name = "VRCLearn Hierarchy Decorator Settings";
+                settings.name = "HierarchyDecorator Settings";
                 settings.NeedsPresetSelection = true;
             }
 

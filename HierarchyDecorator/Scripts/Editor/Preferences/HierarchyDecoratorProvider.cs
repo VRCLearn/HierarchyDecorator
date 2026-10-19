@@ -1,12 +1,12 @@
 using System.IO;
 using UnityEditor;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     // Register the Settings for the HiearchyDecorator
     public static class HierarchyDecoratorProvider
     {
-        private const string LanguageMenu = "Tools/VRCLearn/Hierarchy Decorator/Language/";
+        private const string LanguageMenu = "Tools/HierarchyDecorator/Language/";
         private const string AutoMenu = LanguageMenu + "Auto";
         private const string EnglishMenu = LanguageMenu + "English";
         private const string JapaneseMenu = LanguageMenu + "日本語";
@@ -21,13 +21,13 @@ namespace VRCLearn.HierarchyDecorator
             new SettingsPreferences (Path, SettingsScope.User),
         };
 
-        [MenuItem ("Tools/VRCLearn/Hierarchy Decorator/Settings")]
+        [MenuItem ("Tools/HierarchyDecorator/Settings")]
         private static void OpenSettings()
         {
             SettingsService.OpenUserPreferences (Path);
         }
 
-        [MenuItem ("Tools/VRCLearn/Hierarchy Decorator/Choose Preset")]
+        [MenuItem ("Tools/HierarchyDecorator/Choose Preset")]
         private static void OpenPresets()
         {
             InitialSetupWindow.Open (true);

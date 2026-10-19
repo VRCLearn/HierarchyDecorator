@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public abstract class HierarchyInfo : HierarchyDrawer
     {

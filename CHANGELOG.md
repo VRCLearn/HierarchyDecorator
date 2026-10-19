@@ -8,13 +8,22 @@
   Choosing a fresh preset keeps both plugins installed.
 - Add optional settings migration to the first-run preset chooser. Non-VPM
   migration saves settings before removing the old Assets, UPM or embedded
-  installation and selected old settings asset. Retain unrelated files and other
+  installation and current source settings asset. Retain unrelated files and other
   settings assets; report incomplete cleanup instead of reporting success.
 - For VPM installations, import settings only and keep the old installation,
-  selected settings asset and both package manifests unchanged. Leave removal
+  current source settings asset and both package manifests unchanged. Leave removal
   to VCC/ALCOMD without invoking a Resolver API or checking removal dependencies.
 - Identify Assets installations by known directory layouts and folder/file GUIDs,
   then match distributed relative file paths to handle regenerated file GUIDs.
+- Migrate only the current configuration referenced by wooshii's recorded Settings
+  GUID, re-reading it when migration starts. Remove settings scans, default-path
+  fallbacks and source selection; require an invalid current reference to be
+  restored through wooshii before migration.
+- Use `UserSettings/HierarchyDecoratorSettings.asset`, name the settings object
+  `HierarchyDecorator Settings`, and title the preset window `HierarchyDecorator`.
+  Use `Tools > HierarchyDecorator` and `Preferences > HierarchyDecorator` without
+  a publisher menu group. Keep the `VRCLearn.HierarchyDecorator.Editor` assembly
+  publisher identity and use the `HierarchyDecorator.Editor` namespace.
 - Verify asset identities and both editor assemblies in coexistence checks.
 
 ### Fixed

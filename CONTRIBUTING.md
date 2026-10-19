@@ -41,7 +41,7 @@ which do not receive these secrets.
 
 ## VPM releases
 
-The maintained package uses the `VRCLearn.HierarchyDecorator` namespace and
+The maintained package uses the `HierarchyDecorator.Editor` namespace and
 `VRCLearn.HierarchyDecorator.Editor` assembly. Keep its asset GUIDs, menus and
 settings separate from upstream. Upstream coexistence must work without removing
 the original package. Use old identities only to detect migration sources and

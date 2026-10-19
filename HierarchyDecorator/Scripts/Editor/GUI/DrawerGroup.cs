@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using System.Collections.Generic;
 
-namespace VRCLearn.HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// Stores a collection of <see cref="IDrawable"/>s and draws all under a single title.

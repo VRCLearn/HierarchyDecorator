@@ -22,7 +22,7 @@ namespace HierarchyDecoratorCI
         public static void Run()
         {
             const string assemblyName = "VRCLearn.HierarchyDecorator.Editor";
-            var loadedAssembly = typeof(VRCLearn.HierarchyDecorator.Settings).Assembly;
+            var loadedAssembly = typeof(HierarchyDecorator.Editor.Settings).Assembly;
             var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(loadedAssembly);
             var compiled = CompilationPipeline.GetAssemblies(AssembliesType.Editor)
                 .SingleOrDefault(assembly => assembly.name == assemblyName);
@@ -60,10 +60,10 @@ namespace HierarchyDecoratorCI
                 return false;
 
             var upstreamType = Type.GetType("HierarchyDecorator.Settings, " + upstreamAssemblyName, true);
-            var forkType = Type.GetType("VRCLearn.HierarchyDecorator.Settings, " + loadedAssembly.GetName().Name, true);
+            var forkType = Type.GetType("HierarchyDecorator.Editor.Settings, " + loadedAssembly.GetName().Name, true);
             if (upstream == null || upstream.sourceFiles.Length == 0 || !File.Exists(upstream.outputPath) ||
                 upstreamType.Assembly.GetName().Name != upstreamAssemblyName ||
-                forkType != typeof(VRCLearn.HierarchyDecorator.Settings) ||
+                forkType != typeof(HierarchyDecorator.Editor.Settings) ||
                 upstreamType == forkType || upstreamType.Assembly == forkType.Assembly)
                 throw new InvalidOperationException("Upstream and VRCLearn settings did not compile as independent types.");
             return true;

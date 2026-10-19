@@ -14,41 +14,54 @@ token is required.
 
 The listing retains the former `com.wooshii.hierarchydecorator` 0.12.1 package and
 its original release assets. The maintained package has an independent assembly
-`VRCLearn.HierarchyDecorator.Editor`, `VRCLearn.HierarchyDecorator` namespaces,
+`VRCLearn.HierarchyDecorator.Editor`, `HierarchyDecorator.Editor` namespaces,
 asset GUIDs, menus and settings. Do not restore `legacyPackages` replacement of
 upstream: both plugins must be able to remain installed and usable independently.
 Do not edit or replace the old release or move its tag.
 
-The UnityPackage format installs beneath `Assets/VRCLearn/HierarchyDecorator`,
-with the existing `HierarchyDecorator` source folder. Only this maintained
-UnityPackage distribution folder is declared in `legacyFolders`, with a stable
-GUID, so installing its VPM format can remove that duplicate distribution. The
+The UnityPackage format installs beneath `Assets/com.vrclearn.hierarchydecorator`,
+using its existing package ID as the directory name and retaining the
+`HierarchyDecorator` source folder. Only `Assets/com.vrclearn.hierarchydecorator`
+is declared in `legacyFolders`, with its distribution folder GUID, so installing
+the VPM format can remove that duplicate distribution. The
 wooshii package and Assets folders must not appear in `legacyPackages` or
 `legacyFolders`: VPM applies those rules during installation, before a user can
 choose whether to migrate.
 
-Settings are stored independently at
-`UserSettings/VRCLearnHierarchyDecoratorSettings.asset`. The first-run preset
-chooser and **Tools > VRCLearn > Hierarchy Decorator > Choose Preset** offer
-migration for loaded upstream settings assets. Choosing a preset or closing the
-chooser leaves wooshii installed. Settings are imported from the installed
-upstream plugin's assets under `Assets`.
+Settings are stored at `UserSettings/HierarchyDecoratorSettings.asset`, using the
+object name `HierarchyDecorator Settings`. The preset window title is
+`HierarchyDecorator`; **Tools > HierarchyDecorator > Choose Preset**
+reopens it. Choosing a preset or closing the window leaves wooshii installed.
+The assembly, namespace, package ID and internal preference keys remain
+independent. Preferences use the `HierarchyDecorator` path. Publisher identity
+remains in package and assembly identifiers; it is not added as a product prefix
+or menu group.
 
-Migration copies the selected settings and saves before any cleanup. Non-VPM
+Migration resolves exactly one source: the current Settings GUID recorded in
+wooshii's `EditorPrefs` key `Application.productName + "_HD_GUID"`. Do not scan
+`Assets` for settings, fall back to default settings paths, present a candidate
+list, select another copy, or merge configurations. If wooshii is installed but
+its recorded current reference is invalid, prompt the user to restore that
+reference through the old plugin. The migration entry point re-reads the current
+reference when invoked rather than trusting a cached UI path. Only the explicit
+migration action copies this source over the new local settings. No compatibility
+lookup for former VRCLearn local settings paths is added.
+
+Migration copies the current source settings and saves before any cleanup. Non-VPM
 Assets cleanup locates the known `Assets/HierarchyDecorator` root and the nested
 `Assets/HierarchyDecorator/HierarchyDecorator` layout, plus renamed roots
 identified by known folder or distributed file GUIDs. It uses the distributed
 relative file paths within identified roots as well as known file GUIDs, so
 regenerated file GUIDs do not leave the original scripts behind. Cleanup removes
-recognized distribution files, the selected settings asset and empty plugin
-directories. It retains extra user files and unselected settings. UPM dependencies
+recognized distribution files, the current source settings asset and empty plugin
+directories. It retains extra user files and other settings assets. UPM dependencies
 use `Client.Remove` and retain external source directories. Embedded packages are
 removed only from the confirmed project-local package directory. Import/save
 failures prevent cleanup; later cleanup failures are reported as incomplete
 migration.
 
 For a VPM-managed wooshii installation, migration imports settings only. Keep the
-old package installation, selected old settings asset, `Packages/manifest.json`
+old package installation, current source settings asset, `Packages/manifest.json`
 and `Packages/vpm-manifest.json` unchanged. The user can remove wooshii through
 VCC/ALCOMD after importing. The tool must not invoke Resolver APIs, edit package
 records, or preflight package dependencies for VPM removal.
@@ -137,7 +150,7 @@ python .github/unity-ci/prepare_migration_project.py --unity-version 2022.3.22f1
 
 Use `--mode local`, `--mode embedded`, or `--mode vpm` with a fresh project path
 to exercise the other installation routes. VPM mode verifies settings import
-while retaining the old installation, selected settings and both manifest files;
+while retaining the old installation, current source settings and both manifest files;
 it does not require a Resolver package. The preparation script uses local packages
 and does not download them. Do not add `-quit`: the probe waits for asynchronous
 package operations where needed and exits when finished. Read
