@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public abstract class HierarchyInfo : HierarchyDrawer
     {

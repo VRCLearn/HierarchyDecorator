@@ -1,6 +1,6 @@
-﻿using UnityEditor;
+using UnityEditor;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// A class for drawing GUI elements.

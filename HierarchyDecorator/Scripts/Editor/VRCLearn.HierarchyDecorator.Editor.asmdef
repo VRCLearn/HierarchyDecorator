@@ -1,8 +1,6 @@
 {
-    "name": "Wooshii.HierarchyDecorator.Editor",
-    "references": [
-        "GUID:cf0fe5fdb6e31b84ea35fb4ddc265b8c"
-    ],
+    "name": "VRCLearn.HierarchyDecorator.Editor",
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],

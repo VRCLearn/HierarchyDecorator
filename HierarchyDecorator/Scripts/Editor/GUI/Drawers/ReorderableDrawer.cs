@@ -1,6 +1,6 @@
-﻿using UnityEditorInternal;
+using UnityEditorInternal;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class ReorderableDrawer : GUIDrawer<ReorderableList>
     {

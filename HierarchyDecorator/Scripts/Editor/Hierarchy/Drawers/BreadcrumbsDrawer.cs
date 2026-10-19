@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class BreadcrumbsDrawer : HierarchyDrawer
     {

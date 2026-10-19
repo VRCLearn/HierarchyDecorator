@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public enum PrefabInfo { None, Root, Part }
 

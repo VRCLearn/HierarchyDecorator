@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class EnumFlagToggleDrawer<T> : GUIDrawer<SerializedProperty> where T : Enum
     {

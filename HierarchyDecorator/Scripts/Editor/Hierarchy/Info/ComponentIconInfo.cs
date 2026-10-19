@@ -9,7 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using System.ComponentModel;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class ComponentIconInfo : HierarchyInfo
     {

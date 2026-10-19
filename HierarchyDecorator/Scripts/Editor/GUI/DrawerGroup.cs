@@ -1,9 +1,9 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using System.Collections.Generic;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// Stores a collection of <see cref="IDrawable"/>s and draws all under a single title.

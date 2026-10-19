@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public struct IconInfo : IComparable<IconInfo>
     {

@@ -5,11 +5,11 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     //Seeing this makes me realize I should have made a smaller name for this.
     [CustomEditor (typeof (Settings))]
-    internal class SettingsEditor : Editor
+    internal class SettingsEditor : UnityEditor.Editor
     {
         private static Type[] s_TabTypes;
         private static GUIContent[] s_TabLabels;

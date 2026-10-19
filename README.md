@@ -52,24 +52,50 @@ https://vrclearn.github.io/HierarchyDecorator/index.json
 In your project's package manager, install **HierarchyDecorator**
 (`com.vrclearn.hierarchydecorator`). Refresh the repository and select **Update**
 when a newer version is available. This editor tool has no VRChat SDK dependency
-and works in both avatar and world projects. VPM installation automatically removes
-the former `com.wooshii.hierarchydecorator` package. Existing repository subscriptions
-keep the same URL and ID; select the new VRCLearn package to migrate from 0.12.1.
+and works in both avatar and world projects. The maintained package has independent
+assemblies, C# namespaces, asset GUIDs, menus and settings. It can remain installed
+alongside `com.wooshii.hierarchydecorator`; installation does not remove that package.
+Existing repository subscriptions keep the same URL and ID.
 
-For an existing manual installation under `Assets`, close Unity, keep the old
-settings assets and their `.meta` files, and remove the old tool's scripts before
-installing through VPM. On the next editor startup, existing settings migrate to
-`UserSettings/HierarchyDecoratorSettings.asset`. The VPM migration does not delete
-`Assets/HierarchyDecorator`, where older installations may store settings. Direct
-UPM installations must remove the old dependency from `Packages/manifest.json`
-before switching to VPM.
+Existing wooshii installations remain usable alongside this package. The first-run
+preset chooser lets you apply a fresh Detailed or Minimal preset and keep wooshii
+installed, or migrate wooshii's current configuration into
+`UserSettings/Settings.asset`. Reopen the chooser from
+**Tools > HierarchyDecorator > Choose Preset**.
+
+Migration first imports the current configuration when available, then cleans up
+any recognized old installation. Either step can run when the other has nothing
+to process:
+
+| wooshii installation | Cleanup |
+| --- | --- |
+| UnityPackage or files under `Assets` | Remove recognized upstream files and empty plugin directories. Other user files and other settings assets are retained. |
+| UPM Git, registry, or local-path dependency | Remove the dependency through Unity Package Manager. External source directories are retained. |
+| Embedded package under `Packages` | Remove the identified embedded package directory inside this project. |
+
+Assets cleanup recognizes the default `Assets/HierarchyDecorator` directory and
+its nested `HierarchyDecorator` distribution layout. It also locates renamed
+installations using known folder and file GUIDs. Within an identified installation,
+distributed relative file paths allow cleanup when file GUIDs have been
+regenerated; extra user files and other settings assets are kept.
+
+If importing or saving fails, cleanup does not start. If cleanup fails after
+saving, the window reports that the settings were imported but removal did not
+finish. Successfully imported source settings under `Assets` are removed; external
+sources and settings in other packages are retained. Settings inside a removed
+embedded package are removed with that package.
+
+The recorded configuration can also be imported after the old Settings script has
+been removed. Text and binary assets are read through a temporary copy outside
+the project, preserving their values and asset references. Reading does not change
+the source asset or its metadata; the temporary copy is deleted afterward.
 
 ### Other installation methods
 
 The [Releases page](https://github.com/VRCLearn/HierarchyDecorator/releases) provides
 VPM ZIP, UnityPackage, manifest and checksum files. UnityPackage installs to
 `Assets/VRCLearn/HierarchyDecorator`; VPM can migrate that specific distribution
-folder automatically. Install only one distribution format per project.
+folder automatically. Install only one VRCLearn distribution format per project; the upstream plugin may remain installed independently.
 
 <p align="center">
   <a href="https://github.com/VRCLearn/HierarchyDecorator/archive/refs/heads/main.zip">Source ZIP</a>
@@ -85,7 +111,9 @@ You can also install this via git by adding the following to your **manifest.jso
 "com.vrclearn.hierarchydecorator" : "https://github.com/VRCLearn/HierarchyDecorator.git"
 ```
 
-When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry with the one above. Keep existing settings assets and their `.meta` files. Install only one copy of HierarchyDecorator per project.
+Use the preset chooser to migrate wooshii settings. Keep both distinct package
+IDs to use both plugins. Install only one distribution of the VRCLearn package
+per project.
 
 ## Features
 
@@ -114,15 +142,29 @@ When replacing `com.wooshii.hierarchydecorator`, replace its dependency entry wi
  <img align="center" width="929" alt="chrome_hzlst44Z1X" src="https://user-images.githubusercontent.com/31889435/226493547-3ec3db89-bcdf-4412-b000-c90aa9ee30b7.png">
 </p>
 
-Settings are saved locally for each project in `UserSettings/HierarchyDecoratorSettings.asset` and can be edited from `Preferences > Hierarchy Decorator`. You can also open this page from `Tools > Hierarchy Decorator > Settings`. New installations do not create a settings asset under `Assets`.
+Settings are saved locally for each project in `UserSettings/Settings.asset` and can be edited from `Preferences > HierarchyDecorator`. You can also open this page from `Tools > HierarchyDecorator > Settings`. New installations do not create a settings asset under `Assets`.
 
-New configurations open a preset chooser with image previews for **Detailed** and **Minimal**. Choose either image or its button to apply the preset. You can reopen the chooser from **Tools > Hierarchy Decorator > Choose Preset**. Applying a preset replaces the full configuration, including hierarchy display options, styles, component icon settings, and custom component groups. The language preference is independent and remains unchanged. Existing configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
+New configurations open the `HierarchyDecorator` preset window with image previews for **Detailed** and **Minimal** and optional migration of wooshii's current configuration. Choose either image or its button to apply the preset and keep wooshii installed, or migrate its settings using the installation-specific behavior described above. You can reopen the chooser from **Tools > HierarchyDecorator > Choose Preset**. Applying a preset replaces hierarchy display options, styles, component icon settings, and custom component groups. The language preference remains unchanged. Existing independent VRCLearn configurations skip the first-run prompt. Closing without choosing postpones it until the next editor startup or script reload. Batch mode does not open the chooser.
 
-On first use, an existing settings asset is copied to the new location, preserving styles, component groups, and asset references. The previously selected asset is used when available, followed by the old default path or another existing settings asset in the project. The original asset and its `.meta` file are kept unchanged. Once the local settings file exists, it takes precedence over old assets.
+Migration uses only the current settings GUID recorded by wooshii in its editor
+preference (`Application.productName + "_HD_GUID"`). It does not search for other
+settings assets, fall back to a default path, or combine configurations. A missing
+record, stale GUID or reference to another asset type skips configuration transfer
+without preventing installation cleanup. The migration reads the reference again
+when clicked rather than using a cached source. A configuration can be transferred
+without a recognized old installation, and an installation can be cleaned up
+without a current configuration.
 
-Existing local configurations and migrated settings assets skip the first-run window and retain their current options.
+Only clicking the migration action copies the current wooshii configuration over
+the new settings. Styles, component groups, fonts and script references are
+preserved. Reading or saving a found configuration must succeed before cleanup
+starts. Deletion checks apply only to cleanup; a cleanup failure does not undo
+saved settings. Other user files and settings assets remain untouched. The new
+settings object is named `Settings`, and the independent local file is the only
+settings file used during normal operation. The original Settings type must be
+available to load a source configuration.
 
-The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > Hierarchy Decorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
+The settings inspector and Preferences page include a language selector for Auto, English, Japanese, Korean, Traditional Chinese, and Simplified Chinese. You can also switch from `Tools > HierarchyDecorator > Language`, where the current selection is checked. Auto is the default for new preferences and follows the operating system language, falling back to English for unsupported languages. Existing explicit language selections are preserved. Both selectors use the same language preference, saved locally in the editor without changing the project's settings asset.
 
 Setting design may change over time with development to support more features, or keep things looking consistent & clean.
 

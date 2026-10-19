@@ -4,14 +4,13 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [InitializeOnLoad]
     internal static class HierarchyDecorator
     {
         public static event Action OnSettings;
 
-        public const string SETTINGS_TYPE_STRING = "Settings";
         private const string SettingsSessionKey = "com.vrclearn.hierarchydecorator.settings.instance";
         private static double s_NextSaveTime;
         private static bool s_SaveErrorReported;
@@ -87,6 +86,25 @@ namespace HierarchyDecorator
             InternalEditorUtility.RepaintAllViews();
         }
 
+        internal static void ImportSettings(string path)
+        {
+            Settings imported = SettingsImport.Read(path);
+            Settings current = Settings;
+            try
+            {
+                EditorUtility.CopySerialized(imported, current);
+                current.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
+                OnSettings?.Invoke();
+                if (!SaveSettings(current))
+                    throw new IOException("Cannot save imported settings.");
+                InternalEditorUtility.RepaintAllViews();
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(imported);
+            }
+        }
+
         private static void UpdateComponentData()
         {
             Settings.Components.UpdateData();
@@ -97,7 +115,7 @@ namespace HierarchyDecorator
         // Factory Methods
 
         /// <summary>
-        /// Restore local settings, migrating a copy of an existing asset when needed.
+        /// Restore only this package's own local settings.
         /// </summary>
         /// <returns>The loaded settings</returns>
         private static Settings GetOrCreateSettings()
@@ -131,10 +149,9 @@ namespace HierarchyDecorator
             }
             else
             {
-                Settings legacy = FindLegacySettings();
-                settings = legacy != null ? UnityEngine.Object.Instantiate(legacy) : ScriptableObject.CreateInstance<Settings>();
-                settings.name = "HierarchyDecorator Settings";
-                settings.NeedsPresetSelection = legacy == null;
+                settings = ScriptableObject.CreateInstance<Settings>();
+                settings.name = "Settings";
+                settings.NeedsPresetSelection = true;
             }
 
             settings.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
@@ -145,27 +162,6 @@ namespace HierarchyDecorator
                 SaveSettings(settings);
 
             return settings;
-        }
-
-        private static Settings FindLegacySettings()
-        {
-            string path = AssetDatabase.GUIDToAssetPath(EditorPrefs.GetString(Constants.Paths.PREF_GUID, string.Empty));
-            Settings settings = AssetDatabase.LoadAssetAtPath<Settings>(path);
-            if (settings != null)
-                return settings;
-
-            settings = AssetDatabase.LoadAssetAtPath<Settings>(Constants.Paths.DEFAULT_ASSET_PATH);
-            if (settings != null)
-                return settings;
-
-            foreach (string guid in AssetDatabase.FindAssets("t:" + SETTINGS_TYPE_STRING, new[] { "Assets" }))
-            {
-                settings = AssetDatabase.LoadAssetAtPath<Settings>(AssetDatabase.GUIDToAssetPath(guid));
-                if (settings != null)
-                    return settings;
-            }
-
-            return null;
         }
 
         private static void SaveDirtySettings()
@@ -183,21 +179,41 @@ namespace HierarchyDecorator
                 SaveSettings(s_Settings);
         }
 
-        private static void SaveSettings(Settings settings)
+        private static bool SaveSettings(Settings settings)
         {
             string path = Constants.Paths.SETTINGS_FILE_PATH;
-            string temporaryPath = path + ".tmp";
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
-                InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { settings }, temporaryPath, true);
-                if (File.Exists(path))
-                    File.Replace(temporaryPath, path, null);
-                else
-                    File.Move(temporaryPath, path);
+                if (Directory.Exists(path))
+                    throw new IOException("The settings path is a directory.");
+                if (File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReadOnly) != 0)
+                    throw new UnauthorizedAccessException("The settings file is read-only.");
+
+                // Unity already stages and moves the serialized file. An additional
+                // File.Replace can fail on Windows after the native save succeeds.
+                string saveError = null;
+                Application.LogCallback captureError = (message, stackTrace, type) =>
+                {
+                    if (saveError == null && (type == LogType.Error || type == LogType.Exception || type == LogType.Assert))
+                        saveError = message;
+                };
+                Application.logMessageReceived += captureError;
+                try
+                {
+                    InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { settings }, path, true);
+                }
+                finally
+                {
+                    Application.logMessageReceived -= captureError;
+                }
+                // The native void API can log an error without throwing.
+                if (saveError != null || !File.Exists(path))
+                    throw new IOException(saveError ?? "Unity did not create the settings file.");
 
                 EditorUtility.ClearDirty(settings);
                 s_SaveErrorReported = false;
+                return true;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
             {
@@ -205,6 +221,7 @@ namespace HierarchyDecorator
                     Debug.LogError("Cannot save HierarchyDecorator settings to " + path + ": " + exception.Message);
                 s_SaveErrorReported = true;
                 EditorUtility.SetDirty(settings);
+                return false;
             }
         }
 

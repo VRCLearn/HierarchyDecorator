@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// Interface for a named group of elements of type <typeparamref name="T"/>.

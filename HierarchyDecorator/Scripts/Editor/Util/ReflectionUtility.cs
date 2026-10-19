@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal static class ReflectionUtility
     {

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [System.Serializable]
     public class ColorSetting

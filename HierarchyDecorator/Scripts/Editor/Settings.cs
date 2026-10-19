@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal enum SettingsPreset { Detailed, Minimal }
 

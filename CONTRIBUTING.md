@@ -41,10 +41,18 @@ which do not receive these secrets.
 
 ## VPM releases
 
+The maintained package uses the `HierarchyDecorator.Editor` namespace and
+`VRCLearn.HierarchyDecorator.Editor` assembly. Keep its asset GUIDs, menus and
+settings separate from upstream. Upstream coexistence must work without removing
+the original package. Use old identities only to detect migration sources and
+identify files removed after the user explicitly chooses migration. Installation
+must not trigger wooshii cleanup.
+Extensions targeting this fork must reference these independent identities.
+
 Publishing follows the VRCLearn convention: immutable GitHub Release assets and
 an official VRChat template hosted on GitHub Pages. See
 [publishing instructions](.github/docs/PUBLISHING.md) for local builds, validation,
-version tags, and the existing package ID migration.
+version tags, and coexistence and migration behavior.
 
 Run `python -m unittest discover -s .github/scripts -v` before changing distribution
 code. The package workflow runs these tests and builds the archives on Windows,

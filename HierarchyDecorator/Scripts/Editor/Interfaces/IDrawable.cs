@@ -1,4 +1,4 @@
-﻿namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public interface IDrawable
     {

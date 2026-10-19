@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     /// <summary>
     /// Base class for drawing custom GUI to the Hierarchy

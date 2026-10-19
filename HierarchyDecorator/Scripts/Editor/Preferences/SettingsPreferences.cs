@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 
 #if UNITY_2019_1_OR_NEWER
@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 using UnityEngine.Experimental.UIElements;
 #endif
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class SettingsPreferences : SettingsProvider
     {
@@ -15,7 +15,7 @@ namespace HierarchyDecorator
         private static Settings settings;
 
         private static SerializedObject serializedSettings;
-        private static Editor settingsEditor;
+        private static UnityEditor.Editor settingsEditor;
 
         //Constructor
         public SettingsPreferences(string path, SettingsScope scope = SettingsScope.User) : base (path, scope) { }
@@ -64,7 +64,7 @@ namespace HierarchyDecorator
         {
             if (settingsEditor == null)
             {
-                Editor.CreateCachedEditor (settings, null, ref settingsEditor);
+                UnityEditor.Editor.CreateCachedEditor (settings, null, ref settingsEditor);
                 return;
             }
 

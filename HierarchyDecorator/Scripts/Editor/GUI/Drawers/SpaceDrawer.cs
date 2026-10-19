@@ -1,6 +1,6 @@
-﻿using UnityEditor;
+using UnityEditor;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class SpaceDrawer : IDrawable
     {

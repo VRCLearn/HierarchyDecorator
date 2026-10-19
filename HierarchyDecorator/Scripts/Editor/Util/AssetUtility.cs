@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     internal static class AssetUtility
     {

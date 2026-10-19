@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class RegisterTabAttribute : Attribute
     {

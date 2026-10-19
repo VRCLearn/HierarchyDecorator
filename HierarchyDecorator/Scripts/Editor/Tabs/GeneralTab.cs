@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     [RegisterTab(0)]
     public class GeneralTab : SettingsTab

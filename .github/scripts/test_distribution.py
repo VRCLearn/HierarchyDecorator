@@ -2,6 +2,9 @@
 import hashlib
 import json
 from pathlib import Path
+import re
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -55,7 +58,7 @@ class DistributionTests(unittest.TestCase):
         manifest = json.loads(Path(result["manifest"]).read_bytes())
         self.assertEqual(manifest["sourceRevision"], "ab" * 20)
         self.assertEqual(manifest["repository"]["revision"], "ab" * 20)
-        self.assertEqual(manifest["legacyPackages"], ["com.wooshii.hierarchydecorator"])
+        self.assertEqual(manifest["legacyPackages"], [])
         self.assertEqual(manifest["legacyFolders"], {builder.UNITY_ROOT: builder.ROOT_GUID})
         self.assertNotIn("zipSHA256", manifest)
         zipped = builder.validate_zip(Path(result["archive"]), manifest)
@@ -108,7 +111,8 @@ class DistributionTests(unittest.TestCase):
     def test_rejects_wrong_identity_license_migration_and_stale_download_url(self):
         cases = ({"name": "another.package"}, {"license": "unlicensed"}, {"version": "v1.0.0"},
                  {"vpmDependencies": {"com.vrchat.avatars": "1.0.0"}},
-                 {"legacyPackages": ["another.package"]}, {"zipSHA256": "a" * 64},
+                 {"legacyPackages": ["another.package"]},
+                 {"legacyPackages": ["com.wooshii.hierarchydecorator"]}, {"zipSHA256": "a" * 64},
                  {"legacyFolders": {"Assets/HierarchyDecorator": "a" * 32}},
                  {"url": "https://example.test/other.zip"})
         for override in cases:
@@ -135,6 +139,11 @@ class DistributionTests(unittest.TestCase):
         notes = (self.root / "release/release-notes.md").read_text(encoding="utf-8")
         self.assertIn("### Added", notes)
         self.assertIn("com.vrclearn.hierarchydecorator", notes)
+        self.assertIn("Separate configuration transfer from installation cleanup", notes)
+        self.assertIn("Skip absent configurations or installations independently", notes)
+        self.assertIn("Settings GUID recorded by wooshii", notes)
+        self.assertNotIn("Replace the former", notes)
+        self.assertNotIn("while preserving the originals", notes)
         self.assertNotIn("## Unreleased", notes)
         self.assertNotIn("## v0.12.0", notes)
         (self.package / "CHANGELOG.md").write_text("## Unreleased\n\n- Future work.\n", encoding="utf-8")
@@ -149,6 +158,68 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(source["packages"], {builder.PACKAGE_ID: builder.REPOSITORY,
                                             "com.wooshii.hierarchydecorator": builder.REPOSITORY})
         self.assertNotIn("Assets/HierarchyDecorator", self.manifest["legacyFolders"])
+
+    def test_release_asset_and_assembly_identities_are_independent_from_upstream(self):
+        # This committed snapshot is extracted from the existing 0.12.1 tag.
+        # Keep the test offline and independent of shallow-clone Git history.
+        fixture = json.loads((builder.ROOT / ".github/unity-ci/upstream-0.12.1-identities.json")
+                             .read_text(encoding="utf-8"))
+        with patch.object(builder, "PACKAGE", builder.ROOT):
+            assets = builder.source_assets(self.manifest)
+        upstream_guids = set(fixture["metadata"].values())
+        collisions = {asset.path: builder.metadata_guid(asset.metadata) for asset in assets
+                      if builder.metadata_guid(asset.metadata) in upstream_guids}
+        self.assertEqual(collisions, {}, "New release must not reuse upstream asset GUIDs")
+        definitions = [json.loads(asset.content) for asset in assets if asset.path.endswith(".asmdef")]
+        assemblies = {definition["name"] for definition in definitions}
+        self.assertEqual(assemblies, {"VRCLearn.HierarchyDecorator.Editor"})
+        self.assertFalse(assemblies.intersection(fixture["assemblyNames"]))
+        current_guids = {builder.metadata_guid(asset.metadata) for asset in assets}
+        for definition in definitions:
+            for reference in definition.get("references", []):
+                if reference.startswith("GUID:"):
+                    self.assertIn(reference.removeprefix("GUID:"), current_guids,
+                                  "Internal assembly references must resolve within this standalone package")
+        self.assertNotIn(fixture["packageName"], self.manifest["legacyPackages"])
+
+    def test_csharp_namespaces_do_not_export_upstream_types(self):
+        for source in (builder.ROOT / "HierarchyDecorator").rglob("*.cs"):
+            namespaces = re.findall(r"^\s*namespace\s+([\w.]+)", source.read_text(encoding="utf-8-sig"), re.MULTILINE)
+            with self.subTest(source=source.relative_to(builder.ROOT).as_posix()):
+                self.assertTrue(namespaces, "Each package source must use an explicit namespace")
+                self.assertTrue(all(name == "HierarchyDecorator.Editor" or
+                                    name.startswith("HierarchyDecorator.Editor.") for name in namespaces), namespaces)
+
+    def test_unity_project_can_include_both_local_packages_without_replacement(self):
+        # Relative Unity package paths require the project and repository to be
+        # on the same drive; hosted Windows runners keep TEMP on another drive.
+        temporary = tempfile.TemporaryDirectory(dir=builder.ROOT, prefix=".coexistence-test-")
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name).resolve()
+        upstream = root / "upstream package"
+        upstream.mkdir()
+        (upstream / "package.json").write_text(json.dumps({"name": "com.wooshii.hierarchydecorator"}), encoding="utf-8")
+        project = root / "coexistence project"
+        prepared = subprocess.run([sys.executable, str(builder.ROOT / ".github/unity-ci/prepare_project.py"),
+                        "--unity-version", "2022.3.22f1", "--project-path", str(project),
+                        "--upstream-package", str(upstream)], capture_output=True, text=True)
+        self.assertEqual(prepared.returncode, 0, prepared.stderr)
+        manifest = json.loads((project / "Packages/manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(manifest["dependencies"]),
+                         {builder.PACKAGE_ID, "com.wooshii.hierarchydecorator"})
+        for package_id, path in manifest["dependencies"].items():
+            target = (project / "Packages" / path.removeprefix("file:")).resolve()
+            expected = upstream if package_id == "com.wooshii.hierarchydecorator" else builder.ROOT
+            self.assertEqual(target, expected.resolve())
+
+        (upstream / "package.json").write_text(json.dumps({"name": "wrong.package"}), encoding="utf-8")
+        rejected = root / "rejected project"
+        result = subprocess.run([sys.executable, str(builder.ROOT / ".github/unity-ci/prepare_project.py"),
+                                 "--unity-version", "2022.3.22f1", "--project-path", str(rejected),
+                                 "--upstream-package", str(upstream)], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Expected an upstream", result.stderr)
+        self.assertFalse(rejected.exists())
 
     def test_existing_release_requires_complete_matching_assets(self):
         result = self.build()

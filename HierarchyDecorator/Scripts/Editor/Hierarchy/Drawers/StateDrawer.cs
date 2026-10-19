@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEditor;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class StateDrawer : HierarchyDrawer
     {

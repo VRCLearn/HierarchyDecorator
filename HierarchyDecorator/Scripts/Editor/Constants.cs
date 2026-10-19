@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
 
 
@@ -12,24 +12,14 @@ namespace HierarchyDecorator
         public static class Paths
         {
             /// <summary>
-            /// Legacy preference used to locate settings assets for migration.
-            /// </summary>
-            public static string PREF_GUID = Application.productName + "_HD_GUID";
-
-            /// <summary>
             /// Path used for showing Hierarchy Decorator settings in Preferences. See <see cref="HierarchyDecoratorProvider"/>.
             /// </summary>
-            public const string SETTINGS_PATH = "Hierarchy Decorator";
-
-            /// <summary>
-            /// Previous default asset path, retained for migration.
-            /// </summary>
-            public const string DEFAULT_ASSET_PATH = "Assets/HierarchyDecorator/Settings.asset";
+            public const string SETTINGS_PATH = "HierarchyDecorator";
 
             /// <summary>
             /// Project-local file used to persist personal settings.
             /// </summary>
-            public const string SETTINGS_FILE_PATH = "UserSettings/HierarchyDecoratorSettings.asset";
+            public const string SETTINGS_FILE_PATH = "UserSettings/Settings.asset";
         }
        
 

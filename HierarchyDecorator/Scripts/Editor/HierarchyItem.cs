@@ -1,8 +1,8 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace HierarchyDecorator
+namespace HierarchyDecorator.Editor
 {
     public class HierarchyItem
     {
