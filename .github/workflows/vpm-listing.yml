@@ -2,8 +2,6 @@ name: Build VPM repository listing
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/15 * * * *'
   push:
     branches: [main]
     paths:
@@ -27,40 +25,18 @@ jobs:
   check-updates:
     if: github.event_name != 'release'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
       changed: ${{ steps.updates.outputs.changed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+          persist-credentials: false
       - name: Check for new package releases
         id: updates
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT_NAME" = schedule ]; then
-            python .github/scripts/check_listing.py --bootstrap
-          else
-            python .github/scripts/check_listing.py --force --bootstrap
-          fi
-      - name: Keep scheduled updates active after extended inactivity
-        if: github.event_name == 'schedule'
-        run: |
-          set -euo pipefail
-          idle_seconds="$(( $(date +%s) - $(git log -1 --format=%ct) ))"
-          if [ "$idle_seconds" -lt "$((45 * 24 * 60 * 60))" ]; then
-            exit 0
-          fi
-          date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/keepalive
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/keepalive
-          git commit -m 'Keep scheduled VPM updates active'
-          git push origin HEAD:main
+        run: python .github/scripts/check_listing.py --force --bootstrap
   request-refresh:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
