@@ -101,10 +101,11 @@ Select a language in settings or **Tools > HierarchyDecorator > Language**. Engl
   Depth Mode              The accepted criteria for selecting instances when swiping.
   ```
 
-Shift-click an active toggle on a selected scene object to apply its new state to
+Ordinary clicks operate on the clicked object, including when Active Swiping is
+disabled. Shift-click an active toggle on a selected scene object to apply its new state to
 the whole selection, including objects outside the visible rows. Mixed states
 follow the clicked object's new state. Shift-clicking an unselected object changes
-only that object. The selection toggle supports Undo/Redo and prefab overrides.
+only that object. Both click paths support Undo/Redo and prefab overrides.
 
 </details>
 

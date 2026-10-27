@@ -3,6 +3,7 @@
 ### Fixed
 
 - Shift-clicking an active toggle updates all selected scene objects to the clicked object's new state, including selections outside the visible rows. The operation supports Undo/Redo and saved prefab instance overrides.
+- Ordinary active-toggle clicks no longer revert on mouse release when Active Swiping is disabled. Both ordinary click paths support Undo/Redo and saved prefab instance overrides.
 
 ## [1.1.0] - 2026-10-27
 

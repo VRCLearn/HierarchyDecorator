@@ -65,7 +65,7 @@ namespace HierarchyDecorator.Editor
                 HandleMultiToggle (rect, instance, settings);
             }
             else
-            if (isHoldingMouse)
+            if (isHoldingMouse && settings.globalData.activeSwiping)
             {
                 HandleSwiping (rect, instance, settings);
             }
@@ -114,7 +114,12 @@ namespace HierarchyDecorator.Editor
             {
                 if (canUpdate)
                 {
+                    Undo.RecordObject(instance, isActive ? "Enable GameObject" : "Disable GameObject");
                     instance.SetActive (isActive);
+                    if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                    {
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                    }
                 }
             }
         }
@@ -145,6 +150,10 @@ namespace HierarchyDecorator.Editor
 
                 swipedInstances.Add (instance);
                 instance.SetActive (!instance.activeSelf);
+                if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                }
             }
         }
 

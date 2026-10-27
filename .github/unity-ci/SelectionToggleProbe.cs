@@ -108,7 +108,12 @@ namespace HierarchyDecoratorCI
                 if (++scenario == 32)
                 {
                     CheckSelectionBoundaries();
-                    CheckPrefabPersistence();
+                    CheckOrdinaryClicks();
+                    foreach (bool swipe in new[] { true, false })
+                    {
+                        CheckPrefabPersistence(true, swipe);
+                        CheckPrefabPersistence(false, swipe);
+                    }
                     Finish(null);
                     return;
                 }
@@ -196,8 +201,47 @@ namespace HierarchyDecoratorCI
                 "Ordinary swiping continues to respect selection-only filtering");
         }
 
-        private static void CheckPrefabPersistence()
+        private static void CheckOrdinaryClicks()
         {
+            foreach (GlobalData.ToggleType style in Enum.GetValues(typeof(GlobalData.ToggleType)))
+            {
+                foreach (bool initial in new[] { true, false })
+                {
+                    ResetObjects();
+                    settings.globalData.activeSwiping = false;
+                    settings.globalData.activeToggleType = style;
+                    foreach (var go in objects) go.SetActive(initial);
+                    Undo.ClearAll();
+                    Undo.IncrementCurrentGroup();
+                    Click(0);
+                    Require(objects[0].activeSelf == !initial && objects.Skip(1).All(go => go.activeSelf == initial),
+                        "Single click without swiping changes only the clicked object and does not rebound: " + style + "/" + initial);
+                    Undo.FlushUndoRecordObjects();
+                    Undo.IncrementCurrentGroup();
+                    Undo.PerformUndo();
+                    Require(objects.All(go => go.activeSelf == initial), "Single click can be undone: " + style + "/" + initial);
+                    Undo.PerformRedo();
+                    Require(objects[0].activeSelf == !initial && objects.Skip(1).All(go => go.activeSelf == initial),
+                        "Single click can be redone: " + style + "/" + initial);
+                    Click(0);
+                    Require(objects.All(go => go.activeSelf == initial), "Second single click restores the initial state: " + style + "/" + initial);
+                }
+                ResetObjects();
+                settings.globalData.activeSwiping = false;
+                settings.globalData.activeToggleType = style;
+                SendMouse(EventType.MouseDown, 0);
+                SendMouse(EventType.MouseDrag, 1);
+                SendMouse(EventType.MouseUp, 1);
+                Require(objects.All(go => go.activeSelf), "Dragging off a native toggle cancels a click when swiping is disabled: " + style);
+            }
+        }
+
+        private static void CheckPrefabPersistence(bool shift, bool swipe)
+        {
+            window.Items = Array.Empty<HierarchyItem>();
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            settings.globalData.activeSwiping = swipe;
+            string mode = "Shift=" + shift + ", swipe=" + swipe;
             if (!AssetDatabase.IsValidFolder("Assets/SelectionToggleProbe"))
                 AssetDatabase.CreateFolder("Assets", "SelectionToggleProbe");
             var source = new GameObject("Selection prefab");
@@ -210,26 +254,26 @@ namespace HierarchyDecoratorCI
             Selection.objects = new Object[] { first, second, prefab };
             Undo.ClearAll();
             Undo.IncrementCurrentGroup();
-            Click(0, true);
-            Require(!first.activeSelf && !second.activeSelf && prefab.activeSelf,
-                "Selected prefab instances toggle while selected project prefab assets remain unchanged");
+            Click(0, shift);
+            Require(!first.activeSelf && second.activeSelf == !shift && prefab.activeSelf,
+                "Prefab click respects selection scope and does not modify project assets: " + mode);
             Require(PrefabUtility.GetPropertyModifications(first).Any(p => p.propertyPath == "m_IsActive" && p.value == "0")
-                && PrefabUtility.GetPropertyModifications(second).Any(p => p.propertyPath == "m_IsActive" && p.value == "0"),
-                "Both selected prefab instances record active-state overrides");
+                && (!shift || PrefabUtility.GetPropertyModifications(second).Any(p => p.propertyPath == "m_IsActive" && p.value == "0")),
+                "Changed prefab instances record active-state overrides: " + mode);
             Undo.FlushUndoRecordObjects();
             Undo.IncrementCurrentGroup();
             Undo.PerformUndo();
-            Require(first.activeSelf && second.activeSelf, "One Undo restores both selected prefab instances");
+            Require(first.activeSelf && second.activeSelf, "One Undo restores clicked prefab instances: " + mode);
             Undo.PerformRedo();
-            Require(!first.activeSelf && !second.activeSelf, "One Redo disables both selected prefab instances");
+            Require(!first.activeSelf && second.activeSelf == !shift, "One Redo reapplies the correct prefab scope: " + mode);
             string path = "Assets/SelectionToggleProbe/Fixture.unity";
             Require(EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), path), "Fixture scene saved");
             window.Items = Array.Empty<HierarchyItem>();
             EditorSceneManager.OpenScene(path);
             var restored = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects()
                 .Where(go => PrefabUtility.IsPartOfPrefabInstance(go)).ToArray();
-            Require(restored.Length == 2 && restored.All(go => !go.activeSelf),
-                "Both selected prefab active-state overrides survive scene save and reopen");
+            Require(restored.Length == 2 && restored.Count(go => go.activeSelf) == (shift ? 0 : 1),
+                "Prefab active-state overrides survive scene save and reopen: " + mode);
         }
 
         private static void Require(bool condition, string check)
