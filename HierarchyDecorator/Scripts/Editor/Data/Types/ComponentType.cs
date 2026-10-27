@@ -214,7 +214,13 @@ namespace HierarchyDecorator.Editor
             }
 
             GUIContent content = new GUIContent(displayName, displayName);
-            Texture texture;
+            Texture texture = VrcComponentIcons.GetIcon(Type);
+            if (texture != null)
+            {
+                content.image = texture;
+                return content;
+            }
+
             if (isBuiltIn)
             {
                 texture = EditorGUIUtility.ObjectContent(null, Type).image;

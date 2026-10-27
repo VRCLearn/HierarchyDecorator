@@ -172,6 +172,8 @@ Select a language in settings or **Tools > HierarchyDecorator > Language**. Engl
 
  Icons can be displayed that represent components that exist on gameobjects. This tab will provide the flexibility to specify what components can and cannot be displayed, and also allow you to automatically show all. 
 
+ VRChat Avatar Descriptor uses a gray humanoid icon; PhysBone and PhysBone Collider share a diagonal blue bone icon, and Mirror has its own icon. Each icon represents a component attached to that GameObject; it does not indicate referenced roots, affected bones or components generated during an avatar build. These icons use the existing component icon settings and do not require the VRChat SDK to use the rest of the plugin.
+
 <p align="center">
  <img width="132" height="327" alt="Unity_emGzaT8YHM" src="https://user-images.githubusercontent.com/31889435/226554415-8bd0be96-6eb2-4217-8d56-e39d23dd7ffd.png"><img width="627" alt="Unity_iWzNrNwYKa" src="https://user-images.githubusercontent.com/31889435/226494920-6b78be6e-686d-42ac-a11f-629f270cb5bc.png">
 </p>
@@ -222,3 +224,5 @@ For bug fixes, features, documentation, and translations, see the [contribution 
 This fork is maintained by VRCLearn under the [MIT license](LICENSE.md). The original project was created by Damian Slocombe (Wooshii), with contributions from the [original contributors](https://github.com/WooshiiDev/HierarchyDecorator/graphs/contributors).
 
 Copyright (c) 2020-2025 Damian Slocombe
+
+The Mirror component icon is from [AzuriteLab/VRCHierarchyHighlighter](https://github.com/AzuriteLab/VRCHierarchyHighlighter), Copyright (c) 2019 AzuriteLab, under the [MIT license](HierarchyDecorator/Icons/VRC/LICENSE.txt).

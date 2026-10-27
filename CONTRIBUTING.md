@@ -45,6 +45,17 @@ active-toggle input, and saves its report and window screenshots under
 `Logs/PrefabOverrideProbe` before exiting. It creates fixtures only in that
 disposable project and does not require editing a user's scene.
 
+For VRChat component icons, copy `.github/unity-ci/VrcComponentIconProbe.cs` into
+`Assets/Editor` in a disposable Unity 2022.3 project and run
+`-executeMethod HierarchyDecoratorCI.VrcComponentIconProbe.Run`. Run once without
+the SDK, then in separate projects with the real VRChat Avatars and Worlds SDKs.
+Use `-vrcIconProbeSdk` for both, and also `-vrcIconProbeWorlds` for the Worlds
+project. SDK projects need the usual Unity built-in modules and Unity Test
+Framework required by the SDK.
+Add `-vrcIconProbeGraphic` in a graphical Editor to capture the real Hierarchy
+with normal and stacked icons using the Editor's current native theme.
+Reports and screenshots are saved under `Logs/VrcComponentIconProbe`.
+
 ## AI-assisted development
 
 AI-assisted development is welcome. Contributors are responsible for understanding,
