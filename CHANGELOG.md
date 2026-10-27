@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.1.0] - 2026-10-27
+
 ### Added
 
 - Icons for attached VRChat components: a gray humanoid for Avatar Descriptor, one shared diagonal blue bone for PhysBone and PhysBone Collider, and a Mirror icon. Icons do not indicate referenced roots, affected bones or build results.
