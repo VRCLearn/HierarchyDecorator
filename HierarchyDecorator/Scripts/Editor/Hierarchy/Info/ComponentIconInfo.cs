@@ -149,23 +149,18 @@ namespace HierarchyDecorator.Editor
             {
                 item.ToggleActive();
                 ev.Use();
+            }
 
-                if (Selection.Contains(item.Component.gameObject))
+            Color previousColor = GUI.color;
+            try
+            {
+                if (!item.Active)
                 {
-                    EditorUtility.SetDirty(item.Component.gameObject);
+                    GUI.color *= s_DisabledColor;
                 }
+                DrawIcon(rect, item.Content);
             }
-
-            bool active = item.Active;
-            if (!active)
-            {
-                GUI.color = s_DisabledColor;
-            }
-            DrawIcon(rect, item.Content);
-            if (!active)
-            {
-                GUI.color = Color.white;
-            }
+            finally { GUI.color = previousColor; }
         }
 
         private void DrawMissingComponent(Rect rect)

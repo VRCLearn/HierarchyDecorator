@@ -13,7 +13,6 @@ namespace HierarchyDecorator.Editor
         public bool IsNullComponent { get; private set; }
 
         public readonly bool IsBehaviour;
-        private Behaviour behaviour;
 
         // - Visual
 
@@ -21,7 +20,8 @@ namespace HierarchyDecorator.Editor
 
         public string DisplayName => Type.DisplayName;
         public bool IsBuiltIn => Type.IsBuiltIn;
-        public bool HasToggle => Type.HasToggle;
+        // Use the same component eligibility as Unity's Inspector titlebar.
+        public bool HasToggle => !IsNullComponent && Component != null && EditorUtility.GetObjectEnabled(Component) != -1;
 
         public bool Active { get; private set; }
 
@@ -33,10 +33,6 @@ namespace HierarchyDecorator.Editor
             IsNullComponent = component == null;
 
             IsBehaviour = Component is Behaviour;
-            if (IsBehaviour)
-            {
-                behaviour = Component as Behaviour;
-            }
 
             if (IsNullComponent)
             {
@@ -78,41 +74,43 @@ namespace HierarchyDecorator.Editor
         {
             // Default as enabled 
 
-            if (IsNullComponent || !HasToggle)
+            if (IsNullComponent || Component == null)
             {
                 return true;
             }
 
-            if (IsBehaviour)
-            {
-                return behaviour.enabled;
-            }
-
-            return (bool)Type.ToggleProperty.GetValue(Component);
+            return EditorUtility.GetObjectEnabled(Component) != 0;
         }
 
         public void ToggleActive()
         {
-            SetActive(!Active);
+            SetActive(!GetActiveState());
         }
 
         public void SetActive(bool active)
         {
-            if (Active != active)
-            {
-                Active = active;
-                Type.ToggleProperty.SetValue(Component, active);
-                EditorUtility.SetDirty(Component.gameObject);
-            }
-        }
-
-        public void UpdateActiveState()
-        {
-            if (IsNullComponent || !Type.HasToggle)
+            if (!HasToggle)
             {
                 return;
             }
 
+            Active = GetActiveState();
+            if (Active == active)
+            {
+                return;
+            }
+
+            Undo.RecordObject(Component, active ? "Enable Component" : "Disable Component");
+            EditorUtility.SetObjectEnabled(Component, active);
+            if (PrefabUtility.IsPartOfPrefabInstance(Component))
+            {
+                PrefabUtility.RecordPrefabInstancePropertyModifications(Component);
+            }
+            Active = GetActiveState();
+        }
+
+        public void UpdateActiveState()
+        {
             Active = GetActiveState();
         }
     }
