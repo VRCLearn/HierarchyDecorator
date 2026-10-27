@@ -65,6 +65,18 @@ to also check Avatar Descriptor, PhysBone and PhysBone Collider. The probe check
 Inspector toggle eligibility, click handling, Undo/Redo and saved prefab overrides;
 its report is saved under `Logs/ComponentToggleProbe`.
 
+For active toggles, copy `.github/unity-ci/SelectionToggleProbe.cs` into
+`Assets/Editor` in a disposable graphical Unity project and run
+`-executeMethod HierarchyDecoratorCI.SelectionToggleProbe.Run`. The probe sends
+keyboard and mouse events through the production toggle drawer, covering both
+toggle styles, swipe settings, mixed states, offscreen selection, ordinary clicks,
+Undo/Redo and prefab persistence. Reports are saved under `Logs/SelectionToggleProbe`.
+Also copy `.github/unity-ci/NativeActiveToggleProbe.cs` into `Assets/Editor` and run
+`-executeMethod HierarchyDecoratorCI.NativeActiveToggleProbe.Run` to check ordinary
+and Shift clicks in Unity's own Hierarchy. This second probe checks both styles
+with swiping enabled and disabled, selection preservation and Undo/Redo. Reports
+are saved under `Logs/NativeActiveToggleProbe`.
+
 ## AI-assisted development
 
 AI-assisted development is welcome. Contributors are responsible for understanding,

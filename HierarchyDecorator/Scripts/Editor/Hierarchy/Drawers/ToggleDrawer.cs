@@ -65,7 +65,7 @@ namespace HierarchyDecorator.Editor
                 HandleMultiToggle (rect, instance, settings);
             }
             else
-            if (isHoldingMouse)
+            if (isHoldingMouse && settings.globalData.activeSwiping)
             {
                 HandleSwiping (rect, instance, settings);
             }
@@ -114,7 +114,12 @@ namespace HierarchyDecorator.Editor
             {
                 if (canUpdate)
                 {
+                    Undo.RecordObject(instance, isActive ? "Enable GameObject" : "Disable GameObject");
                     instance.SetActive (isActive);
+                    if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                    {
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                    }
                 }
             }
         }
@@ -145,67 +150,58 @@ namespace HierarchyDecorator.Editor
 
                 swipedInstances.Add (instance);
                 instance.SetActive (!instance.activeSelf);
+                if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(instance);
+                }
             }
         }
 
         private void HandleMultiToggle(Rect rect, GameObject instance, Settings settings)
         {
-            int instanceLen = SelectedInstances.Length;
-
-            // If there's only one or no instances selected we don't need to check selected
-
-            if (instanceLen <= 1f)
+            if (CurrentEvent.type != EventType.MouseDown || CurrentEvent.button != 0
+                || !rect.Contains(CurrentEvent.mousePosition))
             {
                 return;
             }
 
-            if (rect.Contains (CurrentEvent.mousePosition))
+            GameObject[] instances = Selection.Contains(instance) ? SelectedInstances : new[] { instance };
+            instances = System.Array.FindAll(instances, selected => selected != null && selected.scene.IsValid());
+            bool active = !targetActiveState;
+            Undo.RecordObjects(instances, active ? "Enable Selected GameObjects" : "Disable Selected GameObjects");
+            foreach (GameObject selected in instances)
             {
-                for (int i = 0; i < instanceLen; i++)
+                if (selected == null || selected.activeSelf == active)
                 {
-                    instance.SetActive (targetActiveState);
+                    continue;
+                }
+
+                selected.SetActive(active);
+                if (PrefabUtility.IsPartOfPrefabInstance(selected))
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(selected);
                 }
             }
+            CurrentEvent.Use();
         }
 
         private void HandleEvent(Rect rect, GameObject instance, Settings settings)
         {
             EventType eventType = CurrentEvent.type;
 
-            if (targetInstance == null && rect.Contains(CurrentEvent.mousePosition))
+            if (eventType == EventType.MouseDown && CurrentEvent.button == 0
+                && rect.Contains(CurrentEvent.mousePosition))
             {
-                if (swipedInstances.Count > 0)
-                {
-                    swipedInstances.Clear ();
-                }
-
-                // Check event conditions
-
-                isPressingShift = CurrentEvent.keyCode == KeyCode.LeftShift;
-                isHoldingMouse = (eventType == EventType.MouseDown) && (CurrentEvent.button == 0);
-
-                if (isPressingShift || isHoldingMouse)
-                {
-                    targetInstance = instance;
-                    targetActiveState = targetInstance.activeSelf;
-                    targetDepth = GetInstanceDepth (targetInstance.transform);
-                }
+                swipedInstances.Clear();
+                isPressingShift = CurrentEvent.shift;
+                isHoldingMouse = true;
+                targetInstance = instance;
+                targetActiveState = targetInstance.activeSelf;
+                targetDepth = GetInstanceDepth(targetInstance.transform);
             }
 
-            bool hasChanged = false;
-            if (isPressingShift)
-            {
-                hasChanged = !(isPressingShift = eventType != EventType.KeyUp);
-            }
-
-            if (isHoldingMouse)
-            {
-                hasChanged = !(isHoldingMouse = eventType != EventType.MouseUp);
-            }
-
-            // Reset variables
-
-            if (hasChanged)
+            if (isHoldingMouse && ((eventType == EventType.MouseUp && CurrentEvent.button == 0)
+                || eventType == EventType.Ignore))
             {
                 isPressingShift = false;
                 isHoldingMouse = false;
