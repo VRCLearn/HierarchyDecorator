@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fixed
+
+- Preserve Unity's native prefab override markers when using alternating backgrounds or header styles.
+
 ## [1.0.0] - 2026-10-19
 
 ### Added
