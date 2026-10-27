@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.1.1] - 2026-10-27
+
 ### Fixed
 
 - Shift-clicking an active toggle updates all selected scene objects to the clicked object's new state, including selections outside the visible rows. The operation supports Undo/Redo and saved prefab instance overrides.
