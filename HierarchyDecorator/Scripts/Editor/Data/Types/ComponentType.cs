@@ -95,12 +95,13 @@ namespace HierarchyDecorator.Editor
         public GUIContent Content => content;
 
         /// <summary>
-        /// Can this component be toggled on/off or not.
+        /// Whether the type exposes an enabled property. Inspector toggle eligibility
+        /// is determined per instance by ComponentItem.HasToggle.
         /// </summary>
         public bool HasToggle => hasToggle;
 
         /// <summary>
-        /// The reflected toggle property.
+        /// The reflected enabled property.
         /// </summary>
         public PropertyInfo ToggleProperty { get; private set; }
 

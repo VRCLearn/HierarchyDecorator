@@ -4,6 +4,10 @@
 
 - Icons for attached VRChat components: a gray humanoid for Avatar Descriptor, one shared diagonal blue bone for PhysBone and PhysBone Collider, and a Mirror icon. Icons do not indicate referenced roots, affected bones or build results.
 
+### Fixed
+
+- Non-stacked component icons only toggle components for which Unity provides an Inspector enable checkbox. Component toggles support Undo/Redo and preserve prefab instance overrides.
+
 ## [1.0.1] - 2026-10-27
 
 ### Fixed
