@@ -132,23 +132,42 @@ namespace HierarchyDecorator.Editor
         {
 #if UNITY_2019_1_OR_NEWER
             rect.height = 16f;
+
+            // Unity draws prefab override markers in the first two pixels after
+            // the visibility column. Preserve that native margin for every row,
+            // including selection overlays, toggles and custom header styles.
+            Rect contentRect = rect;
+            contentRect.xMin = 34f;
+            contentRect.xMax += rect.height;
+            // Keep the existing viewport's vertical clipping and text overflow.
+            contentRect.yMin = 0f;
+            contentRect.height = float.MaxValue;
+            GUI.BeginClip(contentRect, -contentRect.position, Vector2.zero, false);
 #endif
-            for (int i = 0; i < Drawers.Length; i++)
+            try
             {
-                Drawers[i].Draw(rect, item, s_Settings);
-            }
+                for (int i = 0; i < Drawers.Length; i++)
+                {
+                    Drawers[i].Draw(rect, item, s_Settings);
+                }
 
-            for (int i = 0; i < Info.Length; i++)
+                for (int i = 0; i < Info.Length; i++)
+                {
+                    Info[i].Draw(rect, item, s_Settings);
+                }
+
+                for (int i = 0; i < OverlayDrawers.Length; i++)
+                {
+                    OverlayDrawers[i].Draw(rect, item, s_Settings);
+                }
+            }
+            finally
             {
-                Info[i].Draw(rect, item, s_Settings);
+#if UNITY_2019_1_OR_NEWER
+                GUI.EndClip();
+#endif
+                HierarchyInfo.ResetIndent();
             }
-
-            for (int i = 0; i < OverlayDrawers.Length; i++)
-            {
-                OverlayDrawers[i].Draw(rect, item, s_Settings);
-            }
-
-            HierarchyInfo.ResetIndent();
         }
 
 #if UNITY_6000_0_OR_NEWER

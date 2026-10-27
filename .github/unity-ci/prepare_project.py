@@ -10,6 +10,8 @@ def main():
     parser = argparse.ArgumentParser(description="Create an isolated Unity package compilation project.")
     parser.add_argument("--unity-version", required=True)
     parser.add_argument("--project-path", required=True, type=Path)
+    parser.add_argument("--prefab-override-probe", action="store_true",
+                        help="Include the graphical prefab override regression probe in this disposable project.")
     parser.add_argument("--upstream-package", type=Path,
                         help="Also install a local upstream package to verify both editor assemblies coexist.")
     args = parser.parse_args()
@@ -42,6 +44,9 @@ def main():
     (packages / "manifest.json").write_text(json.dumps(manifest, indent=4) + "\n", encoding="utf-8")
     (settings / "ProjectVersion.txt").write_text("m_EditorVersion: " + args.unity_version + "\n", encoding="utf-8")
     shutil.copyfile(Path(__file__).with_name("CompileCheck.cs"), editor / "CompileCheck.cs")
+    if args.prefab_override_probe:
+        shutil.copyfile(Path(__file__).with_name("PrefabOverrideProbe.cs"), editor / "PrefabOverrideProbe.cs")
+        (settings / "PrefabOverrideProbe.enabled").touch()
     print(f"Prepared Unity {args.unity_version} project at {project}")
 
 
