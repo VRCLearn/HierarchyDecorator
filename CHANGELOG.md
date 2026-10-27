@@ -1,8 +1,15 @@
 ## Unreleased
 
+## [1.0.1] - 2026-10-27
+
 ### Fixed
 
 - Preserve Unity's native prefab override markers when using alternating backgrounds or header styles.
+
+### Changed
+
+- Simplify installation and contribution documentation.
+- Remove periodic VPM update checks and keepalive commits; release-triggered and manual refreshes remain available.
 
 ## [1.0.0] - 2026-10-19
 
