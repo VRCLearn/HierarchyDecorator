@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.3.0] - 2026-11-04
+
 ### Added
 
 - Combined icons for attached Modular Avatar Menu Installer, Menu Item, Menu Group and Parameters components, pairing the installed MA icon with the corresponding VRChat Expressions Menu or Parameters icon.
