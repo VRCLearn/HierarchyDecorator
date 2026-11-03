@@ -1,5 +1,17 @@
 ## Unreleased
 
+## [1.2.0] - 2026-11-04
+
+### Added
+
+- Dedicated icons for attached VRC Contact Receiver and Contact Sender components, using their SDK scene Gizmo colors (cyan and Unity yellow).
+- Icons for the six attached VRC constraint types, preserving Unity's native constraint graphics with pins recolored to VRChat's website brand color (#2BAAC1).
+
+### Changed
+
+- Give VRC PhysBone Collider its own diagonal green capsule wireframe icon and simplify the Mirror icon to a neutral gray frame with one reflection stroke.
+- Match the Avatar Descriptor and Mirror icons to the native Unity constraint body gray, preserving their shapes and transparency.
+
 ## [1.1.1] - 2026-10-27
 
 ### Fixed

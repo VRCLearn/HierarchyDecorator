@@ -55,6 +55,11 @@ Framework required by the SDK.
 Add `-vrcIconProbeGraphic` in a graphical Editor to capture the real Hierarchy
 with normal and stacked icons using the Editor's current native theme.
 Reports and screenshots are saved under `Logs/VrcComponentIconProbe`.
+The constraint checks require a graphics context and verify the rendered sRGB
+pin color #2BAAC1, unchanged native Unity icons and grayscale bodies, caching,
+and cleanup. Do not use `-nographics` for SDK icon checks.
+Use `-nographics -vrcIconProbeSdk -vrcIconProbeHeadless` separately to verify that
+headless SDK projects keep their existing icon path without GPU readback.
 
 For non-stacked component toggle checks, copy
 `.github/unity-ci/ComponentToggleProbe.cs` into `Assets/Editor` and the scripts in
