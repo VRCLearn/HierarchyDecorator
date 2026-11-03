@@ -61,6 +61,17 @@ and cleanup. Do not use `-nographics` for SDK icon checks.
 Use `-nographics -vrcIconProbeSdk -vrcIconProbeHeadless` separately to verify that
 headless SDK projects keep their existing icon path without GPU readback.
 
+For Modular Avatar icons, copy `.github/unity-ci/ModularAvatarIconProbe.cs` into
+an isolated project's `Assets/Editor` folder and run
+`-executeMethod HierarchyDecoratorCI.ModularAvatarIconProbe.Run`. Run without MA,
+then with the real Modular Avatar package, its dependencies and the VRChat
+Avatars SDK, adding `-maIconProbePackages` for the latter. The probe verifies
+the fourteen combined icons, type identity, caching, transparency, original-icon
+fallbacks and cleanup. Reports and a native Hierarchy screenshot are saved to
+`Logs/ModularAvatarIconProbe`, alongside a 48 px / 16 px icon preview. Run the
+installed-package case once with graphics and once with `-nographics` to verify
+the original-icon fallback.
+
 For non-stacked component toggle checks, copy
 `.github/unity-ci/ComponentToggleProbe.cs` into `Assets/Editor` and the scripts in
 `.github/unity-ci/fixtures` into `Assets` in a disposable graphical Unity project.

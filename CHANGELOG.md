@@ -1,5 +1,10 @@
 ## Unreleased
 
+### Added
+
+- Combined icons for attached Modular Avatar Menu Installer, Menu Item, Menu Group and Parameters components, pairing the installed MA icon with the corresponding VRChat Expressions Menu or Parameters icon.
+- Combined MA icons for Merge Animator, Merge Motion (Blend Tree), Material Setter, Material Swap, Mesh Settings and Object Toggle using Unity's native asset and GameObject icons, plus function symbols for Bone Proxy, Merge Armature, Blendshape Sync and Shape Changer.
+
 ## [1.2.0] - 2026-11-04
 
 ### Added
