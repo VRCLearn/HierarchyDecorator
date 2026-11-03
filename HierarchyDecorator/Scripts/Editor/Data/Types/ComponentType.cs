@@ -216,6 +216,7 @@ namespace HierarchyDecorator.Editor
 
             GUIContent content = new GUIContent(displayName, displayName);
             Texture texture = VrcComponentIcons.GetIcon(Type);
+            if (texture == null) texture = ModularAvatarComponentIcons.GetIcon(Type, script);
             if (texture != null)
             {
                 content.image = texture;
