@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.2.0] - 2026-11-04
+
 ### Added
 
 - Dedicated icons for attached VRC Contact Receiver and Contact Sender components, using their SDK scene Gizmo colors (cyan and Unity yellow).
