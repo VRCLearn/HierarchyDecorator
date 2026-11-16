@@ -72,13 +72,13 @@ fallbacks and cleanup. Reports and a native Hierarchy screenshot are saved to
 installed-package case once with graphics and once with `-nographics` to verify
 the original-icon fallback.
 
-For non-stacked component toggle checks, copy
+For component toggle checks, copy
 `.github/unity-ci/ComponentToggleProbe.cs` into `Assets/Editor` and the scripts in
 `.github/unity-ci/fixtures` into `Assets` in a disposable graphical Unity project.
 Run `-executeMethod HierarchyDecoratorCI.ComponentToggleProbe.Run`. The project
 needs the Audio and Physics built-in modules. Run with the real VRChat Avatars SDK
 to also check Avatar Descriptor, PhysBone and PhysBone Collider. The probe checks
-Inspector toggle eligibility, click handling, Undo/Redo and saved prefab overrides;
+Inspector toggle eligibility, stacked and non-stacked click handling, Undo/Redo and saved prefab overrides;
 its report is saved under `Logs/ComponentToggleProbe`.
 
 For active toggles, copy `.github/unity-ci/SelectionToggleProbe.cs` into

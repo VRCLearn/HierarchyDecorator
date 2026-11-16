@@ -181,7 +181,7 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
 
  VRChat Avatar Descriptor uses a gray humanoid icon; PhysBone and PhysBone Collider share a diagonal blue bone icon, and Mirror has its own icon. Each icon represents a component attached to that GameObject; it does not indicate referenced roots, affected bones or components generated during an avatar build. These icons use the existing component icon settings and do not require the VRChat SDK to use the rest of the plugin.
 
- With **Click To Toggle Component** enabled, non-stacked icons can toggle components that have Unity's Inspector enable checkbox. Components without that checkbox remain display-only for left-click toggling. Toggle changes support Undo/Redo and prefab instance overrides.
+ With **Click To Toggle Component** enabled, icons can toggle components that have Unity's Inspector enable checkbox. Clicking a stacked icon sets all eligible components represented by it to the opposite of the first eligible component's state. Components without that checkbox remain unchanged. The stacked icon reflects the first eligible component's state. Toggle changes support Undo/Redo and prefab instance overrides.
 
 <p align="center">
  <img width="132" height="327" alt="Unity_emGzaT8YHM" src="https://user-images.githubusercontent.com/31889435/226554415-8bd0be96-6eb2-4217-8d56-e39d23dd7ffd.png"><img width="627" alt="Unity_iWzNrNwYKa" src="https://user-images.githubusercontent.com/31889435/226494920-6b78be6e-686d-42ac-a11f-629f270cb5bc.png">

@@ -14,9 +14,8 @@ namespace HierarchyDecorator.Editor
     public class ComponentIconInfo : HierarchyInfo
     {
         private static readonly Color s_DisabledColor = new Color(1f, 1f, 1f, 0.4f);
+        private Dictionary<Texture, List<ComponentItem>> stackedComponents = new Dictionary<Texture, List<ComponentItem>>();
         private Dictionary<Texture, GUIContent> stackTextures = new Dictionary<Texture, GUIContent>();
-
-        private List<ComponentItem> stackItems = new List<ComponentItem>();
         private IList<ComponentItem> items = new List<ComponentItem>();
 
         private bool requireWarning;
@@ -54,7 +53,7 @@ namespace HierarchyDecorator.Editor
             if (stackTextures.Count > 0)
             {
                 stackTextures.Clear();
-                stackItems.Clear();
+                stackedComponents.Clear();
             }
         }
 
@@ -97,11 +96,13 @@ namespace HierarchyDecorator.Editor
                     {
                         content = new GUIContent(string.Empty, texture, component.DisplayName);
                         stackTextures.Add(texture, content);
+                        stackedComponents.Add(texture, new List<ComponentItem>());
                     }
                     else
                     {
                         content.tooltip += "\n" + component.DisplayName;
                     }
+                    stackedComponents[texture].Add(component);
                 }
                 else // Draw
                 {
@@ -114,7 +115,11 @@ namespace HierarchyDecorator.Editor
             {
                 foreach (GUIContent content in stackTextures.Values)
                 {
-                    DrawIcon(GetIconPosition(rect), content);
+                    if (IsIconOutOfBounds(rect))
+                    {
+                        break;
+                    }
+                    DrawStackedComponentIcon(rect, content, stackedComponents[content.image], settings);
                     rect.x -= INDENT_SIZE;
                 }
             }
@@ -126,6 +131,34 @@ namespace HierarchyDecorator.Editor
         }
 
         // GUI
+
+        private void DrawStackedComponentIcon(Rect rect, GUIContent content, List<ComponentItem> components, Settings settings)
+        {
+            ComponentItem firstToggleable = null;
+            if (settings.Components.ClickToToggleComponent)
+            {
+                firstToggleable = components.Find(component => component.HasToggle);
+            }
+
+            if (firstToggleable == null)
+            {
+                DrawIcon(rect, content);
+                return;
+            }
+
+            Event ev = Event.current;
+            if (ev.type == EventType.MouseDown && ev.button == 0 && rect.Contains(ev.mousePosition))
+            {
+                bool targetState = !firstToggleable.Active;
+                foreach (ComponentItem component in components)
+                {
+                    component.SetActive(targetState);
+                }
+                ev.Use();
+            }
+
+            DrawActiveIcon(rect, content, firstToggleable.Active);
+        }
 
         private void DrawComponentIcon(Rect rect, ComponentItem item, Settings settings)
         {
@@ -151,14 +184,19 @@ namespace HierarchyDecorator.Editor
                 ev.Use();
             }
 
+            DrawActiveIcon(rect, item.Content, item.Active);
+        }
+
+        private void DrawActiveIcon(Rect rect, GUIContent content, bool active)
+        {
             Color previousColor = GUI.color;
             try
             {
-                if (!item.Active)
+                if (!active)
                 {
                     GUI.color *= s_DisabledColor;
                 }
-                DrawIcon(rect, item.Content);
+                DrawIcon(rect, content);
             }
             finally { GUI.color = previousColor; }
         }

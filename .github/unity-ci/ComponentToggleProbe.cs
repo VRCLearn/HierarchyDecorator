@@ -144,6 +144,7 @@ namespace HierarchyDecoratorCI
             if (EditorApplication.timeSinceStartup < nextStep) return;
             try
             {
+                if (nextItem == 0) CheckStackedClicks();
                 if (nextItem == Items.Count) { Finish(null); return; }
                 var item = Items[nextItem];
                 int initial = InitialStates[nextItem++];
@@ -177,6 +178,48 @@ namespace HierarchyDecoratorCI
             catch (Exception error) { Finish(error); }
         }
 
+        private static void CheckStackedClicks()
+        {
+            var go = new GameObject("Stacked toggle probe");
+            var first = go.AddComponent<AudioSource>();
+            var second = go.AddComponent<AudioSource>();
+            second.enabled = false;
+            var components = new List<ComponentItem> { new ComponentItem(go.transform), new ComponentItem(first), new ComponentItem(second) };
+            window.StackItems = components;
+            window.InputColor = new Color(0.6f, 0.7f, 0.8f, 0.9f);
+            Undo.ClearAll();
+            Undo.IncrementCurrentGroup();
+            window.SendEvent(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(24, 24) });
+            if (window.Error != null) throw new InvalidOperationException("Stacked click probe failed", window.Error);
+            Require(!first.enabled && !second.enabled && window.ClickConsumed, "Stacked click follows first eligible component and ignores unsupported components");
+            Require(window.OutputColor == window.InputColor, "Stacked icon restores GUI color");
+            Undo.FlushUndoRecordObjects();
+            Undo.IncrementCurrentGroup();
+            Undo.PerformUndo();
+            Require(first.enabled && !second.enabled, "One Undo restores the mixed stacked states");
+            Undo.PerformRedo();
+            Require(!first.enabled && !second.enabled, "Redo reapplies stacked states");
+            foreach (ComponentItem component in components) component.UpdateActiveState();
+            SetClickToToggle(false);
+            window.SendEvent(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(24, 24) });
+            Require(!first.enabled && !second.enabled && !window.ClickConsumed, "Stacked click respects disabled setting");
+            SetClickToToggle(true);
+            Undo.ClearAll();
+            Undo.IncrementCurrentGroup();
+            window.SendEvent(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(24, 24) });
+            Require(first.enabled && second.enabled, "Stacked click enables all eligible components");
+            Undo.FlushUndoRecordObjects();
+            Undo.IncrementCurrentGroup();
+            Undo.PerformUndo();
+            Require(!first.enabled && !second.enabled, "One Undo restores both stacked components");
+            Undo.PerformRedo();
+            Require(first.enabled && second.enabled, "One Redo reapplies both stacked components");
+            window.StackItems = new List<ComponentItem> { components[0] };
+            window.SendEvent(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(24, 24) });
+            Require(!window.ClickConsumed, "Stack with no eligible components does not consume clicks");
+            window.StackItems = null;
+        }
+
         private static void SetClickToToggle(bool value)
         {
             var serialized = new SerializedObject(settings);
@@ -208,8 +251,10 @@ namespace HierarchyDecoratorCI
     public class ComponentToggleProbeWindow : EditorWindow
     {
         private static readonly MethodInfo Draw = typeof(ComponentIconInfo).GetMethod("DrawComponentIcon", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo DrawStacked = typeof(ComponentIconInfo).GetMethod("DrawStackedComponentIcon", BindingFlags.Instance | BindingFlags.NonPublic);
         private ComponentIconInfo drawer;
         public ComponentItem Item;
+        public List<ComponentItem> StackItems;
         public Settings Settings;
         public Color InputColor;
         public Color OutputColor;
@@ -218,14 +263,17 @@ namespace HierarchyDecoratorCI
 
         private void OnGUI()
         {
-            if (Item == null) return;
+            if (Item == null && StackItems == null) return;
             Color previous = GUI.color;
             bool click = Event.current.type == EventType.MouseDown;
             try
             {
                 if (drawer == null) drawer = new ComponentIconInfo();
                 GUI.color = InputColor;
-                Draw.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), Item, Settings });
+                if (StackItems != null)
+                    DrawStacked.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), StackItems[0].Content, StackItems, Settings });
+                else
+                    Draw.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), Item, Settings });
                 if (click)
                 {
                     ClickConsumed = Event.current.type == EventType.Used;
