@@ -57,12 +57,12 @@ Install only one distribution of this plugin per project.
 | Tag/Layer Selector         |         ✔️         |        ✔️        |
 | Breadcrumbs                |         ✔️         |        ✔️        |
 | Component Icons            |         ✔️         |        ❌        |
+| GameObject Icons           |         ✔️         |        ✔️        |
 
 ### Planned 
 
 | Feature                    | Hierarchy Decorator  | Other Hierachy Extensions |
 | -------------------------- | :----------------: | :-------------:   |
-| GameObject Icons           |         Planned     |        ✔️        |
 | Folders                    |         Planned     |         ✔️       |
 | Script Error/Warning Popup |         Planned     |        ❌       |
 | Editor Flags Selector      |         Planned     |        ❌       |
@@ -177,7 +177,19 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
 
   ### Icons
 
- Icons can be displayed that represent components that exist on gameobjects. This tab will provide the flexibility to specify what components can and cannot be displayed, and also allow you to automatically show all. 
+ Alt-click a GameObject row in the classic Hierarchy to open its decoration palette. Pick a row
+ color and an object icon independently, or hold **Alt** when choosing to include descendants.
+ **+** adds a project texture to the palette for reuse. The first tile in each group restores
+ the original color or icon independently. The context menu also offers **HierarchyDecorator > Decorate Object...**.
+ The icon presets omit Unity's automatic GameObject, Prefab, and scene icons.
+
+ Object icons replace the icon before the GameObject name and use Unity's native Inspector and
+ Scene view icon. Unity saves them with the scene or prefab. Row colors are personal project
+ settings. For scenes, they persist after the scene is saved in Unity 2019.2 or later. For
+ objects edited in Prefab Mode, row colors persist in Unity 2021.2 or later.
+
+ Component icons appear on the right and represent components attached to the GameObject. Use the
+ Icons settings tab to choose which components appear or show all eligible components.
 
  VRChat Avatar Descriptor uses a gray humanoid icon; PhysBone and PhysBone Collider share a diagonal blue bone icon, and Mirror has its own icon. Each icon represents a component attached to that GameObject; it does not indicate referenced roots, affected bones or components generated during an avatar build. These icons use the existing component icon settings and do not require the VRChat SDK to use the rest of the plugin.
 

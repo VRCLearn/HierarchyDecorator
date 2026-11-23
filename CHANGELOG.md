@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Alt-click a GameObject row to open a shared palette for row colors and object icons. Hold Alt while choosing to include descendants. The palette can retain project textures for reuse.
+
 ## [1.3.0] - 2026-11-04
 
 ### Added
