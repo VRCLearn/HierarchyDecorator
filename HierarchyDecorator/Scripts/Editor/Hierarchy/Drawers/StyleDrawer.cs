@@ -125,7 +125,7 @@ namespace HierarchyDecorator.Editor
         {
             if (TryGetColor(target, colors, preview, out Color color, out _))
             {
-                color.a = EditorGUIUtility.isProSkin ? 0.28f : 0.20f;
+                color.a = EditorGUIUtility.isProSkin ? 0.56f : 0.40f;
                 return color;
             }
 
@@ -152,7 +152,7 @@ namespace HierarchyDecorator.Editor
         {
             if (TryGetColor(owner, colors, GameObjectIconWindow.GetRowPreview(owner), out color, out bool region) && region)
             {
-                color.a = EditorGUIUtility.isProSkin ? 0.12f : 0.08f;
+                color.a = EditorGUIUtility.isProSkin ? 0.24f : 0.16f;
                 return true;
             }
 
