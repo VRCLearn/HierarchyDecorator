@@ -1,8 +1,16 @@
-## Unreleased
+## [1.4.0] - 2026-11-24
 
 ### Added
 
-- Click the icon next to a GameObject's name or Alt-click its Hierarchy row to open a shared palette for row colors and object icons. Hover over an option to preview it. Hold Alt when choosing a color to add a lighter tint to the object's Hierarchy region. Add reusable options with the plus buttons and remove custom options through their context menus.
+- Click a GameObject's icon or Alt-click its Hierarchy row to open the decoration palette. Hover over a color or icon to preview it. Selecting an option applies it and closes the palette.
+- Choose a row color, or hold Alt to also tint its Hierarchy region. Add reusable colors with the plus button. Confirming removal of a custom color clears all of its row and region assignments in the project.
+- Choose a preset object icon or use the icon plus button to apply a project texture through Unity's picker. Unity stores the icon with the scene or prefab and shows it in the Inspector and Scene view.
+
+### Fixed
+
+- Keep the current Hierarchy colors when editing plugin settings.
+- Toggle all eligible components represented by a stacked component icon.
+- Use the matching object ID and texture picker APIs across Unity 6 versions.
 
 ## [1.3.0] - 2026-11-04
 
