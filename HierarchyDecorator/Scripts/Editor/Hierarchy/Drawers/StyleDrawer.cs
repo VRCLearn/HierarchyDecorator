@@ -57,8 +57,8 @@ namespace HierarchyDecorator.Editor
             Color rowTint = Color.clear;
             if (repaint)
             {
-                DrawParentRegions(rect, item.Transform.parent, settings.RowColors);
-                rowTint = GetRowTint(item.GameObject, settings.RowColors, preview);
+                DrawParentRegions(rect, item.Transform.parent, settings);
+                rowTint = GetRowTint(item.GameObject, settings, preview);
                 if (rowTint.a > 0f)
                 {
                     EditorGUI.DrawRect(rect, rowTint);
@@ -97,9 +97,9 @@ namespace HierarchyDecorator.Editor
             DrawFoldout(rect, item.Foldout);
         }
 
-        private void DrawParentRegions(Rect row, Transform parent, ObjectRowColors colors)
+        private void DrawParentRegions(Rect row, Transform parent, Settings settings)
         {
-            if (!colors.HasRegions && !GameObjectIconWindow.HasRegionPreview)
+            if (!settings.RowColors.HasRegions && !GameObjectIconWindow.HasRegionPreview)
             {
                 return;
             }
@@ -110,7 +110,7 @@ namespace HierarchyDecorator.Editor
             for (; parent != null && right > minX; parent = parent.parent)
             {
                 ancestorX -= HierarchyIndentWidth;
-                if (!TryGetRegionTint(parent.gameObject, colors, out Color tint))
+                if (!TryGetRegionTint(parent.gameObject, settings, out Color tint))
                 {
                     continue;
                 }
@@ -121,24 +121,24 @@ namespace HierarchyDecorator.Editor
             }
         }
 
-        private static Color GetRowTint(GameObject target, ObjectRowColors colors, GameObjectIconWindow.RowPreview preview)
+        private static Color GetRowTint(GameObject target, Settings settings, GameObjectIconWindow.RowPreview preview)
         {
-            if (TryGetColor(target, colors, preview, out Color color, out _))
+            if (TryGetColor(target, settings, preview, out Color color, out _))
             {
                 color.a = EditorGUIUtility.isProSkin ? 0.56f : 0.40f;
                 return color;
             }
 
-            return GetRegionTint(target.transform.parent, colors);
+            return GetRegionTint(target.transform.parent, settings);
         }
 
-        private static Color GetRegionTint(Transform parent, ObjectRowColors colors)
+        private static Color GetRegionTint(Transform parent, Settings settings)
         {
-            if (colors.HasRegions || GameObjectIconWindow.HasRegionPreview)
+            if (settings.RowColors.HasRegions || GameObjectIconWindow.HasRegionPreview)
             {
                 for (; parent != null; parent = parent.parent)
                 {
-                    if (TryGetRegionTint(parent.gameObject, colors, out Color color))
+                    if (TryGetRegionTint(parent.gameObject, settings, out Color color))
                     {
                         return color;
                     }
@@ -148,9 +148,9 @@ namespace HierarchyDecorator.Editor
             return Color.clear;
         }
 
-        private static bool TryGetRegionTint(GameObject owner, ObjectRowColors colors, out Color color)
+        private static bool TryGetRegionTint(GameObject owner, Settings settings, out Color color)
         {
-            if (TryGetColor(owner, colors, GameObjectIconWindow.GetRowPreview(owner), out color, out bool region) && region)
+            if (TryGetColor(owner, settings, GameObjectIconWindow.GetRowPreview(owner), out color, out bool region) && region)
             {
                 color.a = EditorGUIUtility.isProSkin ? 0.24f : 0.16f;
                 return true;
@@ -159,12 +159,13 @@ namespace HierarchyDecorator.Editor
             return false;
         }
 
-        private static bool TryGetColor(GameObject target, ObjectRowColors colors, GameObjectIconWindow.RowPreview preview,
+        private static bool TryGetColor(GameObject target, Settings settings, GameObjectIconWindow.RowPreview preview,
             out Color color, out bool region)
         {
             if (!preview.HasColor)
             {
-                return colors.TryGetColor(target, out color, out region);
+                return settings.RowColors.TryGetColor(target, out color, out region) &&
+                    GameObjectIconWindow.IsPaletteColor(settings, color);
             }
 
             color = preview.Color.GetValueOrDefault();

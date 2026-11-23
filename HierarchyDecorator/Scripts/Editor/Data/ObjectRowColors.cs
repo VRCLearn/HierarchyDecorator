@@ -112,6 +112,14 @@ namespace HierarchyDecorator.Editor
             colors = null;
         }
 
+        internal void RemoveColor(Color color)
+        {
+            if (entries.RemoveAll(entry => entry.color.Equals(color)) > 0)
+            {
+                colors = null;
+            }
+        }
+
         private static string SessionPrefix
         {
             get

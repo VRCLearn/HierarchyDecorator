@@ -184,10 +184,11 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
  has the same tint strength in either mode. Each object keeps its own color and icon settings.
  The row tint starts at the object's indentation and extends through the component area. Indentation to the left
  shows the enclosing region colors.
- Use **+** in Row Color to add a custom color or **+** in Object Icon to add a project texture.
- The palette applies the new choice and keeps it in its section for reuse.
- Right-click a custom color or project texture and choose **Remove from Palette** to remove the saved option.
- If the current object uses a removed icon, it restores its default icon. Other objects keep their decorations.
+ Use **+** in Row Color to register a custom color. The palette stays open so you can click the new swatch to apply it.
+ Rows and regions use colors from the palette. Right-click a custom swatch and choose **Remove from Palette**.
+ Confirming clears all uses of that color in the project, including in closed scenes and prefabs.
+ Use **+** in Object Icon to open Unity's texture picker. Selecting a texture applies it to the current object
+ and closes the palette. Project textures are available through the picker whenever you need them.
  The first tile in each group restores the original color or icon independently.
  The icon presets omit Unity's automatic GameObject, Prefab, and scene icons.
 
