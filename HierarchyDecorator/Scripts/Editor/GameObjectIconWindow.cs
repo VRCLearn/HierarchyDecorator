@@ -23,6 +23,7 @@ namespace HierarchyDecorator.Editor
         private const float TileSize = 24f;
         private const float TileStep = 26f;
         private const float ArtworkSize = 14f;
+        private const float ActionArtworkSize = 10f;
         private const float ColorTilesY = 47f;
         private static readonly Rect FullTexture = new Rect(0f, 0f, 1f, 1f);
         private static readonly Dictionary<Texture2D, ArtworkMetrics> ArtworkCache = new Dictionary<Texture2D, ArtworkMetrics>();
@@ -427,13 +428,14 @@ namespace HierarchyDecorator.Editor
             return clicked;
         }
 
-        private bool DrawIconTile(Rect tile, Texture2D texture, bool selected, GUIContent tooltip, Color? tint = null)
+        private bool DrawIconTile(Rect tile, Texture2D texture, bool selected, GUIContent tooltip,
+            float artworkSize = ArtworkSize, Color? tint = null)
         {
             bool clicked = DrawTile(tile, selected, tooltip);
             if (texture != null && Event.current.type == EventType.Repaint)
             {
                 ArtworkMetrics metrics = GetArtworkMetrics(texture);
-                Rect artwork = FitArtwork(tile, metrics, texture.width, texture.height);
+                Rect artwork = FitArtwork(tile, metrics, texture.width, texture.height, artworkSize);
                 Color previous = GUI.color;
                 try
                 {
@@ -459,11 +461,11 @@ namespace HierarchyDecorator.Editor
             return new Rect(tile.x + inset, tile.y + inset, ArtworkSize, ArtworkSize);
         }
 
-        private static Rect FitArtwork(Rect tile, ArtworkMetrics metrics, int width, int height)
+        private static Rect FitArtwork(Rect tile, ArtworkMetrics metrics, int width, int height, float artworkSize)
         {
             Rect uv = metrics.bounds;
             var size = new Vector2(uv.width * width, uv.height * height);
-            float scale = ArtworkSize / Mathf.Max(size.x, size.y);
+            float scale = artworkSize / Mathf.Max(size.x, size.y);
             size *= scale;
             Vector2 offset = metrics.opticalCenter - uv.center;
             var correction = new Vector2(offset.x * width, -offset.y * height) * scale;
@@ -550,7 +552,7 @@ namespace HierarchyDecorator.Editor
         private bool DrawActionTile(Rect tile, Texture2D icon, string tooltip, bool selected = false)
         {
             return DrawIconTile(tile, icon, selected, SettingsLocalization.Content(string.Empty, tooltip),
-                EditorStyles.label.normal.textColor);
+                ActionArtworkSize, EditorStyles.label.normal.textColor);
         }
 
         private bool DrawTile(Rect tile, bool selected, GUIContent tooltip)
