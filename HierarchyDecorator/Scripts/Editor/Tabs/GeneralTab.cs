@@ -88,34 +88,16 @@ namespace HierarchyDecorator.Editor
             // --- Breadcrumbs
 
             SerializedProperty showBreadcrumbs = serializedTab.FindPropertyRelative(nameof(GlobalData.showBreadcrumbs));
-            SerializedProperty instanceBreadcrumbs = serializedTab.FindPropertyRelative(nameof(GlobalData.instanceBreadcrumbs));
-            SerializedProperty fullDepthBreadcrumbs = serializedTab.FindPropertyRelative(nameof(GlobalData.fullDepthBreadcrumbs));
-
-            SerializedProperty instanceBreadcrumbsShow = instanceBreadcrumbs.FindPropertyRelative(nameof(BreadcrumbSettings.show));
-            SerializedProperty fullDepthBreadcrumbsShow = fullDepthBreadcrumbs.FindPropertyRelative(nameof(BreadcrumbSettings.show));
+            SerializedProperty breadcrumbs = serializedTab.FindPropertyRelative(nameof(GlobalData.instanceBreadcrumbs));
 
             CreateDrawableGroup("Breadcrumbs")
                 .RegisterSerializedProperty(showBreadcrumbs)
-                .RegisterDrawer(new SerializedGroupDrawer(
-                    "Instance",
-                    instanceBreadcrumbsShow))
-                    .EnableIf(() => showBreadcrumbs.boolValue)
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
-                    instanceBreadcrumbs,
+                    breadcrumbs,
                     nameof(BreadcrumbSettings.color),
                     nameof(BreadcrumbSettings.style),
                     nameof(BreadcrumbSettings.displayHorizontal))))
-                    .EnableIf(() => showBreadcrumbs.boolValue && instanceBreadcrumbsShow.boolValue)
-                .RegisterDrawer(new SerializedGroupDrawer(
-                    "Hierarchy",
-                    fullDepthBreadcrumbsShow))
-                    .EnableIf(() => showBreadcrumbs.boolValue)
-                .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
-                    fullDepthBreadcrumbs,
-                    nameof(BreadcrumbSettings.color),
-                    nameof(BreadcrumbSettings.style),
-                    nameof(BreadcrumbSettings.displayHorizontal))))
-                    .EnableIf(() => showBreadcrumbs.boolValue && fullDepthBreadcrumbsShow.boolValue);
+                    .EnableIf(() => showBreadcrumbs.boolValue);
         }
         
         void OnChangedRandomizeFields(SerializedProperty changedProperty, SerializedProperty h, SerializedProperty s, SerializedProperty v)

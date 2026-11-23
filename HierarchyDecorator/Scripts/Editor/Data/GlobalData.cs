@@ -18,7 +18,6 @@ namespace HierarchyDecorator.Editor
     [System.Serializable]
     public class BreadcrumbSettings
     {
-        public bool show = true;
         public Color color = Color.grey;
         public BreadcrumbStyle style = BreadcrumbStyle.Solid;
 
@@ -97,12 +96,8 @@ namespace HierarchyDecorator.Editor
 
         public bool showBreadcrumbs = true;
 
+        // Keep the serialized field name so existing line preferences carry over.
         public BreadcrumbSettings instanceBreadcrumbs = new BreadcrumbSettings();
-        public BreadcrumbSettings fullDepthBreadcrumbs = new BreadcrumbSettings()
-        {
-            style = BreadcrumbStyle.Dash,
-            displayHorizontal = false,
-        };
 
     }
 }

@@ -57,8 +57,6 @@ namespace HierarchyDecorator.Editor
             { "Tag Settings", new[] { "タグ設定", "태그 설정", "標籤設定", "标签设置" } },
             { "Layer Settings", new[] { "レイヤー設定", "레이어 설정", "圖層設定", "图层设置" } },
             { "Breadcrumbs", new[] { "階層ガイド", "계층 안내선", "階層引導線", "层级引导线" } },
-            { "Instance", new[] { "オブジェクト", "오브젝트", "物件", "对象" } },
-            { "Hierarchy", new[] { "階層全体", "전체 계층", "整體階層", "整体层级" } },
             { "Background", new[] { "背景", "배경", "背景", "背景" } },
             { "Light Mode", new[] { "ライトモード", "라이트 모드", "淺色模式", "浅色模式" } },
             { "Dark Mode", new[] { "ダークモード", "다크 모드", "深色模式", "深色模式" } },

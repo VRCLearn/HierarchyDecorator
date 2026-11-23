@@ -132,16 +132,15 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
    <img width="922" alt="chrome_DtNbO5Mimi" src="https://user-images.githubusercontent.com/31889435/226493794-e45fbb59-ec38-430a-a3ba-2cd137251f46.png">
 </p>
   
-  Breadcrumbs will show line trails in the hierarchy, between objects to help visualise the tree. 
-  
-  _Instance_ settings are related to breadcrumbs drwan for the instance and it's siblings.<br>
- _Hierarchy_ settings will modify how breadcrumbs are displayed for higher depths.
+  Breadcrumbs connect each visible child to its parent. The last visible sibling ends its branch.
+
+  All branches use the same color and line style.
   
   ```
   Show                    Show the breadcrumbs.
   Color                   The colour of the drawn lines.
   Style                   The line style - Solid, Dash, Dotted.
-  Display Horizontal      Draw a horizontal line, from left to right, towards the instance.
+  Display Horizontal      Draw the horizontal connector from a branch to each object.
   ```
 </details>
  
