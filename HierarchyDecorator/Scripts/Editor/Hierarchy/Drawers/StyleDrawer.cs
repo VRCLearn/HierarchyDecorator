@@ -10,6 +10,10 @@ namespace HierarchyDecorator.Editor
         protected override void DrawInternal(Rect rect, HierarchyItem item, Settings settings)
         {
             bool hasStyle = settings.styleData.twoToneBackground;
+            bool repaint = Event.current.type == EventType.Repaint;
+            Texture2D customIcon = repaint
+                ? GameObjectIconInfo.GetIcon(item.GameObject)
+                : null;
 
             // Only draw the two tone background if there's no style override
 
@@ -29,8 +33,27 @@ namespace HierarchyDecorator.Editor
                     ? rect
                     : GetActualHierarchyWidth(rect);
 
-                HierarchyGUI.DrawHierarchyStyle(prefix, styleRect, rect, displayName);
+                Rect labelRect = rect;
+                if (customIcon != null)
+                {
+                    labelRect.xMin += GameObjectIconInfo.LabelOffset;
+                }
+
+                HierarchyGUI.DrawHierarchyStyle(prefix, styleRect, labelRect, displayName);
                 hasStyle = true;
+            }
+
+            Color rowTint = Color.clear;
+            if (repaint && settings.RowColors.TryGetColor(item.GameObject, out Color rowColor))
+            {
+                rowTint = rowColor;
+                rowTint.a = EditorGUIUtility.isProSkin ? 0.28f : 0.20f;
+                EditorGUI.DrawRect(GetActualHierarchyWidth(rect), rowTint);
+            }
+
+            if (customIcon != null)
+            {
+                GameObjectIconInfo.Draw(rect, item.GameObject, customIcon, settings.styleData, prefix, rowTint);
             }
 
             if (!item.HasChildren || !hasStyle)
@@ -62,7 +85,8 @@ namespace HierarchyDecorator.Editor
 
         protected override bool DrawerIsEnabled(HierarchyItem instance, Settings settings)
         {
-            return settings.styleData.Count > 0 || settings.styleData.twoToneBackground;
+            return Event.current.type == EventType.Repaint ||
+                settings.styleData.Count > 0 || settings.styleData.twoToneBackground;
         }
 
         // Standards
