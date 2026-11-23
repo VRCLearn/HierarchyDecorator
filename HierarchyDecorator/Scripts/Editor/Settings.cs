@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace HierarchyDecorator.Editor
 {
@@ -17,6 +18,11 @@ namespace HierarchyDecorator.Editor
         [SerializeField]
         private ComponentData components = new ComponentData ();
 
+        [SerializeField, HideInInspector] private ObjectRowColors rowColors = new ObjectRowColors();
+        [SerializeField, HideInInspector]
+        private List<Texture2D> paletteTextures = new List<Texture2D>();
+        [SerializeField, HideInInspector] private Color paletteColor = new Color(0.56f, 0.52f, 0.84f);
+
         // Missing in older settings files, so existing configurations skip setup.
         [SerializeField, HideInInspector]
         private bool needsPresetSelection;
@@ -27,6 +33,15 @@ namespace HierarchyDecorator.Editor
         {
             get => needsPresetSelection;
             set => needsPresetSelection = value;
+        }
+
+        internal ObjectRowColors RowColors => rowColors;
+        internal List<Texture2D> PaletteTextures => paletteTextures;
+
+        internal Color PaletteColor
+        {
+            get => paletteColor;
+            set => paletteColor = value;
         }
 
         public ComponentData Components
