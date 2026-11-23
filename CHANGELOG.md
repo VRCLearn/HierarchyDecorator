@@ -2,7 +2,7 @@
 
 ### Added
 
-- Click the icon next to a GameObject's name or Alt-click its Hierarchy row to open a shared palette for row colors and object icons. Hold Alt while choosing to include descendants. Add reusable options with the plus buttons and remove custom options through their context menus.
+- Click the icon next to a GameObject's name or Alt-click its Hierarchy row to open a shared palette for row colors and object icons. Hover over an option to preview it. Hold Alt when choosing a color to add a lighter tint to the object's Hierarchy region. Add reusable options with the plus buttons and remove custom options through their context menus.
 
 ## [1.3.0] - 2026-11-04
 

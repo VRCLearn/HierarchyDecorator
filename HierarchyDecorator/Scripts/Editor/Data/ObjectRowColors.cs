@@ -19,6 +19,7 @@ namespace HierarchyDecorator.Editor
         {
             public string key;
             public Color color;
+            public bool colorRegion;
         }
 
         private struct ObjectKeys
@@ -28,7 +29,8 @@ namespace HierarchyDecorator.Editor
         }
 
         [SerializeField] private List<Entry> entries = new List<Entry>();
-        [NonSerialized] private Dictionary<string, Color> colors;
+        [NonSerialized] private Dictionary<string, Entry> colors;
+        [NonSerialized] private bool hasRegions;
 
         [InitializeOnLoadMethod]
         private static void TrackObjectIdentity()
@@ -41,41 +43,71 @@ namespace HierarchyDecorator.Editor
 #endif
         }
 
-        internal bool TryGetColor(GameObject target, out Color color)
+        internal bool HasRegions
+        {
+            get
+            {
+                EnsureColorIndex();
+                return hasRegions;
+            }
+        }
+
+        internal bool TryGetColor(GameObject target, out Color color, out bool colorRegion)
         {
             color = default;
+            colorRegion = false;
             if (entries.Count == 0)
             {
                 return false;
             }
 
-            if (colors == null)
-            {
-                colors = new Dictionary<string, Color>(entries.Count);
-                foreach (Entry entry in entries)
-                {
-                    colors[entry.key] = entry.color;
-                }
-            }
-
+            EnsureColorIndex();
             if (!KeyCache.TryGetValue(target, out ObjectKeys keys))
             {
                 keys = GetKeys(target);
                 KeyCache.Add(target, keys);
             }
 
-            return (keys.persistent != null && colors.TryGetValue(keys.persistent, out color)) ||
-                colors.TryGetValue(keys.temporary, out color);
+            if ((keys.persistent != null && colors.TryGetValue(keys.persistent, out Entry entry)) ||
+                colors.TryGetValue(keys.temporary, out entry))
+            {
+                color = entry.color;
+                colorRegion = entry.colorRegion;
+                return true;
+            }
+
+            return false;
         }
 
-        internal void SetColor(GameObject target, Color? color)
+        private void EnsureColorIndex()
+        {
+            if (colors != null)
+            {
+                return;
+            }
+
+            colors = new Dictionary<string, Entry>(entries.Count);
+            hasRegions = false;
+            foreach (Entry entry in entries)
+            {
+                colors[entry.key] = entry;
+                hasRegions |= entry.colorRegion;
+            }
+        }
+
+        internal void SetColor(GameObject target, Color? color, bool colorRegion)
         {
             ObjectKeys keys = GetKeys(target);
             KeyCache[target] = keys;
             entries.RemoveAll(entry => entry.key == keys.persistent || entry.key == keys.temporary);
             if (color.HasValue)
             {
-                entries.Add(new Entry { key = keys.persistent ?? keys.temporary, color = color.Value });
+                entries.Add(new Entry
+                {
+                    key = keys.persistent ?? keys.temporary,
+                    color = color.Value,
+                    colorRegion = colorRegion
+                });
             }
             colors = null;
         }

@@ -11,9 +11,20 @@ namespace HierarchyDecorator.Editor
         {
             bool hasStyle = settings.styleData.twoToneBackground;
             bool repaint = Event.current.type == EventType.Repaint;
-            Texture2D customIcon = repaint
-                ? GameObjectIconInfo.GetIcon(item.GameObject)
-                : null;
+            GameObjectIconWindow.RowPreview preview = repaint ? GameObjectIconWindow.GetRowPreview(item.GameObject) : default;
+            Texture2D visibleIcon = repaint ? GameObjectIconInfo.GetIcon(item.GameObject) : null;
+            if (preview.HasIcon)
+            {
+                if (preview.Icon != null || visibleIcon == null)
+                {
+                    visibleIcon = preview.Icon;
+                }
+                else
+                {
+                    visibleIcon = HierarchyGUI.GetStandardContent(item.GameObject, item.PrefabInfo == PrefabInfo.Root)
+                        .image as Texture2D;
+                }
+            }
 
             // Only draw the two tone background if there's no style override
 
@@ -34,7 +45,7 @@ namespace HierarchyDecorator.Editor
                     : GetActualHierarchyWidth(rect);
 
                 Rect labelRect = rect;
-                if (customIcon != null)
+                if (visibleIcon != null)
                 {
                     labelRect.xMin += GameObjectIconInfo.LabelOffset;
                 }
@@ -44,16 +55,18 @@ namespace HierarchyDecorator.Editor
             }
 
             Color rowTint = Color.clear;
-            if (repaint && settings.RowColors.TryGetColor(item.GameObject, out Color rowColor))
+            if (repaint)
             {
-                rowTint = rowColor;
-                rowTint.a = EditorGUIUtility.isProSkin ? 0.28f : 0.20f;
-                EditorGUI.DrawRect(GetActualHierarchyWidth(rect), rowTint);
+                rowTint = GetRowTint(item.GameObject, settings.RowColors, preview);
+                if (rowTint.a > 0f)
+                {
+                    EditorGUI.DrawRect(GetActualHierarchyWidth(rect), rowTint);
+                }
             }
 
-            if (customIcon != null)
+            if (visibleIcon != null)
             {
-                GameObjectIconInfo.Draw(rect, item.GameObject, customIcon, settings.styleData, prefix, rowTint);
+                GameObjectIconInfo.Draw(rect, item.GameObject, visibleIcon, settings.styleData, prefix, rowTint);
             }
 
             if (!item.HasChildren || !hasStyle)
@@ -81,6 +94,57 @@ namespace HierarchyDecorator.Editor
             }
 
             DrawFoldout(rect, item.Foldout);
+        }
+
+        private static Color GetRowTint(GameObject target, ObjectRowColors colors, GameObjectIconWindow.RowPreview preview)
+        {
+            if (TryGetColor(target, colors, preview, out Color color, out _))
+            {
+                color.a = EditorGUIUtility.isProSkin ? 0.28f : 0.20f;
+                return color;
+            }
+
+            return GetRegionTint(target.transform.parent, colors);
+        }
+
+        private static Color GetRegionTint(Transform parent, ObjectRowColors colors)
+        {
+            if (colors.HasRegions || GameObjectIconWindow.HasRegionPreview)
+            {
+                for (; parent != null; parent = parent.parent)
+                {
+                    if (TryGetRegionTint(parent.gameObject, colors, out Color color))
+                    {
+                        return color;
+                    }
+                }
+            }
+
+            return Color.clear;
+        }
+
+        private static bool TryGetRegionTint(GameObject owner, ObjectRowColors colors, out Color color)
+        {
+            if (TryGetColor(owner, colors, GameObjectIconWindow.GetRowPreview(owner), out color, out bool region) && region)
+            {
+                color.a = EditorGUIUtility.isProSkin ? 0.12f : 0.08f;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetColor(GameObject target, ObjectRowColors colors, GameObjectIconWindow.RowPreview preview,
+            out Color color, out bool region)
+        {
+            if (!preview.HasColor)
+            {
+                return colors.TryGetColor(target, out color, out region);
+            }
+
+            color = preview.Color.GetValueOrDefault();
+            region = preview.ColorRegion;
+            return preview.Color.HasValue;
         }
 
         protected override bool DrawerIsEnabled(HierarchyItem instance, Settings settings)

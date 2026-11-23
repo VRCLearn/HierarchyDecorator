@@ -178,7 +178,10 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
   ### Icons
 
  Click the icon next to a GameObject's name or **Alt**-click its row in the classic Hierarchy to open its
- decoration palette. Pick a row color and an object icon independently, or hold **Alt** when choosing to include descendants.
+ decoration palette. Pick a row color and an object icon independently.
+ Hover over a color or icon to preview it in the Hierarchy before applying it. Hold **Alt** while previewing or
+ picking a color to add a lighter tint to visible descendant rows without their own color. The object's own row
+ has the same tint strength in either mode. Each object keeps its own color and icon settings.
  Use **+** in Row Color to add a custom color or **+** in Object Icon to add a project texture.
  The palette applies the new choice and keeps it in its section for reuse.
  Right-click a custom color or project texture and choose **Remove from Palette** to remove the saved option.
