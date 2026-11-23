@@ -21,6 +21,7 @@ namespace HierarchyDecorator.Editor
         [SerializeField, HideInInspector] private ObjectRowColors rowColors = new ObjectRowColors();
         [SerializeField, HideInInspector]
         private List<Texture2D> paletteTextures = new List<Texture2D>();
+        [SerializeField, HideInInspector] private List<Color> paletteColors = new List<Color>();
         [SerializeField, HideInInspector] private Color paletteColor = new Color(0.56f, 0.52f, 0.84f);
 
         // Missing in older settings files, so existing configurations skip setup.
@@ -37,6 +38,7 @@ namespace HierarchyDecorator.Editor
 
         internal ObjectRowColors RowColors => rowColors;
         internal List<Texture2D> PaletteTextures => paletteTextures;
+        internal List<Color> PaletteColors => paletteColors;
 
         internal Color PaletteColor
         {

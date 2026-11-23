@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,14 +13,17 @@ namespace HierarchyDecorator.Editor
         private const string Title = "Decorate Object";
         private const string ResetArtworkGuid = "a459cc77dd434689b3edab153ff1f081";
         private const string AddArtworkGuid = "62583739412147f39a8bc2a2380786d6";
-        private const string ApplyArtworkGuid = "eda440e0815d485c8c4b49521bb0d576";
         private const string StarArtworkGuid = "940482a15c0244f393faf9b56f57718e";
-        private const int TextureLimit = 6;
+        private const int PaletteColumns = 9;
+        private const float PaletteWidth = 264f;
+        private const float ContentWidth = 248f;
+        private const float MinPaletteHeight = 259f;
+        private const float MaxPaletteHeight = 340f;
         private const float Left = 14f;
         private const float TileSize = 24f;
         private const float TileStep = 26f;
         private const float ArtworkSize = 14f;
-        private static readonly Vector2 PaletteSize = new Vector2(264f, 252f);
+        private const float ColorTilesY = 47f;
         private static readonly Rect FullTexture = new Rect(0f, 0f, 1f, 1f);
         private static readonly Dictionary<Texture2D, ArtworkMetrics> ArtworkCache = new Dictionary<Texture2D, ArtworkMetrics>();
 
@@ -55,13 +59,27 @@ namespace HierarchyDecorator.Editor
             public Vector2 opticalCenter;
         }
 
+        private struct PaletteLayout
+        {
+            public float iconHeaderY;
+            public float textureHeaderY;
+            public float hintY;
+            public float Height => hintY + 18f;
+
+            public PaletteLayout(int colorCount, int textureCount)
+            {
+                iconHeaderY = ColorTilesY + RowCount(1 + RowColors.Length + colorCount) * TileStep;
+                textureHeaderY = iconHeaderY + 18f + IconGroups.Length * TileStep;
+                hintY = textureHeaderY + (textureCount > 0 ? 20f + RowCount(textureCount) * TileStep : 2f);
+            }
+        }
+
         [SerializeField] private GameObject targetObject;
         private readonly List<Symbol> symbols = new List<Symbol>();
         private Texture2D resetArtwork;
         private Texture2D addArtwork;
-        private Texture2D applyArtwork;
         private Texture2D starArtwork;
-        private Color customColor;
+        private Vector2 paletteScroll;
         private int texturePickerId;
         private bool textureForChildren;
         private Vector2 pointerPosition;
@@ -77,8 +95,8 @@ namespace HierarchyDecorator.Editor
             }
 
             GameObjectIconWindow window = CreatePalette(target);
-            window.minSize = PaletteSize;
-            window.maxSize = PaletteSize;
+            window.minSize = GetPaletteSize();
+            window.maxSize = window.minSize;
             window.ShowUtility();
         }
 
@@ -108,10 +126,23 @@ namespace HierarchyDecorator.Editor
                 {
                     if (IsEditable(target))
                     {
-                        CreatePalette(target).ShowAsDropDown(anchor, PaletteSize);
+                        CreatePalette(target).ShowAsDropDown(anchor, GetPaletteSize());
                     }
                 };
             }
+        }
+
+        private static Vector2 GetPaletteSize()
+        {
+            Settings settings = HierarchyDecorator.Settings;
+            var layout = new PaletteLayout(settings.PaletteColors.Count,
+                settings.PaletteTextures.FindAll(IsProjectTexture).Count);
+            return new Vector2(PaletteWidth, Mathf.Clamp(layout.Height, MinPaletteHeight, MaxPaletteHeight));
+        }
+
+        private static int RowCount(int count)
+        {
+            return (count + PaletteColumns - 1) / PaletteColumns;
         }
 
         private static GameObjectIconWindow CreatePalette(GameObject target)
@@ -120,9 +151,7 @@ namespace HierarchyDecorator.Editor
             window.targetObject = target;
             window.resetArtwork = AssetUtility.LoadAssetFromGUID<Texture2D>(ResetArtworkGuid);
             window.addArtwork = AssetUtility.LoadAssetFromGUID<Texture2D>(AddArtworkGuid);
-            window.applyArtwork = AssetUtility.LoadAssetFromGUID<Texture2D>(ApplyArtworkGuid);
             window.starArtwork = AssetUtility.LoadAssetFromGUID<Texture2D>(StarArtworkGuid);
-            window.customColor = HierarchyDecorator.Settings.PaletteColor;
             window.titleContent = SettingsLocalization.Content(Title);
             return window;
         }
@@ -150,7 +179,7 @@ namespace HierarchyDecorator.Editor
                 return;
             }
 
-            if (evt.type == EventType.MouseMove || evt.type == EventType.MouseEnterWindow)
+            if (evt.type == EventType.MouseMove || evt.type == EventType.MouseEnterWindow || evt.type == EventType.ScrollWheel)
             {
                 pointerPosition = evt.mousePosition;
                 pointerInPalette = true;
@@ -170,62 +199,153 @@ namespace HierarchyDecorator.Editor
             if (evt.type == EventType.ExecuteCommand && evt.commandName == "ObjectSelectorClosed" &&
                 texturePickerId != 0 && EditorGUIUtility.GetObjectPickerControlID() == texturePickerId)
             {
-                FinishTextureSelection(icon);
+                FinishTextureSelection();
                 return;
             }
 
             Settings settings = HierarchyDecorator.Settings;
             bool children = evt.alt;
             bool hasColor = settings.RowColors.TryGetColor(targetObject, out Color color);
-            EditorGUI.LabelField(new Rect(Left, 5f, 236f, 18f),
-                new GUIContent(targetObject.name, targetObject.name), EditorStyles.boldLabel);
+            List<Texture2D> projectTextures = settings.PaletteTextures.FindAll(IsProjectTexture);
+            var layout = new PaletteLayout(settings.PaletteColors.Count, projectTextures.Count);
 
-            DrawColors(hasColor, color, children);
-            DrawIcons(settings.PaletteTextures, icon, children);
-            DrawCustomColor(settings, children);
-            EditorGUI.LabelField(new Rect(Left, 234f, 236f, 15f),
-                SettingsLocalization.Content(children ? "Applying to this object and its children"
-                    : "Hold Alt to include children"), children ? EditorStyles.boldLabel : EditorStyles.miniLabel);
+            paletteScroll = GUI.BeginScrollView(new Rect(0f, 0f, position.width, position.height), paletteScroll,
+                new Rect(0f, 0f, ContentWidth, layout.Height));
+            try
+            {
+                EditorGUI.LabelField(new Rect(Left, 5f, 219f, 18f),
+                    new GUIContent(targetObject.name, targetObject.name), EditorStyles.boldLabel);
+
+                DrawColors(settings, hasColor, color, children);
+                DrawIcons(projectTextures, icon, children, layout);
+                EditorGUI.LabelField(new Rect(Left, layout.hintY, 232f, 15f),
+                    SettingsLocalization.Content(children ? "Applying to this object and its children"
+                        : "Hold Alt to include children"), children ? EditorStyles.boldLabel : EditorStyles.miniLabel);
+            }
+            finally
+            {
+                GUI.EndScrollView();
+            }
         }
 
-        private void DrawColors(bool hasColor, Color current, bool children)
+        private void DrawColors(Settings settings, bool hasColor, Color current, bool children)
         {
-            EditorGUI.LabelField(new Rect(Left, 24f, 236f, 15f),
+            EditorGUI.LabelField(new Rect(Left, 24f, 176f, 15f),
                 SettingsLocalization.Content("Row Color"), EditorStyles.miniBoldLabel);
-            Rect clearTile = IconTile(Left, 40f);
-            if (DrawActionTile(clearTile, resetArtwork, "Clear Color", !hasColor))
+            if (DrawActionTile(IconTile(224f, 22f), addArtwork, "Add Color…"))
             {
-                ApplyColor(null, children);
+                OpenColorPicker(settings.PaletteColor, children);
             }
 
-            for (int i = 0; i < RowColors.Length; i++)
+            Rect clearTile = IconTile(Left, ColorTilesY);
+            if (DrawActionTile(clearTile, resetArtwork, "Clear Color", !hasColor))
             {
-                Color color = RowColors[i];
-                Rect tile = IconTile(Left + (i + 1) * TileStep, 40f);
+                ApplyColor(targetObject, null, children);
+                Repaint();
+            }
+
+            int colorCount = RowColors.Length + settings.PaletteColors.Count;
+            for (int i = 0; i < colorCount; i++)
+            {
+                Color color = i < RowColors.Length ? RowColors[i] : settings.PaletteColors[i - RowColors.Length];
+                Rect tile = PaletteTile(i + 1, ColorTilesY);
                 if (DrawSwatch(tile, color, hasColor && current.Equals(color)))
                 {
-                    ApplyColor(color, children);
+                    ApplyColor(targetObject, color, children);
+                    Repaint();
                 }
             }
         }
 
-        private void DrawCustomColor(Settings settings, bool children)
+        private void OpenColorPicker(Color initial, bool children)
         {
-            customColor = EditorGUI.ColorField(new Rect(200f, 209f, 28f, 18f),
-                SettingsLocalization.Content(string.Empty, "Apply Custom Color"), customColor, false, false, false);
-            if (DrawActionTile(IconTile(231f, 206f), applyArtwork, "Apply Custom Color"))
+            // Unity exposes ColorField publicly, but opening its picker from a button uses this overload.
+            Type pickerType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ColorPicker", true);
+            Type[] parameters = { typeof(Action<Color>), typeof(Color), typeof(bool), typeof(bool) };
+            MethodInfo show = pickerType.GetMethod("Show", parameters);
+            GameObject target = targetObject;
+            Color chosen = initial;
+            Action<Color> onColorChanged = color => chosen = color;
+            if (show != null)
             {
-                ApplyColor(customColor, children);
-                settings.PaletteColor = customColor;
-                EditorUtility.SetDirty(settings);
+                show.Invoke(null, new object[] { onColorChanged, initial, false, false });
+            }
+            else
+            {
+                // Newer Unity versions add an option for a transparent starting color.
+                show = pickerType.GetMethod("Show", new[] { parameters[0], parameters[1], parameters[2],
+                    parameters[3], typeof(bool) });
+                show.Invoke(null, new object[] { onColorChanged, initial, false, false, false });
+            }
+
+            var picker = (EditorWindow)pickerType.GetProperty("instance").GetValue(null);
+            EditorApplication.update += FinishColorSelection;
+            GUIUtility.ExitGUI();
+
+            void FinishColorSelection()
+            {
+                if (picker != null)
+                {
+                    return;
+                }
+
+                EditorApplication.update -= FinishColorSelection;
+                // Escape restores the original color through the same callback before closing.
+                Color32 selected = chosen;
+                if (((Color32)initial).Equals(selected) || !IsEditable(target))
+                {
+                    return;
+                }
+
+                AddPaletteColor(target, selected, children);
+                if (this != null)
+                {
+                    Repaint();
+                }
             }
         }
 
-        private void DrawIcons(List<Texture2D> textures, Texture2D current, bool children)
+        private static void AddPaletteColor(GameObject target, Color32 selected, bool children)
         {
-            EditorGUI.LabelField(new Rect(Left, 66f, 236f, 16f),
+            Settings settings = HierarchyDecorator.Settings;
+            Color color;
+            int preset = Array.FindIndex(RowColors, entry => ((Color32)entry).Equals(selected));
+            int saved = settings.PaletteColors.FindIndex(entry => ((Color32)entry).Equals(selected));
+            Undo.IncrementCurrentGroup();
+            Undo.RegisterCompleteObjectUndo(settings, SettingsLocalization.Text("Row Color"));
+            if (preset >= 0)
+            {
+                color = RowColors[preset];
+            }
+            else if (saved >= 0)
+            {
+                color = settings.PaletteColors[saved];
+            }
+            else
+            {
+                color = selected;
+                settings.PaletteColors.Add(color);
+            }
+
+            settings.PaletteColor = color;
+            ApplyColor(target, color, children, false);
+            EditorUtility.SetDirty(settings);
+        }
+
+        private void DrawIcons(List<Texture2D> textures, Texture2D current, bool children, PaletteLayout layout)
+        {
+            EditorGUI.LabelField(new Rect(Left, layout.iconHeaderY, 176f, 16f),
                 SettingsLocalization.Content("Object Icon"), EditorStyles.miniBoldLabel);
-            if (DrawActionTile(IconTile(Left, 83f), resetArtwork, "Default Icon", current == null))
+            if (DrawActionTile(IconTile(224f, layout.iconHeaderY - 4f), addArtwork, "Add Icon…"))
+            {
+                texturePickerId = GUIUtility.GetControlID(FocusType.Passive);
+                textureForChildren = children;
+                EditorGUIUtility.ShowObjectPicker<Texture2D>(null, false, string.Empty, texturePickerId);
+                GUIUtility.ExitGUI();
+            }
+
+            float iconTilesY = layout.iconHeaderY + 17f;
+            if (DrawActionTile(IconTile(Left, iconTilesY), resetArtwork, "Default Icon", current == null))
             {
                 ApplyIcons(targetObject, null, children);
             }
@@ -244,7 +364,7 @@ namespace HierarchyDecorator.Editor
                             {
                                 icon = texture,
                                 tooltip = new GUIContent(string.Empty, ObjectNames.NicifyVariableName(name.Replace(" Icon", ""))),
-                                tile = IconTile(Left + slot++ * TileStep, 83f + group * 26f)
+                                tile = IconTile(Left + slot++ * TileStep, group * TileStep)
                             });
                         }
                     }
@@ -255,7 +375,7 @@ namespace HierarchyDecorator.Editor
                         {
                             icon = starArtwork,
                             tooltip = SettingsLocalization.Content(string.Empty, "Star"),
-                            tile = IconTile(Left + slot * TileStep, 83f)
+                            tile = IconTile(Left + slot * TileStep, 0f)
                         });
                     }
                 }
@@ -263,37 +383,35 @@ namespace HierarchyDecorator.Editor
 
             foreach (Symbol symbol in symbols)
             {
-                if (DrawIconTile(symbol.tile, symbol.icon, symbol.icon == current, symbol.tooltip))
+                Rect tile = symbol.tile;
+                tile.y += iconTilesY;
+                if (DrawIconTile(tile, symbol.icon, symbol.icon == current, symbol.tooltip))
                 {
                     ApplyIcons(targetObject, symbol.icon, children);
                 }
             }
 
-            EditorGUI.LabelField(new Rect(Left, 188f, 236f, 17f),
-                SettingsLocalization.Content("Project Textures"), EditorStyles.miniBoldLabel);
-            int textureSlot = 0;
-            foreach (Texture2D texture in textures)
+            if (textures.Count == 0)
             {
-                if (!IsProjectTexture(texture) || textureSlot == TextureLimit)
-                {
-                    continue;
-                }
+                return;
+            }
 
-                Rect tile = IconTile(Left + textureSlot++ * TileStep, 206f);
+            EditorGUI.LabelField(new Rect(Left, layout.textureHeaderY, 232f, 17f),
+                SettingsLocalization.Content("Project Textures"), EditorStyles.miniBoldLabel);
+            for (int index = 0; index < textures.Count; index++)
+            {
+                Texture2D texture = textures[index];
+                Rect tile = PaletteTile(index, layout.textureHeaderY + 18f);
                 if (DrawIconTile(tile, texture, texture == current, new GUIContent(string.Empty, texture.name)))
                 {
                     ApplyIcons(targetObject, texture, children);
                 }
             }
+        }
 
-            if (DrawActionTile(IconTile(Left + TextureLimit * TileStep, 206f), addArtwork, "Project Texture…"))
-            {
-                texturePickerId = GUIUtility.GetControlID(FocusType.Passive);
-                textureForChildren = children;
-                EditorGUIUtility.ShowObjectPicker<Texture2D>(IsProjectTexture(current) ? current : null,
-                    false, string.Empty, texturePickerId);
-                GUIUtility.ExitGUI();
-            }
+        private static Rect PaletteTile(int slot, float startY)
+        {
+            return IconTile(Left + (slot % PaletteColumns) * TileStep, startY + (slot / PaletteColumns) * TileStep);
         }
 
         private bool DrawSwatch(Rect tile, Color color, bool selected)
@@ -439,7 +557,7 @@ namespace HierarchyDecorator.Editor
         {
             if (Event.current.type == EventType.Repaint)
             {
-                bool hovered = pointerInPalette && tile.Contains(pointerPosition);
+                bool hovered = pointerInPalette && tile.Contains(pointerPosition + paletteScroll);
                 Rect stateRect = InsetTile(tile, 1f);
                 if (selected || hovered)
                 {
@@ -481,11 +599,11 @@ namespace HierarchyDecorator.Editor
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, color, 0f, radius);
         }
 
-        private void FinishTextureSelection(Texture2D current)
+        private void FinishTextureSelection()
         {
             texturePickerId = 0;
             var texture = EditorGUIUtility.GetObjectPickerObject() as Texture2D;
-            if (!IsProjectTexture(texture) || texture == current)
+            if (!IsProjectTexture(texture))
             {
                 return;
             }
@@ -495,25 +613,30 @@ namespace HierarchyDecorator.Editor
             bool children = textureForChildren;
             EditorApplication.delayCall += () =>
             {
-                if (IsEditable(target))
-                {
-                    Settings settings = HierarchyDecorator.Settings;
-                    var textures = settings.PaletteTextures;
-                    textures.RemoveAll(entry => !IsProjectTexture(entry) || entry == texture);
-                    textures.Insert(0, texture);
-                    if (textures.Count > TextureLimit)
-                    {
-                        textures.RemoveRange(TextureLimit, textures.Count - TextureLimit);
-                    }
-                    EditorUtility.SetDirty(settings);
-                    ApplyIcons(target, texture, children);
-                }
+                AddProjectIcon(target, texture, children);
 
                 if (this != null)
                 {
                     Repaint();
                 }
             };
+        }
+
+        private static void AddProjectIcon(GameObject target, Texture2D texture, bool children)
+        {
+            if (!IsEditable(target) || !IsProjectTexture(texture))
+            {
+                return;
+            }
+
+            Settings settings = HierarchyDecorator.Settings;
+            if (!settings.PaletteTextures.Contains(texture))
+            {
+                settings.PaletteTextures.Add(texture);
+                EditorUtility.SetDirty(settings);
+            }
+
+            ApplyIcons(target, texture, children);
         }
 
         private static bool IsProjectTexture(Texture2D texture)
@@ -528,12 +651,12 @@ namespace HierarchyDecorator.Editor
                 path.StartsWith("Packages/", StringComparison.Ordinal);
         }
 
-        private void ApplyColor(Color? color, bool children)
+        private static void ApplyColor(GameObject root, Color? color, bool children, bool recordUndo = true)
         {
             Settings settings = HierarchyDecorator.Settings;
             ObjectRowColors data = settings.RowColors;
             bool changed = false;
-            foreach (GameObject target in Targets(targetObject, children))
+            foreach (GameObject target in Targets(root, children))
             {
                 bool hasColor = data.TryGetColor(target, out Color existing);
                 if (hasColor == color.HasValue && (!hasColor || existing.Equals(color.Value)))
@@ -541,11 +664,11 @@ namespace HierarchyDecorator.Editor
                     continue;
                 }
 
-                if (!changed)
+                if (!changed && recordUndo)
                 {
                     Undo.RegisterCompleteObjectUndo(settings, SettingsLocalization.Text("Row Color"));
-                    changed = true;
                 }
+                changed = true;
                 data.SetColor(target, color);
             }
 
@@ -553,7 +676,6 @@ namespace HierarchyDecorator.Editor
             {
                 EditorUtility.SetDirty(settings);
                 EditorApplication.RepaintHierarchyWindow();
-                Repaint();
             }
         }
 

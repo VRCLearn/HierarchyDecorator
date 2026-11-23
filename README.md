@@ -179,7 +179,8 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
 
  Alt-click a GameObject row in the classic Hierarchy to open its decoration palette. Pick a row
  color and an object icon independently, or hold **Alt** when choosing to include descendants.
- **+** adds a project texture to the palette for reuse. The first tile in each group restores
+ Use **+** in Row Color to add a custom color or **+** in Object Icon to add a project texture.
+ The palette applies the new choice and keeps it in its section for reuse. The first tile in each group restores
  the original color or icon independently. The context menu also offers **HierarchyDecorator > Decorate Object...**.
  The icon presets omit Unity's automatic GameObject, Prefab, and scene icons.
 
