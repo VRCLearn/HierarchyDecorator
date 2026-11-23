@@ -95,7 +95,8 @@ namespace HierarchyDecorator.Editor
                 .RegisterDrawer(new SerializedGroupDrawer(SerializedPropertyUtility.GetChildProperties(
                     breadcrumbs,
                     nameof(BreadcrumbSettings.color),
-                    nameof(BreadcrumbSettings.style),
+                    nameof(BreadcrumbSettings.directStyle),
+                    nameof(BreadcrumbSettings.ancestorStyle),
                     nameof(BreadcrumbSettings.displayHorizontal))))
                     .EnableIf(() => showBreadcrumbs.boolValue);
         }

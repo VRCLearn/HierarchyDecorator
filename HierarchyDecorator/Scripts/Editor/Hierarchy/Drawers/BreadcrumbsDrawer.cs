@@ -39,7 +39,7 @@ namespace HierarchyDecorator.Editor
                 column -= HierarchyIndentWidth;
                 if (HasVisibleSibling(ancestor, 1))
                 {
-                    DrawLine(new Vector2(column, row.yMin), new Vector2(column, row.yMax), breadcrumbs.style, color, pixel);
+                    DrawLine(new Vector2(column, row.yMin), new Vector2(column, row.yMax), breadcrumbs.ancestorStyle, color, pixel);
                 }
             }
         }
@@ -50,13 +50,13 @@ namespace HierarchyDecorator.Editor
             bool hasPrevious = HasVisibleSibling(node, -1);
             bool hasNext = HasVisibleSibling(node, 1);
             Rect branch = GetBranchBounds(row, column, hasPrevious, hasNext, HasVisibleChild(node));
-            DrawLine(branch.min, new Vector2(column, branch.yMax), settings.style, color, pixel);
+            DrawLine(branch.min, new Vector2(column, branch.yMax), settings.directStyle, color, pixel);
 
             if (settings.displayHorizontal)
             {
                 // A continuing stem already owns the junction pixel. A final branch ends just above it.
                 float start = hasNext ? column + pixel : column;
-                DrawLine(new Vector2(start, row.center.y), new Vector2(branch.xMax, row.center.y), settings.style, color, pixel);
+                DrawLine(new Vector2(start, row.center.y), new Vector2(branch.xMax, row.center.y), settings.directStyle, color, pixel);
             }
         }
 

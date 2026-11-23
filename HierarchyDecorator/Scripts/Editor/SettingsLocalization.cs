@@ -105,6 +105,8 @@ namespace HierarchyDecorator.Editor
             { "Color", new[] { "色", "색상", "色彩", "颜色" } },
             { "Style", new[] { "スタイル", "스타일", "樣式", "样式" } },
             { "Display Horizontal", new[] { "横線を表示", "가로선 표시", "顯示水平線", "显示水平线" } },
+            { "Direct Style", new[] { "直結する枝の線種", "직접 연결선 모양", "直連分支線型", "直连分支线型" } },
+            { "Ancestor Style", new[] { "上位の枝の線種", "상위 분기선 모양", "祖先分支線型", "祖先分支线型" } },
             { "Enable Icons", new[] { "アイコンを有効化", "아이콘 활성화", "啟用圖示", "启用图标" } },
             { "Click To Toggle Component", new[] { "クリックでコンポーネントを切り替え", "클릭으로 컴포넌트 전환", "點擊切換元件", "点击切换组件" } },
             { "Stack Duplicate Icons", new[] { "重複アイコンをまとめる", "중복 아이콘 합치기", "合併重複圖示", "合并重复图标" } },

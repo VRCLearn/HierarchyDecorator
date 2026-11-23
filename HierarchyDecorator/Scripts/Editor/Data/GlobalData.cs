@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HierarchyDecorator.Editor
 {
@@ -19,7 +20,9 @@ namespace HierarchyDecorator.Editor
     public class BreadcrumbSettings
     {
         public Color color = Color.grey;
-        public BreadcrumbStyle style = BreadcrumbStyle.Solid;
+        [FormerlySerializedAs("style")]
+        public BreadcrumbStyle directStyle = BreadcrumbStyle.Solid;
+        public BreadcrumbStyle ancestorStyle = BreadcrumbStyle.Dash;
 
         public bool displayHorizontal = true;
     }
