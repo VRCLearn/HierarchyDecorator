@@ -214,6 +214,7 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
  - Enable Icons: Will toggle the icons on.
  - Stack Mono Behaviours - If there are any MonoBehaviour derived components, show only one script icon on the instance.
  - Show Missing Script Warning - Show an indicator if there's an invalid script or "missing" script that cannot find the source file.
+ - Component Icon Limit - Set the maximum number of component icons per row after stacking duplicates. Use `0` for no limit. Hover over `+N` to see the hidden components.
 
 </details>
 

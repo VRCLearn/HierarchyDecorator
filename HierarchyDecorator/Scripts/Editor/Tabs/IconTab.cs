@@ -183,7 +183,8 @@ namespace HierarchyDecorator.Editor
             display.ToggleStyle = Style.ToolbarButtonLeft;
 
             CreateDrawableGroup("Settings")
-                .RegisterSerializedProperty(serializedTab, "enableIcons", "clickToToggleComponent", "stackDuplicateIcons", "showMissingScriptWarning");
+                .RegisterSerializedProperty(serializedTab, "enableIcons", "clickToToggleComponent", "stackDuplicateIcons",
+                    "componentIconLimit", "showMissingScriptWarning");
         }
 
         // Methods

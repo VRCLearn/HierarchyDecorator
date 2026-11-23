@@ -7,19 +7,18 @@ using System.Reflection;
 using Object = UnityEngine.Object;
 using UnityEditor;
 using UnityEngine;
-using System.ComponentModel;
 
 namespace HierarchyDecorator.Editor
 {
     public class ComponentIconInfo : HierarchyInfo
     {
         private static readonly Color s_DisabledColor = new Color(1f, 1f, 1f, 0.4f);
-        private Dictionary<Texture, List<ComponentItem>> stackedComponents = new Dictionary<Texture, List<ComponentItem>>();
-        private Dictionary<Texture, GUIContent> stackTextures = new Dictionary<Texture, GUIContent>();
-        private IList<ComponentItem> items = new List<ComponentItem>();
+        private readonly Dictionary<Texture, List<ComponentItem>> stackedComponents = new Dictionary<Texture, List<ComponentItem>>();
+        private readonly List<ComponentItem> items = new List<ComponentItem>();
 
         private bool requireWarning;
-        private int componentCount;
+        private int iconLimit;
+        private bool stackIcons;
 
 #if UNITY_2019_1_OR_NEWER
         private readonly GUIContent warningGUI = EditorGUIUtility.IconContent("warning");
@@ -29,8 +28,11 @@ namespace HierarchyDecorator.Editor
         protected override void OnDrawInit(HierarchyItem item, Settings settings)
         {
             requireWarning = false;
+            iconLimit = settings.Components.ComponentIconLimit;
+            stackIcons = settings.Components.StackScripts;
+            items.Clear();
+            stackedComponents.Clear();
 
-            List<ComponentItem> newComponents = new List<ComponentItem>();
             foreach (ComponentItem component in item.Components.GetItems())
             {
                 if (component.IsNullComponent && settings.Components.ShowMissingScriptWarning)
@@ -44,22 +46,27 @@ namespace HierarchyDecorator.Editor
                     continue;
                 }
 
-                newComponents.Add(component);
-            }
+                Texture texture = stackIcons ? component.Content.image : null;
+                if (texture != null)
+                {
+                    if (stackedComponents.TryGetValue(texture, out List<ComponentItem> group))
+                    {
+                        group.Add(component);
+                        continue;
+                    }
 
-            items = newComponents;
-            componentCount = items.Count;
-
-            if (stackTextures.Count > 0)
-            {
-                stackTextures.Clear();
-                stackedComponents.Clear();
+                    stackedComponents.Add(texture, new List<ComponentItem> { component });
+                }
+                items.Add(component);
             }
         }
 
         protected override int CalculateGridCount()
         {
-            return componentCount;
+            int visible = iconLimit > 0 ? Mathf.Min(items.Count, iconLimit) : items.Count;
+            int hidden = items.Count - visible;
+            int overflowSlots = hidden > 0 ? OverflowSlots(hidden) : 0;
+            return visible + overflowSlots + (requireWarning ? 1 : 0);
         }
 
         protected override bool DrawerIsEnabled(HierarchyItem item, Settings settings)
@@ -74,60 +81,96 @@ namespace HierarchyDecorator.Editor
 
         protected override void DrawInfo(Rect rect, HierarchyItem item, Settings settings)
         {
-            bool stackScripts = settings.Components.StackScripts;
-
+            int available = GridCount - (requireWarning ? 1 : 0);
+            int visible = GetVisibleIconCount(available);
             rect = GetIconPosition(rect);
 
-            for (int i = 0; i < componentCount; i++)
+            for (int i = 0; i < visible; i++)
             {
-                if (IsIconOutOfBounds(rect))
-                {
-                    break;
-                }
-
                 ComponentItem component = items[i];
-
-                // Feature - Stack Scripts: Only draw once
-
-                if (stackScripts)
+                List<ComponentItem> group = GetStack(component);
+                if (group != null)
                 {
-                    Texture texture = component.Content.image;
-                    if (!stackTextures.TryGetValue(texture, out GUIContent content))
-                    {
-                        content = new GUIContent(string.Empty, texture, component.DisplayName);
-                        stackTextures.Add(texture, content);
-                        stackedComponents.Add(texture, new List<ComponentItem>());
-                    }
-                    else
-                    {
-                        content.tooltip += "\n" + component.DisplayName;
-                    }
-                    stackedComponents[texture].Add(component);
+                    var content = new GUIContent(string.Empty, component.Content.image,
+                        string.Join("\n", group.Select(member => member.DisplayName)));
+                    DrawStackedComponentIcon(rect, content, group, settings);
                 }
-                else // Draw
+                else
                 {
                     DrawComponentIcon(rect, component, settings);
-                    rect.x -= INDENT_SIZE;
                 }
+                rect.x -= INDENT_SIZE;
             }
 
-            if (stackScripts)
+            int hidden = items.Count - visible;
+            if (iconLimit > 0 && hidden > 0 && available > visible)
             {
-                foreach (GUIContent content in stackTextures.Values)
-                {
-                    if (IsIconOutOfBounds(rect))
-                    {
-                        break;
-                    }
-                    DrawStackedComponentIcon(rect, content, stackedComponents[content.image], settings);
-                    rect.x -= INDENT_SIZE;
-                }
+                int slots = Mathf.Min(OverflowSlots(hidden), available - visible);
+                Rect overflowRect = rect;
+                overflowRect.xMin -= (slots - 1) * INDENT_SIZE;
+                DrawOverflow(overflowRect, visible, hidden, slots);
+                rect.x -= slots * INDENT_SIZE;
             }
 
             if (requireWarning)
             {
-                DrawMissingComponent(rect);
+                DrawIcon(rect, warningGUI);
             }
+        }
+
+        private int GetVisibleIconCount(int available)
+        {
+            int visible = Mathf.Min(available, items.Count);
+            if (iconLimit == 0)
+            {
+                return visible;
+            }
+
+            visible = Mathf.Min(visible, iconLimit);
+            while (visible > 0 && visible < items.Count && visible + OverflowSlots(items.Count - visible) > available)
+            {
+                visible--;
+            }
+            return visible;
+        }
+
+        private static int OverflowSlots(int hidden) => hidden > 9 ? 2 : 1;
+
+        private List<ComponentItem> GetStack(ComponentItem component)
+        {
+            Texture texture = stackIcons ? component.Content.image : null;
+            return texture != null && stackedComponents.TryGetValue(texture, out List<ComponentItem> group)
+                ? group : null;
+        }
+
+        private void DrawOverflow(Rect rect, int visible, int hidden, int slots)
+        {
+            string count = "+" + hidden;
+            string label = slots < OverflowSlots(hidden) ? "…" : count;
+            if (!rect.Contains(Event.current.mousePosition))
+            {
+                GUI.Label(rect, label, EditorStyles.miniLabel);
+                return;
+            }
+
+            var tooltip = new StringBuilder(count);
+            for (int i = visible; i < items.Count; i++)
+            {
+                ComponentItem component = items[i];
+                List<ComponentItem> group = GetStack(component);
+                if (group == null)
+                {
+                    tooltip.Append('\n').Append(component.DisplayName);
+                    continue;
+                }
+
+                foreach (ComponentItem member in group)
+                {
+                    tooltip.Append('\n').Append(member.DisplayName);
+                }
+            }
+
+            GUI.Label(rect, new GUIContent(label, tooltip.ToString()), EditorStyles.miniLabel);
         }
 
         // GUI
@@ -201,12 +244,6 @@ namespace HierarchyDecorator.Editor
             finally { GUI.color = previousColor; }
         }
 
-        private void DrawMissingComponent(Rect rect)
-        {
-            rect = GetIconPosition(rect);
-            DrawIcon(rect, warningGUI);
-        }
-
         private void DrawIcon(Rect rect, GUIContent content)
         {
             GUI.Label(rect, content, Style.ComponentIconStyle);
@@ -248,11 +285,6 @@ namespace HierarchyDecorator.Editor
             rect.x += rect.width - INDENT_SIZE;
             rect.width = INDENT_SIZE;
             return rect;
-        }
-
-        private bool IsIconOutOfBounds(Rect rect)
-        {
-            return rect.x < (LabelRect.x + LabelRect.width);
         }
     }
 }

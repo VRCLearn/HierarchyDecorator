@@ -110,6 +110,8 @@ namespace HierarchyDecorator.Editor
             { "Enable Icons", new[] { "アイコンを有効化", "아이콘 활성화", "啟用圖示", "启用图标" } },
             { "Click To Toggle Component", new[] { "クリックでコンポーネントを切り替え", "클릭으로 컴포넌트 전환", "點擊切換元件", "点击切换组件" } },
             { "Stack Duplicate Icons", new[] { "重複アイコンをまとめる", "중복 아이콘 합치기", "合併重複圖示", "合并重复图标" } },
+            { "Component Icon Limit", new[] { "コンポーネントアイコンの表示上限", "컴포넌트 아이콘 표시 제한", "元件圖示顯示上限", "组件图标显示上限" } },
+            { "Maximum component icons per row. Zero means unlimited.", new[] { "1 行に表示するコンポーネントアイコンの最大数。0 は無制限です。", "한 행에 표시할 컴포넌트 아이콘의 최대 개수입니다. 0은 무제한입니다.", "每列最多顯示的元件圖示數量。0 代表不限。", "每行最多显示的组件图标数量。0 表示不限。" } },
             { "Show Missing Script Warning", new[] { "スクリプト欠落の警告を表示", "누락된 스크립트 경고 표시", "顯示遺失腳本警告", "显示缺失脚本警告" } },
             { "Show All", new[] { "すべて表示", "모두 표시", "全部顯示", "全部显示" } },
             { "Two Tone Background", new[] { "交互の背景色", "교차 배경색", "交替背景色", "交替背景色" } },

@@ -66,6 +66,8 @@ namespace HierarchyDecorator.Editor
         [SerializeField] private bool showMissingScriptWarning = true;
         [SerializeField] private DisplayMode showAll = DisplayMode.Unity | DisplayMode.Custom;
         [SerializeField] private bool stackDuplicateIcons;
+        [SerializeField, Min(0), Tooltip("Maximum component icons per row. Zero means unlimited.")]
+        private int componentIconLimit;
 
         [SerializeField] private ComponentGroup[] unityGroups = new ComponentGroup[0];
 
@@ -95,6 +97,8 @@ namespace HierarchyDecorator.Editor
         }
 
         public bool StackScripts => stackDuplicateIcons;
+
+        internal int ComponentIconLimit => Mathf.Max(0, componentIconLimit);
 
         /// <summary>
         /// Are components enabled?
