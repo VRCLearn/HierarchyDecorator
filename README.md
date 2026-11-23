@@ -134,12 +134,13 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
   
   Breadcrumbs connect each visible child to its parent. The last visible sibling ends its branch.
 
-  All branches use the same color and line style.
+  All branches share a color. Direct connections and ancestor lines can each use a solid, dashed, or dotted style.
   
   ```
   Show                    Show the breadcrumbs.
   Color                   The colour of the drawn lines.
-  Style                   The line style - Solid, Dash, Dotted.
+  Direct Style            Line style for the branch connecting an object to its parent.
+  Ancestor Style          Line style for ancestor branches passing through the current row.
   Display Horizontal      Draw the horizontal connector from a branch to each object.
   ```
 </details>
