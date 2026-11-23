@@ -12,19 +12,7 @@ namespace HierarchyDecorator.Editor
             bool hasStyle = settings.styleData.twoToneBackground;
             bool repaint = Event.current.type == EventType.Repaint;
             GameObjectIconWindow.RowPreview preview = repaint ? GameObjectIconWindow.GetRowPreview(item.GameObject) : default;
-            Texture2D visibleIcon = repaint ? GameObjectIconInfo.GetIcon(item.GameObject) : null;
-            if (preview.HasIcon)
-            {
-                if (preview.Icon != null || visibleIcon == null)
-                {
-                    visibleIcon = preview.Icon;
-                }
-                else
-                {
-                    visibleIcon = HierarchyGUI.GetStandardContent(item.GameObject, item.PrefabInfo == PrefabInfo.Root)
-                        .image as Texture2D;
-                }
-            }
+            Texture2D visibleIcon = repaint ? GameObjectIconInfo.GetVisibleIcon(item, preview) : null;
 
             // Only draw the two tone background if there's no style override
 
@@ -44,12 +32,7 @@ namespace HierarchyDecorator.Editor
                     ? rect
                     : GetActualHierarchyWidth(rect);
 
-                Rect labelRect = rect;
-                if (visibleIcon != null)
-                {
-                    labelRect.xMin += GameObjectIconInfo.LabelOffset;
-                }
-
+                Rect labelRect = prefix.GetLabelRect(rect, visibleIcon != null);
                 HierarchyGUI.DrawHierarchyStyle(prefix, styleRect, labelRect, displayName);
                 hasStyle = true;
             }

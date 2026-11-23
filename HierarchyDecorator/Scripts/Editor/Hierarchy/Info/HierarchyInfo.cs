@@ -34,7 +34,7 @@ namespace HierarchyDecorator.Editor
             // Full rect calculation 
 
             FullRect = GetFullRect (rect);
-            LabelRect = GetLabelRect(rect, item.DisplayName, settings);
+            LabelRect = GetLabelRect(rect, item, settings);
 
             // Setup any data before drawing
 
@@ -131,73 +131,35 @@ namespace HierarchyDecorator.Editor
             return text.Substring(start, length);
         }
 
-        private Rect GetLabelRect(Rect rect, string name, Settings settings)
+        private Rect GetLabelRect(Rect rect, HierarchyItem item, Settings settings)
         {
-            GUIStyle labelStyle = null;
-            GUIContent labelGUI = new GUIContent();
-
-            bool hasStyle = settings.styleData.TryGetStyleFromPrefix (name, out HierarchyStyle style);
-
-            if (hasStyle)
+            string name = item.DisplayName;
+            if (!settings.styleData.TryGetStyleFromPrefix(name, out HierarchyStyle style))
             {
-                labelStyle = style.style;
-                
-                if (style.isRegex)
-                {
-                    if (style.capturedGroups != null && style.capturedGroups.Length > 0) {
-                        name = style.FormatString(string.Join("", style.capturedGroups));
-                    }
-                }
-                else
-                {
-                    int len = style.prefix.Length;
-                    name = style.FormatString(SafeSubstring(name, len + 1, name.Length - len - 1));
-                }
-            }
-            else
-            {
-                labelStyle = EditorStyles.label;
+                rect.width = EditorStyles.label.CalcSize(new GUIContent(name)).x + 18f;
+                return rect;
             }
 
-            labelGUI.text = name;
-            rect.width = labelStyle.CalcSize (labelGUI).x + 2f;
-
-            if (!hasStyle)
+            GUIStyle labelStyle = style.style;
+            var preview = GameObjectIconWindow.GetRowPreview(item.GameObject);
+            bool hasIcon = GameObjectIconInfo.GetVisibleIcon(item, preview) != null;
+            Rect label = style.GetLabelRect(rect, hasIcon);
+            rect.width = labelStyle.CalcSize(new GUIContent(style.GetLabelText(name))).x + 2f;
+            switch (labelStyle.alignment)
             {
-                rect.width += 16f;
-            }
-            else
-            {
-                switch (labelStyle.alignment)
-                {
-                    case TextAnchor.UpperCenter:
-                    case TextAnchor.MiddleCenter:
-                    case TextAnchor.LowerCenter:
-
-                        // Calculations:
-                        // - Get the center of the full width
-                        // - Add the original offset
-                        // - Subtract half the content size
-                        // - Add 16f to shift over due to the toggle box area
-
-                        float width = (FullRect.width - 16f) * 0.5f;
-                        width += rect.x * 0.5f;
-                        width -= rect.width * 0.5f;
-                        width += 16f;
-
-                        rect.x = width;
-
-                        break;
-
-                    case TextAnchor.UpperRight:
-                    case TextAnchor.MiddleRight:
-                    case TextAnchor.LowerRight:
-
-                        rect.x = FullRect.width + 17f;
-                        rect.x -= rect.width;
-
-                        break;
-                }
+                case TextAnchor.UpperCenter:
+                case TextAnchor.MiddleCenter:
+                case TextAnchor.LowerCenter:
+                    rect.x = label.center.x - rect.width * 0.5f;
+                    break;
+                case TextAnchor.UpperRight:
+                case TextAnchor.MiddleRight:
+                case TextAnchor.LowerRight:
+                    rect.x = label.xMax + 1f - rect.width;
+                    break;
+                default:
+                    rect.x = label.xMin;
+                    break;
             }
 
             return rect;

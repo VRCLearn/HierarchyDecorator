@@ -8,7 +8,7 @@ namespace HierarchyDecorator.Editor
 {
     internal static class GameObjectIconInfo
     {
-        private const float IconWidth = 16f;
+        internal const float IconWidth = 16f;
         internal const float LabelOffset = 18f;
 
 #if !UNITY_2021_2_OR_NEWER
@@ -26,6 +26,22 @@ namespace HierarchyDecorator.Editor
 #else
             return GetLegacyIcon(target);
 #endif
+        }
+
+        internal static Texture2D GetVisibleIcon(HierarchyItem item, GameObjectIconWindow.RowPreview preview)
+        {
+            Texture2D icon = GetIcon(item.GameObject);
+            if (!preview.HasIcon)
+            {
+                return icon;
+            }
+
+            if (preview.Icon != null || icon == null)
+            {
+                return preview.Icon;
+            }
+
+            return HierarchyGUI.GetStandardContent(item.GameObject, item.PrefabInfo == PrefabInfo.Root).image as Texture2D;
         }
 
         internal static Rect GetSlot(Rect row)

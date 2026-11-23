@@ -83,6 +83,38 @@ namespace HierarchyDecorator.Editor
             style.normal.textColor = GetCurrentMode(isDarkMode).fontColour;
         }
 
+        internal Rect GetLabelRect(Rect row, bool hasIcon)
+        {
+            TextAnchor alignment = style.alignment;
+            if (hasIcon)
+            {
+                row.xMin += Mathf.Min(row.width, GameObjectIconInfo.LabelOffset);
+            }
+            else if (alignment == TextAnchor.UpperLeft || alignment == TextAnchor.MiddleLeft || alignment == TextAnchor.LowerLeft)
+            {
+                row.xMin += Mathf.Min(row.width, GameObjectIconInfo.IconWidth * 0.5f);
+            }
+
+            return row;
+        }
+
+        internal string GetLabelText(string label, bool removePrefix = true)
+        {
+            if (removePrefix)
+            {
+                if (!isRegex)
+                {
+                    label = label.Substring(prefix.Length).Trim();
+                }
+                else if (capturedGroups != null && capturedGroups.Length > 0)
+                {
+                    label = string.Join("", capturedGroups);
+                }
+            }
+
+            return FormatString(label);
+        }
+
         /// <summary>
         /// Returns string formatted according to styling options of <see cref="HierarchyStyle"/> instance
         /// </summary>

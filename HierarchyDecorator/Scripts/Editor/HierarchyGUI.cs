@@ -12,24 +12,9 @@ namespace HierarchyDecorator.Editor
 
         public static void DrawHierarchyStyle(HierarchyStyle style, Rect styleRect, Rect labelRect, string label, bool removePrefix = true)
         {
-            if (removePrefix)
-            {
-                if (style.isRegex)
-                {
-                    if(style.capturedGroups != null && style.capturedGroups.Length > 0){
-                        label = string.Join("", style.capturedGroups);
-                    }
-                }
-                else
-                {
-                    label = label.Substring (style.prefix.Length).Trim ();
-                }
-            }
-
-            ModeOptions styleSetting = style.GetCurrentMode (EditorGUIUtility.isProSkin);
-
-            EditorGUI.DrawRect (styleRect, styleSetting.backgroundColour);
-            EditorGUI.LabelField (labelRect, style.FormatString(label), style.style);
+            ModeOptions styleSetting = style.GetCurrentMode(EditorGUIUtility.isProSkin);
+            EditorGUI.DrawRect(styleRect, styleSetting.backgroundColour);
+            EditorGUI.LabelField(labelRect, style.GetLabelText(label, removePrefix), style.style);
         }
 
         public static void DrawStandardContent(Rect rect, GameObject instance)
