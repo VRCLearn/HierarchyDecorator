@@ -9,7 +9,6 @@ namespace HierarchyDecorator.Editor
 {
     internal sealed class GameObjectIconWindow : EditorWindow
     {
-        private const string MenuPath = "GameObject/HierarchyDecorator/Decorate Object...";
         private const string Title = "Decorate Object";
         private const string ResetArtworkGuid = "a459cc77dd434689b3edab153ff1f081";
         private const string AddArtworkGuid = "62583739412147f39a8bc2a2380786d6";
@@ -86,43 +85,33 @@ namespace HierarchyDecorator.Editor
         private Vector2 pointerPosition;
         private bool pointerInPalette;
 
-        [MenuItem(MenuPath, false, 10)]
-        private static void Open(MenuCommand command)
-        {
-            GameObject target = command.context as GameObject ?? Selection.activeGameObject;
-            if (!IsEditable(target) || Selection.gameObjects.Length > 1)
-            {
-                return;
-            }
-
-            GameObjectIconWindow window = CreatePalette(target);
-            window.minSize = GetPaletteSize();
-            window.maxSize = window.minSize;
-            window.ShowUtility();
-        }
-
-        [MenuItem(MenuPath, true)]
-        private static bool ValidateOpen(MenuCommand command)
-        {
-            return IsEditable(command.context as GameObject ?? Selection.activeGameObject) &&
-                Selection.gameObjects.Length <= 1;
-        }
-
         internal static void HandleRowInput(Rect row, GameObject target)
         {
-            Event evt = Event.current;
-            if (!evt.alt || !row.Contains(evt.mousePosition) || !IsEditable(target))
+            if (!IsEditable(target))
             {
                 return;
             }
 
-            EditorGUIUtility.AddCursorRect(row, MouseCursor.Link);
-            if (evt.type == EventType.MouseDown && evt.button == 0 &&
-                (evt.modifiers & (EventModifiers.Shift | EventModifiers.Control | EventModifiers.Command)) == 0)
+            Event evt = Event.current;
+            Rect icon = GameObjectIconInfo.GetSlot(row);
+            Rect clickArea = evt.alt ? row : icon;
+            bool selectionModifier = evt.shift || evt.control || evt.command;
+            if (!selectionModifier)
             {
-                Rect anchor = GUIUtility.GUIToScreenRect(
-                    new Rect(evt.mousePosition.x, row.y, 1f, row.height));
-                evt.Use();
+                EditorGUIUtility.AddCursorRect(clickArea, MouseCursor.Link);
+            }
+
+            bool insideClickArea = clickArea.Contains(evt.mousePosition);
+            if (evt.type == EventType.MouseDown && (evt.button != 0 || selectionModifier || !insideClickArea))
+            {
+                return;
+            }
+
+            // Keep the button's rect stable even if Alt is released mid-click.
+            if (GUI.Button(row, GUIContent.none, GUIStyle.none) && !selectionModifier && insideClickArea)
+            {
+                Rect anchor = evt.alt ? new Rect(evt.mousePosition.x, row.y, 1f, row.height) : icon;
+                anchor = GUIUtility.GUIToScreenRect(anchor);
                 EditorApplication.delayCall += () =>
                 {
                     if (IsEditable(target))
