@@ -47,6 +47,9 @@ namespace HierarchyDecorator.Editor
 
         public override void OnInspectorGUI()
         {
+            // The hierarchy palette can edit the same settings while this inspector is open.
+            serializedObject.Update();
+
             if (!hasInitialized)
             {
                 if (Event.current.type != EventType.Layout)
@@ -136,7 +139,6 @@ namespace HierarchyDecorator.Editor
         private void Refresh()
         {
             serializedObject.Update();
-            serializedObject.ApplyModifiedProperties();
             EditorApplication.RepaintHierarchyWindow();
             Repaint();
         }
