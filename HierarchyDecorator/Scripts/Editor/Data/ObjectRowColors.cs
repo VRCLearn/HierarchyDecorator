@@ -135,7 +135,11 @@ namespace HierarchyDecorator.Editor
             return new ObjectKeys
             {
                 persistent = PersistentKey(target),
+#if UNITY_6000_5_OR_NEWER
+                temporary = SessionPrefix + EntityId.ToULong(target.GetEntityId())
+#else
                 temporary = SessionPrefix + target.GetInstanceID()
+#endif
             };
         }
 
@@ -178,13 +182,25 @@ namespace HierarchyDecorator.Editor
             for (int index = 0; index < data.entries.Count; index++)
             {
                 Entry entry = data.entries[index];
-                if (!entry.key.StartsWith(prefix, StringComparison.Ordinal) ||
-                    !int.TryParse(entry.key.Substring(prefix.Length), out int instanceId))
+                if (!entry.key.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
+                string objectId = entry.key.Substring(prefix.Length);
+#if UNITY_6000_5_OR_NEWER
+                if (!ulong.TryParse(objectId, out ulong rawId))
+                {
+                    continue;
+                }
+                var target = EditorUtility.EntityIdToObject(EntityId.FromULong(rawId)) as GameObject;
+#else
+                if (!int.TryParse(objectId, out int instanceId))
+                {
+                    continue;
+                }
                 var target = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
+#endif
                 if (target == null || target.scene != scene)
                 {
                     continue;

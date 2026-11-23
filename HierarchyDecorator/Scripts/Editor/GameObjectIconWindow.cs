@@ -941,8 +941,16 @@ namespace HierarchyDecorator.Editor
             const BindingFlags instance = BindingFlags.Instance | BindingFlags.NonPublic;
             Type[] parameters =
             {
-                typeof(Object), typeof(Type), typeof(Object), typeof(bool), typeof(List<int>),
-                typeof(Action<Object>), typeof(Action<Object>), typeof(bool)
+                typeof(Object), typeof(Type), typeof(Object), typeof(bool),
+#if UNITY_6000_4_OR_NEWER
+                typeof(List<EntityId>),
+#else
+                typeof(List<int>),
+#endif
+                typeof(Action<Object>), typeof(Action<Object>), typeof(bool),
+#if UNITY_6000_5_OR_NEWER
+                typeof(bool),
+#endif
             };
             MethodInfo show = selectorType.GetMethod("Show", instance, null, parameters, null);
             Action<Object> onClosed = selection => RunOnNextUpdate(() =>
@@ -953,7 +961,13 @@ namespace HierarchyDecorator.Editor
                     AddProjectIcon(target, texture);
                 }
             });
-            object[] arguments = { null, typeof(Texture2D), target, false, null, onClosed, null, false };
+            object[] arguments =
+            {
+                null, typeof(Texture2D), target, false, null, onClosed, null, false,
+#if UNITY_6000_5_OR_NEWER
+                false, // Only project textures can be added to the palette.
+#endif
+            };
 
             if (show == null)
             {

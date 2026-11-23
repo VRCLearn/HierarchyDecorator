@@ -65,7 +65,11 @@ namespace HierarchyDecorator.Editor
             if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return null;
             var original = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(script)) as Texture2D;
             if (original == null) return null;
+#if UNITY_6000_5_OR_NEWER
+            string key = EntityId.ToULong(original.GetEntityId()) + ":" + assetType;
+#else
             string key = original.GetInstanceID() + ":" + assetType;
+#endif
             Texture2D icon;
             if (Icons.TryGetValue(key, out icon) && icon != null) return icon;
 

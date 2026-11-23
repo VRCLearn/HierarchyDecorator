@@ -120,7 +120,13 @@ namespace HierarchyDecorator.Editor
         /// <returns>The loaded settings</returns>
         private static Settings GetOrCreateSettings()
         {
+#if UNITY_6000_5_OR_NEWER
+            Settings settings = ulong.TryParse(SessionState.GetString(SettingsSessionKey, string.Empty), out ulong rawId)
+                ? EditorUtility.EntityIdToObject(EntityId.FromULong(rawId)) as Settings
+                : null;
+#else
             Settings settings = EditorUtility.InstanceIDToObject(SessionState.GetInt(SettingsSessionKey, 0)) as Settings;
+#endif
             if (settings != null && !EditorUtility.IsPersistent(settings))
             {
                 settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
@@ -156,7 +162,11 @@ namespace HierarchyDecorator.Editor
 
             settings.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
             settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
+#if UNITY_6000_5_OR_NEWER
+            SessionState.SetString(SettingsSessionKey, EntityId.ToULong(settings.GetEntityId()).ToString());
+#else
             SessionState.SetInt(SettingsSessionKey, settings.GetInstanceID());
+#endif
 
             if (!hasLocalFile)
                 SaveSettings(settings);
