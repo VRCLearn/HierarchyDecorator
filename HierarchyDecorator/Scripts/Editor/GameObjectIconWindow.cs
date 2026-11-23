@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HierarchyDecorator.Editor
 {
@@ -24,8 +26,12 @@ namespace HierarchyDecorator.Editor
         private const float ArtworkSize = 14f;
         private const float ActionArtworkSize = 10f;
         private const float ColorTilesY = 47f;
+        private const float PopupGap = 4f;
         private static readonly Rect FullTexture = new Rect(0f, 0f, 1f, 1f);
         private static readonly Dictionary<Texture2D, ArtworkMetrics> ArtworkCache = new Dictionary<Texture2D, ArtworkMetrics>();
+
+        private static GameObjectIconWindow activePalette;
+        private static GameObject pressedPaletteTarget;
 
         private static readonly Color[] RowColors =
         {
@@ -79,11 +85,12 @@ namespace HierarchyDecorator.Editor
         private Texture2D resetArtwork;
         private Texture2D addArtwork;
         private Texture2D starArtwork;
+        private Vector2 hierarchyRightEdge;
         private Vector2 paletteScroll;
-        private int texturePickerId;
-        private bool textureForChildren;
         private Vector2 pointerPosition;
         private bool pointerInPalette;
+        private bool dismissOnFocusLoss;
+        private bool choosingPaletteItem;
 
         internal static void HandleRowInput(Rect row, GameObject target)
         {
@@ -102,24 +109,87 @@ namespace HierarchyDecorator.Editor
             }
 
             bool insideClickArea = clickArea.Contains(evt.mousePosition);
-            if (evt.type == EventType.MouseDown && (evt.button != 0 || selectionModifier || !insideClickArea))
+            if (evt.type == EventType.MouseDown && evt.button == 0 && !selectionModifier && insideClickArea)
+            {
+                pressedPaletteTarget = target;
+                evt.Use();
+                return;
+            }
+
+            if (evt.rawType != EventType.MouseUp || evt.button != 0 || pressedPaletteTarget != target)
             {
                 return;
             }
 
-            // Keep the button's rect stable even if Alt is released mid-click.
-            if (GUI.Button(row, GUIContent.none, GUIStyle.none) && !selectionModifier && insideClickArea)
+            pressedPaletteTarget = null;
+            if (evt.type != EventType.MouseUp || selectionModifier || !insideClickArea)
             {
-                Rect anchor = evt.alt ? new Rect(evt.mousePosition.x, row.y, 1f, row.height) : icon;
-                anchor = GUIUtility.GUIToScreenRect(anchor);
-                EditorApplication.delayCall += () =>
-                {
-                    if (IsEditable(target))
-                    {
-                        CreatePalette(target).ShowAsDropDown(anchor, GetPaletteSize());
-                    }
-                };
+                return;
             }
+
+            Vector2 anchor = GUIUtility.GUIToScreenPoint(new Vector2(row.xMax, row.yMin));
+            EditorWindow hierarchy = focusedWindow;
+            if (hierarchy != null && hierarchy.GetType().Name == "SceneHierarchyWindow")
+            {
+                anchor.x = hierarchy.position.xMax;
+            }
+            anchor.x += PopupGap;
+            evt.Use();
+            RunOnNextUpdate(() =>
+            {
+                if (IsEditable(target))
+                {
+                    ShowPalette(target, anchor);
+                }
+            });
+        }
+
+        private static void RunOnNextUpdate(Action action)
+        {
+            EditorApplication.update += Run;
+
+            void Run()
+            {
+                EditorApplication.update -= Run;
+                action();
+            }
+        }
+
+        private static void ShowPalette(GameObject target, Vector2 anchor)
+        {
+            if (activePalette != null)
+            {
+                activePalette.Close();
+            }
+
+            GameObjectIconWindow window = CreatePalette(target);
+            Vector2 size = GetPaletteSize();
+            window.hierarchyRightEdge = anchor;
+            window.minSize = window.maxSize = size;
+            window.position = FitPopupToDesktop(anchor, size);
+            activePalette = window;
+            // ShowAsDropDown can be dismissed by Unity's auxiliary window manager before the next frame.
+            window.ShowPopup();
+            window.Focus();
+            window.dismissOnFocusLoss = true;
+        }
+
+        private static Rect FitPopupToDesktop(Vector2 anchor, Vector2 size)
+        {
+            Rect desktop = InternalEditorUtility.GetBoundsOfDesktopAtPoint(anchor);
+            float x = Mathf.Clamp(anchor.x, desktop.xMin, Mathf.Max(desktop.xMin, desktop.xMax - size.x));
+            float y = Mathf.Clamp(anchor.y, desktop.yMin, Mathf.Max(desktop.yMin, desktop.yMax - size.y));
+            return new Rect(new Vector2(x, y), size);
+        }
+
+        private void PositionPicker(EditorWindow picker)
+        {
+            Vector2 size = picker.position.size;
+            var besidePalette = new Vector2(position.xMax + PopupGap, position.y);
+            Rect beside = FitPopupToDesktop(besidePalette, size);
+            picker.position = beside.x >= besidePalette.x
+                ? beside
+                : FitPopupToDesktop(new Vector2(hierarchyRightEdge.x, position.y), size);
         }
 
         private static Vector2 GetPaletteSize()
@@ -160,12 +230,52 @@ namespace HierarchyDecorator.Editor
             wantsMouseEnterLeaveWindow = true;
         }
 
+        private void OnDestroy()
+        {
+            if (activePalette == this)
+            {
+                activePalette = null;
+            }
+        }
+
+        private void OnLostFocus()
+        {
+            pointerInPalette = false;
+            if (!dismissOnFocusLoss || choosingPaletteItem)
+            {
+                return;
+            }
+
+            RunOnNextUpdate(() =>
+            {
+                if (this != null && focusedWindow != this && !choosingPaletteItem)
+                {
+                    Close();
+                }
+            });
+        }
+
+        private void RequestClose()
+        {
+            RunOnNextUpdate(() =>
+            {
+                if (this != null)
+                {
+                    Close();
+                }
+            });
+        }
+
         private void OnGUI()
         {
             Event evt = Event.current;
             if (!IsEditable(targetObject) || (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape))
             {
-                Close();
+                if (evt.type == EventType.KeyDown)
+                {
+                    evt.Use();
+                }
+                RequestClose();
                 return;
             }
 
@@ -186,12 +296,6 @@ namespace HierarchyDecorator.Editor
             }
 
             Texture2D icon = GameObjectIconInfo.GetIcon(targetObject);
-            if (evt.type == EventType.ExecuteCommand && evt.commandName == "ObjectSelectorClosed" &&
-                texturePickerId != 0 && EditorGUIUtility.GetObjectPickerControlID() == texturePickerId)
-            {
-                FinishTextureSelection();
-                return;
-            }
 
             Settings settings = HierarchyDecorator.Settings;
             bool children = evt.alt;
@@ -256,6 +360,7 @@ namespace HierarchyDecorator.Editor
             GameObject target = targetObject;
             Color chosen = initial;
             Action<Color> onColorChanged = color => chosen = color;
+            choosingPaletteItem = true;
             if (show != null)
             {
                 show.Invoke(null, new object[] { onColorChanged, initial, false, false });
@@ -269,6 +374,7 @@ namespace HierarchyDecorator.Editor
             }
 
             var picker = (EditorWindow)pickerType.GetProperty("instance").GetValue(null);
+            PositionPicker(picker);
             EditorApplication.update += FinishColorSelection;
             GUIUtility.ExitGUI();
 
@@ -280,6 +386,7 @@ namespace HierarchyDecorator.Editor
                 }
 
                 EditorApplication.update -= FinishColorSelection;
+                ResumeAfterPicker();
                 // Escape restores the original color through the same callback before closing.
                 Color32 selected = chosen;
                 if (((Color32)initial).Equals(selected) || !IsEditable(target))
@@ -288,10 +395,16 @@ namespace HierarchyDecorator.Editor
                 }
 
                 AddPaletteColor(target, selected, children);
-                if (this != null)
-                {
-                    Repaint();
-                }
+            }
+        }
+
+        private void ResumeAfterPicker()
+        {
+            if (this != null)
+            {
+                choosingPaletteItem = false;
+                Focus();
+                Repaint();
             }
         }
 
@@ -328,10 +441,9 @@ namespace HierarchyDecorator.Editor
                 SettingsLocalization.Content("Object Icon"), EditorStyles.miniBoldLabel);
             if (DrawActionTile(IconTile(224f, layout.iconHeaderY - 4f), addArtwork, "Add Icon…"))
             {
-                texturePickerId = GUIUtility.GetControlID(FocusType.Passive);
-                textureForChildren = children;
-                EditorGUIUtility.ShowObjectPicker<Texture2D>(null, false, string.Empty, texturePickerId);
-                GUIUtility.ExitGUI();
+                GameObject target = targetObject;
+                // Open the picker outside this dropdown's IMGUI pass so it has no GUI delegate.
+                RunOnNextUpdate(() => OpenTexturePicker(target, children));
             }
 
             float iconTilesY = layout.iconHeaderY + 17f;
@@ -590,27 +702,58 @@ namespace HierarchyDecorator.Editor
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0f, color, 0f, radius);
         }
 
-        private void FinishTextureSelection()
+        private void OpenTexturePicker(GameObject target, bool children)
         {
-            texturePickerId = 0;
-            var texture = EditorGUIUtility.GetObjectPickerObject() as Texture2D;
-            if (!IsProjectTexture(texture))
+            if (this == null || !IsEditable(target))
             {
                 return;
             }
 
-            // Unity sends ObjectSelectorClosed while tearing down its window.
-            GameObject target = targetObject;
-            bool children = textureForChildren;
-            EditorApplication.delayCall += () =>
+            // The callback overload does not require the palette to survive until the picker closes.
+            Type selectorType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ObjectSelector", true);
+            const BindingFlags instance = BindingFlags.Instance | BindingFlags.NonPublic;
+            Type[] parameters =
             {
-                AddProjectIcon(target, texture, children);
-
-                if (this != null)
-                {
-                    Repaint();
-                }
+                typeof(Object), typeof(Type), typeof(Object), typeof(bool), typeof(List<int>),
+                typeof(Action<Object>), typeof(Action<Object>), typeof(bool)
             };
+            MethodInfo show = selectorType.GetMethod("Show", instance, null, parameters, null);
+            Action<Object> onClosed = selection => RunOnNextUpdate(() =>
+            {
+                ResumeAfterPicker();
+                if (selection is Texture2D texture)
+                {
+                    AddProjectIcon(target, texture, children);
+                }
+            });
+            object[] arguments = { null, typeof(Texture2D), target, false, null, onClosed, null, false };
+
+            if (show == null)
+            {
+                // Older editors omit showNoneItem, and Unity 2018.4 takes a SerializedProperty as the context.
+                Array.Resize(ref parameters, parameters.Length - 1);
+                Array.Resize(ref arguments, arguments.Length - 1);
+                show = selectorType.GetMethod("Show", instance, null, parameters, null);
+                if (show == null)
+                {
+                    parameters[2] = typeof(SerializedProperty);
+                    show = selectorType.GetMethod("Show", instance, null, parameters, null);
+                    arguments[2] = null;
+                }
+            }
+
+            var selector = (EditorWindow)selectorType.GetProperty("get").GetValue(null);
+            choosingPaletteItem = true;
+            try
+            {
+                show.Invoke(selector, arguments);
+                PositionPicker(selector);
+            }
+            catch
+            {
+                choosingPaletteItem = false;
+                throw;
+            }
         }
 
         private static void AddProjectIcon(GameObject target, Texture2D texture, bool children)
