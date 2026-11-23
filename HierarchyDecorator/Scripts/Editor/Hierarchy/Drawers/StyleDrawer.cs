@@ -57,10 +57,11 @@ namespace HierarchyDecorator.Editor
             Color rowTint = Color.clear;
             if (repaint)
             {
+                DrawParentRegions(rect, item.Transform.parent, settings.RowColors);
                 rowTint = GetRowTint(item.GameObject, settings.RowColors, preview);
                 if (rowTint.a > 0f)
                 {
-                    EditorGUI.DrawRect(GetActualHierarchyWidth(rect), rowTint);
+                    EditorGUI.DrawRect(rect, rowTint);
                 }
             }
 
@@ -94,6 +95,30 @@ namespace HierarchyDecorator.Editor
             }
 
             DrawFoldout(rect, item.Foldout);
+        }
+
+        private void DrawParentRegions(Rect row, Transform parent, ObjectRowColors colors)
+        {
+            if (!colors.HasRegions && !GameObjectIconWindow.HasRegionPreview)
+            {
+                return;
+            }
+
+            float minX = GetActualHierarchyWidth(row).xMin;
+            float right = row.xMin;
+            float ancestorX = right;
+            for (; parent != null && right > minX; parent = parent.parent)
+            {
+                ancestorX -= HierarchyIndentWidth;
+                if (!TryGetRegionTint(parent.gameObject, colors, out Color tint))
+                {
+                    continue;
+                }
+
+                float left = Mathf.Max(minX, ancestorX);
+                EditorGUI.DrawRect(Rect.MinMaxRect(left, row.yMin, right, row.yMax), tint);
+                right = left;
+            }
         }
 
         private static Color GetRowTint(GameObject target, ObjectRowColors colors, GameObjectIconWindow.RowPreview preview)
@@ -192,7 +217,7 @@ namespace HierarchyDecorator.Editor
             rect.width = 0f;
             rect.height -= 0f;
 
-            rect.x -= 14f;
+            rect.x -= HierarchyIndentWidth;
 
             return rect;
         }

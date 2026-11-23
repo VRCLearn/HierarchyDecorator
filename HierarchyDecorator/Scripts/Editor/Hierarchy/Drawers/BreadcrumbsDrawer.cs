@@ -6,7 +6,6 @@ namespace HierarchyDecorator.Editor
 {
     public class BreadcrumbsDrawer : HierarchyDrawer
     {
-        const float DEPTH_WIDTH = 14f;
         const float DEPTH_OFFSET = 7f;
 
         const float HORIZONTAL_WIDTH = 6f;
@@ -192,7 +191,7 @@ namespace HierarchyDecorator.Editor
 
         private static float GetDepthX(int depth)
         {
-            return depth * DEPTH_WIDTH + DEPTH_OFFSET;
+            return depth * HierarchyIndentWidth + DEPTH_OFFSET;
         }
     }
 }

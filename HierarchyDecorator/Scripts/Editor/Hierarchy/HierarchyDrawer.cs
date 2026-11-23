@@ -8,6 +8,8 @@ namespace HierarchyDecorator.Editor
     /// </summary>
     public abstract class HierarchyDrawer
     {
+        protected const float HierarchyIndentWidth = 14f;
+
         /// <summary>
         /// Display the drawer for the given instance.
         /// </summary>

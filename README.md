@@ -182,6 +182,8 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
  Hover over a color or icon to preview it in the Hierarchy before applying it. Hold **Alt** while previewing or
  picking a color to add a lighter tint to visible descendant rows without their own color. The object's own row
  has the same tint strength in either mode. Each object keeps its own color and icon settings.
+ The row tint starts at the object's indentation and extends through the component area. Indentation to the left
+ shows the enclosing region colors.
  Use **+** in Row Color to add a custom color or **+** in Object Icon to add a project texture.
  The palette applies the new choice and keeps it in its section for reuse.
  Right-click a custom color or project texture and choose **Remove from Palette** to remove the saved option.
