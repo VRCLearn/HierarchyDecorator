@@ -11,6 +11,7 @@
 - Keep the current Hierarchy colors when editing plugin settings.
 - Toggle all eligible components represented by a stacked component icon.
 - Use the matching object ID and texture picker APIs across Unity 6 versions.
+- Include Unity's expected archive name in the `.unitypackage` download so Unity can import it.
 
 ## [1.3.0] - 2026-11-04
 

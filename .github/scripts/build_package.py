@@ -19,6 +19,7 @@ PACKAGE = ROOT
 PACKAGE_ID = "com.vrclearn.hierarchydecorator"
 REPOSITORY = "VRCLearn/HierarchyDecorator"
 UNITY_ROOT = "Assets/VRCLearn/HierarchyDecorator"
+UNITY_GZIP_FILENAME = "archtemp.tar"
 GUID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY)
 ROOT_GUID = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/" + REPOSITORY + "#" + UNITY_ROOT).hex
 LICENSE_DECLARATION = "MIT"
@@ -175,7 +176,7 @@ def write_zip(path: Path, assets: list[Asset]) -> None:
 
 
 def write_unitypackage(path: Path, assets: list[Asset]) -> None:
-    with path.open("wb") as stream, gzip.GzipFile(filename="", fileobj=stream, mode="wb", mtime=0, compresslevel=9) as compressed:
+    with path.open("wb") as stream, gzip.GzipFile(filename=UNITY_GZIP_FILENAME, fileobj=stream, mode="wb", mtime=0, compresslevel=9) as compressed:
         with tarfile.open(fileobj=compressed, mode="w", format=tarfile.USTAR_FORMAT) as archive:
             for asset in assets:
                 guid = metadata_guid(asset.metadata)

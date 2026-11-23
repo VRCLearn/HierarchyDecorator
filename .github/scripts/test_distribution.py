@@ -62,7 +62,12 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(manifest["legacyFolders"], {builder.UNITY_ROOT: builder.ROOT_GUID})
         self.assertNotIn("zipSHA256", manifest)
         zipped = builder.validate_zip(Path(result["archive"]), manifest)
-        imported = builder.validate_unitypackage(Path(result["unitypackage"]), manifest)
+        unitypackage = Path(result["unitypackage"])
+        with unitypackage.open("rb") as archive:
+            header = archive.read(10)
+            self.assertTrue(header[3] & 0x08)
+            self.assertEqual(archive.read(len(b"archtemp.tar\0")), b"archtemp.tar\0")
+        imported = builder.validate_unitypackage(unitypackage, manifest)
         with zipfile.ZipFile(result["archive"]) as archive:
             self.assertIn("HierarchyDecorator/Empty/", archive.namelist())
         for relative, content in original.items():
