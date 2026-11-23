@@ -45,6 +45,7 @@ namespace HierarchyDecorator.Editor
             { "Clear Color", new[] { "色をクリア", "색상 지우기", "清除色彩", "清除颜色" } },
             { "Add Color…", new[] { "色を追加…", "색 추가…", "新增色彩…", "添加颜色…" } },
             { "Add Icon…", new[] { "アイコンを追加…", "아이콘 추가…", "新增圖示…", "添加图标…" } },
+            { "Remove from Palette", new[] { "パレットから削除", "팔레트에서 제거", "從面板移除", "从面板移除" } },
             { "Project Textures", new[] { "プロジェクトのテクスチャ", "프로젝트 텍스처", "專案貼圖", "项目贴图" } },
             { "Default Icon", new[] { "既定のアイコン", "기본 아이콘", "預設圖示", "默认图标" } },
             { "Hold Alt to include children", new[] { "Alt を押して子にも適用", "Alt 키로 자식 포함", "按住 Alt 可一併套用到子物件", "按住 Alt 可同时应用到子对象" } },

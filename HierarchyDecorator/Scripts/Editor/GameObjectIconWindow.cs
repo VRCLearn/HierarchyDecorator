@@ -92,6 +92,10 @@ namespace HierarchyDecorator.Editor
         private bool dismissOnFocusLoss;
         private bool choosingPaletteItem;
 
+        private Action removePaletteOption;
+        private Rect removeMenuRect;
+        private bool pressingRemoveOption;
+
         internal static void HandleRowInput(Rect row, GameObject target)
         {
             if (!IsEditable(target))
@@ -228,6 +232,12 @@ namespace HierarchyDecorator.Editor
             hideFlags = HideFlags.DontSave;
             wantsMouseMove = true;
             wantsMouseEnterLeaveWindow = true;
+            Undo.undoRedoPerformed += Repaint;
+        }
+
+        private void OnDisable()
+        {
+            Undo.undoRedoPerformed -= Repaint;
         }
 
         private void OnDestroy()
@@ -269,6 +279,7 @@ namespace HierarchyDecorator.Editor
         private void OnGUI()
         {
             Event evt = Event.current;
+            HandleRemoveMenuInput(evt);
             if (!IsEditable(targetObject) || (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape))
             {
                 if (evt.type == EventType.KeyDown)
@@ -311,7 +322,7 @@ namespace HierarchyDecorator.Editor
                     new GUIContent(targetObject.name, targetObject.name), EditorStyles.boldLabel);
 
                 DrawColors(settings, hasColor, color, children);
-                DrawIcons(projectTextures, icon, children, layout);
+                DrawIcons(settings, projectTextures, icon, children, layout);
                 EditorGUI.LabelField(new Rect(Left, layout.hintY, 232f, 15f),
                     SettingsLocalization.Content(children ? "Applying to this object and its children"
                         : "Hold Alt to include children"), children ? EditorStyles.boldLabel : EditorStyles.miniLabel);
@@ -319,6 +330,12 @@ namespace HierarchyDecorator.Editor
             finally
             {
                 GUI.EndScrollView();
+            }
+
+            if (removePaletteOption != null && evt.type == EventType.Repaint)
+            {
+                EditorStyles.miniButton.Draw(removeMenuRect, SettingsLocalization.Content("Remove from Palette"),
+                    removeMenuRect.Contains(pointerPosition), pressingRemoveOption, false, false);
             }
         }
 
@@ -341,8 +358,14 @@ namespace HierarchyDecorator.Editor
             int colorCount = RowColors.Length + settings.PaletteColors.Count;
             for (int i = 0; i < colorCount; i++)
             {
-                Color color = i < RowColors.Length ? RowColors[i] : settings.PaletteColors[i - RowColors.Length];
+                bool custom = i >= RowColors.Length;
+                Color color = custom ? settings.PaletteColors[i - RowColors.Length] : RowColors[i];
                 Rect tile = PaletteTile(i + 1, ColorTilesY);
+                if (custom)
+                {
+                    HandleRemoveInput(tile, settings, settings.PaletteColors, color);
+                }
+
                 if (DrawSwatch(tile, color, hasColor && current.Equals(color)))
                 {
                     ApplyColor(targetObject, color, children);
@@ -435,7 +458,7 @@ namespace HierarchyDecorator.Editor
             EditorUtility.SetDirty(settings);
         }
 
-        private void DrawIcons(List<Texture2D> textures, Texture2D current, bool children, PaletteLayout layout)
+        private void DrawIcons(Settings settings, List<Texture2D> textures, Texture2D current, bool children, PaletteLayout layout)
         {
             EditorGUI.LabelField(new Rect(Left, layout.iconHeaderY, 176f, 16f),
                 SettingsLocalization.Content("Object Icon"), EditorStyles.miniBoldLabel);
@@ -504,11 +527,102 @@ namespace HierarchyDecorator.Editor
             {
                 Texture2D texture = textures[index];
                 Rect tile = PaletteTile(index, layout.textureHeaderY + 18f);
+                HandleRemoveInput(tile, settings, settings.PaletteTextures, texture);
                 if (DrawIconTile(tile, texture, texture == current, new GUIContent(string.Empty, texture.name)))
                 {
                     ApplyIcons(targetObject, texture, children);
                 }
             }
+        }
+
+        private void HandleRemoveInput<T>(Rect tile, Settings settings, List<T> options, T option)
+        {
+            Event evt = Event.current;
+            if (evt.type != EventType.MouseDown || evt.button != 1 || !tile.Contains(evt.mousePosition))
+            {
+                return;
+            }
+
+            Vector2 point = evt.mousePosition - paletteScroll;
+            Vector2 size = EditorStyles.miniButton.CalcSize(SettingsLocalization.Content("Remove from Palette"));
+            size.x += 16f;
+            size.y = TileSize;
+            float x = Mathf.Clamp(point.x, 0f, Mathf.Max(0f, position.width - size.x));
+            float y = Mathf.Clamp(point.y + 4f, 0f, Mathf.Max(0f, position.height - size.y));
+            removeMenuRect = new Rect(new Vector2(x, y), size);
+            removePaletteOption = () =>
+            {
+                int index = options.IndexOf(option);
+                if (index < 0)
+                {
+                    return;
+                }
+
+                Undo.IncrementCurrentGroup();
+                int group = Undo.GetCurrentGroup();
+                string undoName = SettingsLocalization.Text("Remove from Palette");
+                Undo.SetCurrentGroupName(undoName);
+                Undo.RegisterCompleteObjectUndo(settings, undoName);
+                options.RemoveAt(index);
+                EditorUtility.SetDirty(settings);
+                if (option is Texture2D texture && IsEditable(targetObject) &&
+                    GameObjectIconInfo.GetIcon(targetObject) == texture)
+                {
+                    SetIcons(targetObject, null, false);
+                }
+                Undo.CollapseUndoOperations(group);
+            };
+            evt.Use();
+            Repaint();
+        }
+
+        private void HandleRemoveMenuInput(Event evt)
+        {
+            if (removePaletteOption == null)
+            {
+                return;
+            }
+
+            if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
+            {
+                DismissRemoveMenu();
+                evt.Use();
+                return;
+            }
+
+            bool overMenu = removeMenuRect.Contains(evt.mousePosition);
+            if (evt.type == EventType.MouseDown)
+            {
+                if (evt.button == 0 && overMenu)
+                {
+                    pressingRemoveOption = true;
+                    evt.Use();
+                    Repaint();
+                }
+                else
+                {
+                    DismissRemoveMenu();
+                }
+                return;
+            }
+
+            if (evt.type == EventType.MouseUp && evt.button == 0 && pressingRemoveOption)
+            {
+                Action remove = removePaletteOption;
+                DismissRemoveMenu();
+                if (overMenu)
+                {
+                    remove();
+                }
+                evt.Use();
+            }
+        }
+
+        private void DismissRemoveMenu()
+        {
+            removePaletteOption = null;
+            pressingRemoveOption = false;
+            Repaint();
         }
 
         private static Rect PaletteTile(int slot, float startY)
@@ -689,6 +803,11 @@ namespace HierarchyDecorator.Editor
                     }
                 }
             }
+            Event evt = Event.current;
+            if ((evt.type == EventType.MouseDown || evt.type == EventType.MouseUp) && evt.button != 0)
+            {
+                return false;
+            }
             return GUI.Button(tile, tooltip, GUIStyle.none);
         }
 
@@ -835,6 +954,12 @@ namespace HierarchyDecorator.Editor
             Undo.IncrementCurrentGroup();
             int group = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName(SettingsLocalization.Text("Object Icon"));
+            SetIcons(root, texture, children);
+            Undo.CollapseUndoOperations(group);
+        }
+
+        private static void SetIcons(GameObject root, Texture2D texture, bool children)
+        {
             bool changed = false;
             foreach (GameObject target in Targets(root, children))
             {
@@ -851,7 +976,6 @@ namespace HierarchyDecorator.Editor
                 }
             }
 
-            Undo.CollapseUndoOperations(group);
             if (changed)
             {
                 EditorSceneManager.MarkSceneDirty(root.scene);
