@@ -232,6 +232,16 @@ namespace HierarchyDecoratorCI
             {
                 serialized.FindProperty("globalData.showAllComponents").boolValue = false;
                 serialized.FindProperty("globalData.depthMode").intValue = 3;
+                serialized.FindProperty("globalData.tagSettings.show").boolValue = true;
+                serialized.FindProperty("globalData.layerSettings.show").boolValue = true;
+                serialized.FindProperty("globalData.showBreadcrumbs").boolValue = !configuration.binarySettings;
+                serialized.FindProperty("globalData.instanceBreadcrumbs.show").boolValue = false;
+                serialized.FindProperty("globalData.instanceBreadcrumbs.color").colorValue = Color.red;
+                serialized.FindProperty("globalData.instanceBreadcrumbs.style").intValue = 2;
+                serialized.FindProperty("globalData.instanceBreadcrumbs.displayHorizontal").boolValue = false;
+                serialized.FindProperty("globalData.fullDepthBreadcrumbs.show").boolValue = false;
+                serialized.FindProperty("globalData.fullDepthBreadcrumbs.color").colorValue = Color.blue;
+                serialized.FindProperty("globalData.fullDepthBreadcrumbs.style").intValue = 0;
                 serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue = "::migration::";
                 serialized.FindProperty("styleData.styles.Array.data[0].font").objectReferenceValue = fixtureFont;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -526,11 +536,21 @@ namespace HierarchyDecoratorCI
             {
                 Require(!serialized.FindProperty("globalData.showAllComponents").boolValue &&
                     serialized.FindProperty("globalData.depthMode").intValue == 3 &&
+                    serialized.FindProperty("globalData.tagSettings.show").boolValue &&
+                    serialized.FindProperty("globalData.layerSettings.show").boolValue &&
                     serialized.FindProperty("styleData.styles.Array.data[0].prefix").stringValue == "::migration::" &&
                     serialized.FindProperty("styleData.styles.Array.data[0].font").objectReferenceValue == fixtureFont &&
                     serialized.FindProperty("components.customGroups.Array.data[0].components.Array.data[0].script").objectReferenceValue == fixtureScript &&
                     !serialized.FindProperty("needsPresetSelection").boolValue,
                     "Imported setting values, references or setup state were not preserved.");
+                Require(serialized.FindProperty("globalData.showBreadcrumbs").boolValue == !configuration.binarySettings,
+                    "The upstream guide visibility toggle was not preserved.");
+                SerializedProperty guides = serialized.FindProperty("globalData.instanceBreadcrumbs");
+                Require(guides.FindPropertyRelative("color").colorValue == Color.grey &&
+                    guides.FindPropertyRelative("directStyle").intValue == 0 &&
+                    guides.FindPropertyRelative("ancestorStyle").intValue == 1 &&
+                    guides.FindPropertyRelative("displayHorizontal").boolValue,
+                    "The new tree guides must use their defaults after importing the old settings.");
             }
         }
 

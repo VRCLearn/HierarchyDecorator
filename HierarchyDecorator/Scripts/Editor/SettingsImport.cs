@@ -218,6 +218,7 @@ namespace HierarchyDecorator.Editor
 
         private static Settings CopySettings(Object source)
         {
+            const string guideSettingsPath = nameof(Settings.globalData) + "." + nameof(GlobalData.instanceBreadcrumbs);
             Settings copy = ScriptableObject.CreateInstance<Settings>();
             try
             {
@@ -234,6 +235,13 @@ namespace HierarchyDecorator.Editor
                         bool enterChildren;
                         do
                         {
+                            // The shared visibility toggle is the only equivalent setting for the new tree guides.
+                            if (property.propertyPath == guideSettingsPath)
+                            {
+                                enterChildren = false;
+                                continue;
+                            }
+
                             SerializedProperty destination = serializedCopy.FindProperty(property.propertyPath);
                             enterChildren = destination != null && property.propertyType == SerializedPropertyType.Generic;
                             if (enterChildren)
