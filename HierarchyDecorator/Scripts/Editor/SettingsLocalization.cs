@@ -25,13 +25,9 @@ namespace HierarchyDecorator.Editor
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
-            { "Migrate from wooshii", new[] { "wooshii 版から移行", "wooshii 버전에서 마이그레이션", "從 wooshii 版遷移", "从 wooshii 版迁移" } },
-            { "Choosing a preset keeps wooshii installed. Migration imports its current settings if available, then removes detected old installations. Missing settings or installations are skipped.", new[] { "プリセットを選ぶと wooshii 版は残ります。移行では現在の設定があればインポートし、検出した旧インストールを削除します。設定やインストールがなければスキップします。", "프리셋을 선택하면 wooshii 버전이 유지됩니다. 마이그레이션은 현재 설정이 있으면 가져온 다음 감지된 기존 설치를 제거합니다. 설정이나 설치가 없으면 해당 단계를 건너뜁니다.", "選擇預設會保留 wooshii 版。遷移會在目前設定存在時匯入，再移除偵測到的舊安裝；找不到的設定或安裝會跳過。", "选择预设会保留 wooshii 版。迁移会在当前配置存在时导入，再移除检测到的旧安装；找不到的配置或安装会跳过。" } },
-            { "Migrate settings and remove wooshii", new[] { "設定を移行して wooshii 版を削除", "설정 마이그레이션 및 wooshii 제거", "遷移設定並移除 wooshii", "一键迁移并移除 wooshii" } },
-            { "Migrating...", new[] { "移行中…", "마이그레이션 중…", "遷移中…", "正在迁移…" } },
-            { "Choose a preset style", new[] { "プリセットスタイルを選択", "프리셋 스타일 선택", "選擇預設樣式", "选择预设样式" } },
-            { "Detailed", new[] { "詳細", "상세", "詳細", "详细" } },
-            { "Minimal", new[] { "シンプル", "간결", "精簡", "精简" } },
+            { "Restore Default Settings", new[] { "既定の設定に戻す", "기본 설정 복원", "恢復預設設定", "恢复默认设置" } },
+            { "Restore the default Hierarchy settings?", new[] { "ヒエラルキーの設定を既定値に戻しますか？", "계층 기본 설정을 복원할까요?", "要恢復階層的預設設定嗎？", "要恢复层级的默认设置吗？" } },
+            { "Restore", new[] { "元に戻す", "복원", "恢復", "恢复" } },
             { "Hierarchy Settings", new[] { "Hierarchy 設定", "하이어라키 설정", "Hierarchy 設定", "Hierarchy 设置" } },
             { "GitHub Repository", new[] { "GitHub リポジトリ", "GitHub 저장소", "GitHub 儲存庫", "GitHub 仓库" } },
             { "Cannot find settings in project", new[] { "プロジェクトに設定が見つかりません", "프로젝트에서 설정을 찾을 수 없습니다", "在專案中找不到設定", "在项目中找不到设置" } },

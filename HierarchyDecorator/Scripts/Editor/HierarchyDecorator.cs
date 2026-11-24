@@ -43,7 +43,8 @@ namespace HierarchyDecorator.Editor
 
             EditorApplication.delayCall -= HierarchyManager.Initialize;
             EditorApplication.delayCall += HierarchyManager.Initialize;
-            EditorApplication.delayCall += ShowInitialSetup;
+            if (!Application.isBatchMode)
+                EditorApplication.delayCall += RunInitialMigrationWhenReady;
 
             EditorApplication.update += SaveDirtySettings;
             AssemblyReloadEvents.beforeAssemblyReload += FlushSettings;
@@ -53,33 +54,47 @@ namespace HierarchyDecorator.Editor
 
         // Setup 
 
-        private static void ShowInitialSetup()
+        private static void RunInitialMigrationWhenReady()
         {
-            if (Application.isBatchMode)
-                return;
-
             if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                EditorApplication.delayCall += ShowInitialSetup;
+                EditorApplication.delayCall += RunInitialMigrationWhenReady;
                 return;
             }
 
-            if (Settings.NeedsPresetSelection)
-                InitialSetupWindow.Open();
+            RunInitialMigration(error =>
+            {
+                if (error != null)
+                    Debug.LogError("HierarchyDecorator could not complete automatic migration from wooshii: " + error.Message);
+            });
         }
 
-        internal static void ApplyInitialPreset(SettingsPreset preset)
-        {
-            if (!Settings.NeedsPresetSelection)
-                return;
-
-            ApplyPreset(preset);
-        }
-
-        internal static void ApplyPreset(SettingsPreset preset)
+        internal static void RunInitialMigration(Action<Exception> completed)
         {
             Settings settings = Settings;
-            settings.ApplyPreset(preset);
+            if (!settings.NeedsInitialSetup)
+            {
+                completed(null);
+                return;
+            }
+
+            settings.NeedsInitialSetup = false;
+            EditorUtility.SetDirty(settings);
+            try
+            {
+                UpstreamMigration.Start(completed);
+            }
+            catch (Exception exception)
+            {
+                completed(exception);
+            }
+        }
+
+        internal static void RestoreDefaults()
+        {
+            Settings settings = Settings;
+            Undo.RegisterCompleteObjectUndo(settings, SettingsLocalization.Text("Restore Default Settings"));
+            settings.RestoreDefaults();
             OnSettings?.Invoke();
             EditorUtility.SetDirty(settings);
             SaveSettings(settings);
@@ -157,7 +172,7 @@ namespace HierarchyDecorator.Editor
             {
                 settings = ScriptableObject.CreateInstance<Settings>();
                 settings.name = "Settings";
-                settings.NeedsPresetSelection = true;
+                settings.NeedsInitialSetup = true;
             }
 
             settings.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;

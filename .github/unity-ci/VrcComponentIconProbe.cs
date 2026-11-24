@@ -71,7 +71,7 @@ namespace HierarchyDecoratorCI
             {
                 settings = (Settings)typeof(Settings).Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true)
                     .GetProperty("Settings", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-                typeof(Settings).GetProperty("NeedsPresetSelection", Instance).SetValue(settings, false);
+                typeof(Settings).GetProperty("NeedsInitialSetup", Instance).SetValue(settings, false);
                 var serialized = new SerializedObject(settings);
                 serialized.FindProperty("components").FindPropertyRelative("showAll").intValue = (int)DisplayMode.Custom;
                 serialized.FindProperty("components").FindPropertyRelative("enableIcons").boolValue = true;

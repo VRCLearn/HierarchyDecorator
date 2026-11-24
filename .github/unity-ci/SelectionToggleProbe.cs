@@ -43,7 +43,7 @@ namespace HierarchyDecoratorCI
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 settings = (Settings)typeof(Settings).Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true)
                     .GetProperty("Settings", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-                typeof(Settings).GetProperty("NeedsPresetSelection", BindingFlags.Instance | BindingFlags.NonPublic)
+                typeof(Settings).GetProperty("NeedsInitialSetup", BindingFlags.Instance | BindingFlags.NonPublic)
                     .SetValue(settings, false);
                 settings.globalData.showActiveToggles = true;
                 objects = new[] { "Selected A", "Selected B", "Unselected C", "Selected offscreen D" }

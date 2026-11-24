@@ -194,9 +194,30 @@ namespace HierarchyDecoratorCI
                 CheckSingleSourceEntry();
                 SelectActiveGuid(configuration.activeGuid);
                 CheckReadOnlyImport();
-                previousCurrent = File.Exists(CurrentSettingsPath) ? File.ReadAllBytes(CurrentSettingsPath) : null;
                 var callback = new Action<Exception>(Completed);
-                migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { callback });
+                if (!configuration.failSave && (configuration.activeGuid == "valid" || configuration.mode == "empty"))
+                {
+                    var decorator = newSettingsType.Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true);
+                    MethodInfo runInitialMigration = decorator.GetMethod("RunInitialMigration", AnyStatic);
+                    var settings = decorator.GetProperty("Settings", AnyStatic).GetValue(null);
+                    var needsInitialSetup = newSettingsType.GetProperty("NeedsInitialSetup", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Require((bool)needsInitialSetup.GetValue(settings), "Expected a first-use migration fixture.");
+                    needsInitialSetup.SetValue(settings, false);
+                    bool skipped = false;
+                    runInitialMigration.Invoke(null, new object[] { new Action<Exception>(error => skipped = error == null) });
+                    Require(skipped && File.Exists(SettingsPath), "Startup migration must skip existing local settings.");
+                    needsInitialSetup.SetValue(settings, true);
+                    Checks.Add("startup migration skips a project that completed first-use setup");
+
+                    previousCurrent = File.ReadAllBytes(CurrentSettingsPath);
+                    Checks.Add("first-use migration runs without a migration window");
+                    runInitialMigration.Invoke(null, new object[] { callback });
+                }
+                else
+                {
+                    previousCurrent = File.Exists(CurrentSettingsPath) ? File.ReadAllBytes(CurrentSettingsPath) : null;
+                    migration.GetMethod("Start", AnyStatic).Invoke(null, new object[] { callback });
+                }
             }
             catch (Exception exception)
             {

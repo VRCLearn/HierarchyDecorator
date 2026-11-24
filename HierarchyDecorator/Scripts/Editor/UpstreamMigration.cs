@@ -30,6 +30,12 @@ namespace HierarchyDecorator.Editor
                 throw new InvalidOperationException("A wooshii migration is already running.");
 
             string sourcePath = SettingsImport.FindSource();
+            if (sourcePath == null && !HasInstallation)
+            {
+                completed(null);
+                return;
+            }
+
             IsRunning = true;
             completion = completed;
             resolvePackages = false;

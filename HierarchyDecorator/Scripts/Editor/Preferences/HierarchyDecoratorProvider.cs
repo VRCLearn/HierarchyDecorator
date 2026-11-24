@@ -13,6 +13,7 @@ namespace HierarchyDecorator.Editor
         private const string KoreanMenu = LanguageMenu + "한국어";
         private const string TraditionalChineseMenu = LanguageMenu + "繁體中文";
         private const string SimplifiedChineseMenu = LanguageMenu + "简体中文";
+        private const string RestoreDefaultsMenu = "Tools/HierarchyDecorator/Restore Default Settings…";
 
         private static string Path => Constants.Paths.SETTINGS_PATH;
 
@@ -27,11 +28,19 @@ namespace HierarchyDecorator.Editor
             SettingsService.OpenUserPreferences (Path);
         }
 
-        [MenuItem ("Tools/HierarchyDecorator/Choose Preset")]
-        private static void OpenPresets()
+        [MenuItem (RestoreDefaultsMenu)]
+        private static void RestoreDefaults()
         {
-            InitialSetupWindow.Open (true);
+            if (EditorUtility.DisplayDialog(SettingsLocalization.Text("Restore Default Settings"),
+                SettingsLocalization.Text("Restore the default Hierarchy settings?"),
+                SettingsLocalization.Text("Restore"), SettingsLocalization.Text("Cancel")))
+            {
+                HierarchyDecorator.RestoreDefaults();
+            }
         }
+
+        [MenuItem (RestoreDefaultsMenu, true)]
+        private static bool ValidateRestoreDefaults() => !UpstreamMigration.IsRunning;
 
         [MenuItem (AutoMenu)]
         private static void SelectAuto() => SelectLanguage (SettingsLanguage.Auto);

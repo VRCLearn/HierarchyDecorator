@@ -263,7 +263,7 @@ namespace HierarchyDecorator.Editor
                 }
 
                 copy.name = "Settings";
-                copy.NeedsPresetSelection = false;
+                copy.NeedsInitialSetup = false;
                 copy.hideFlags = HideFlags.HideAndDontSave & ~HideFlags.NotEditable;
                 return copy;
             }

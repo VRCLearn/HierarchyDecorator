@@ -66,7 +66,7 @@ namespace HierarchyDecoratorCI
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 Type owner = typeof(Settings).Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator", true);
                 settings = (Settings)owner.GetProperty("Settings", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-                typeof(Settings).GetProperty("NeedsPresetSelection", Instance).SetValue(settings, false);
+                typeof(Settings).GetProperty("NeedsInitialSetup", Instance).SetValue(settings, false);
                 settings.styleData.UpdateStyles(EditorGUIUtility.isProSkin);
                 settings.globalData.showActiveToggles = true;
                 if (!AssetDatabase.IsValidFolder(FixtureFolder))

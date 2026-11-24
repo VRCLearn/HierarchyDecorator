@@ -56,7 +56,7 @@ namespace HierarchyDecoratorCI
                 var scripts = MonoImporter.GetAllRuntimeMonoScripts();
                 var settings = (Settings)typeof(Settings).Assembly.GetType("HierarchyDecorator.Editor.HierarchyDecorator")
                     .GetProperty("Settings", BindingFlags.Public | BindingFlags.Static).GetValue(null);
-                typeof(Settings).GetProperty("NeedsPresetSelection", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(settings, false);
+                typeof(Settings).GetProperty("NeedsInitialSetup", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(settings, false);
                 var serialized = new SerializedObject(settings);
                 serialized.FindProperty("components").FindPropertyRelative("showAll").intValue = (int)DisplayMode.Custom;
                 serialized.FindProperty("components").FindPropertyRelative("enableIcons").boolValue = true;

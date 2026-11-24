@@ -3,8 +3,6 @@ using UnityEngine;
 
 namespace HierarchyDecorator.Editor
 {
-    internal enum SettingsPreset { Detailed, Minimal }
-
     /// <summary>
     /// ScriptableObject containing all settings and relevant data for the hierarchy
     /// </summary>
@@ -22,13 +20,13 @@ namespace HierarchyDecorator.Editor
         [SerializeField, HideInInspector] private List<Color> paletteColors = new List<Color>();
         [SerializeField, HideInInspector] private Color paletteColor = new Color(0.56f, 0.52f, 0.84f);
 
-        // Missing in older settings files, so existing configurations skip setup.
+        // Retain the serialized field name for existing installations.
         [SerializeField, HideInInspector]
         private bool needsPresetSelection;
 
         // Properties
 
-        internal bool NeedsPresetSelection
+        internal bool NeedsInitialSetup
         {
             get => needsPresetSelection;
             set => needsPresetSelection = value;
@@ -67,7 +65,7 @@ namespace HierarchyDecorator.Editor
             styleData.UpdateStyles (isDarkMode);
         }
 
-        internal void ApplyPreset(SettingsPreset preset)
+        internal void RestoreDefaults()
         {
             globalData = new GlobalData();
             styleData = new HierarchyStyleData();
@@ -76,11 +74,6 @@ namespace HierarchyDecorator.Editor
             components.UpdateComponents();
             styleData.UpdateStyles(UnityEditor.EditorGUIUtility.isProSkin);
 
-            bool detailed = preset == SettingsPreset.Detailed;
-            globalData.tagSettings.show = detailed;
-            globalData.layerSettings.show = detailed;
-            globalData.showBreadcrumbs = detailed;
-            styleData.twoToneBackground = detailed;
             needsPresetSelection = false;
         }
 

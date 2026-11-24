@@ -76,7 +76,10 @@ Install only one distribution of this plugin per project.
 
 Open **Tools > HierarchyDecorator > Settings** or **Preferences > HierarchyDecorator** to edit settings. They are saved per project in `UserSettings/Settings.asset`.
 
-Choose **Detailed** or **Minimal** on first use. Reopen the chooser from **Tools > HierarchyDecorator > Choose Preset**. If wooshii is detected, **Migrate settings and remove wooshii** transfers its current settings when available and removes its old installation. Choosing a preset leaves the old installation unchanged.
+New projects use one default layout with Hierarchy guide lines enabled and Tag, Layer, and alternating backgrounds hidden. Use **Tools > HierarchyDecorator > Restore Default Settings…** to restore these defaults.
+
+On first use, Hierarchy Decorator automatically imports any available wooshii settings and removes the detected old installation. Migration runs without a dialog. Errors appear in the Unity Console.
+Migration retains the main Hierarchy guide toggle. Line styles, color, and horizontal connectors use the new defaults.
 
 Select a language in settings or **Tools > HierarchyDecorator > Language**. English, Japanese, Korean, Traditional Chinese, and Simplified Chinese are supported; **Auto** follows the operating system language.
 
