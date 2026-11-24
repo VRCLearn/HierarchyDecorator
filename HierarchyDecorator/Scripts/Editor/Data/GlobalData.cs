@@ -88,8 +88,8 @@ namespace HierarchyDecorator.Editor
 
         // Tags & Layers
         public TagLayerLayout tagLayerLayout;
-        public TagSettings tagSettings = new TagSettings();
-        public LayerSettings layerSettings = new LayerSettings();
+        public TagSettings tagSettings = new TagSettings { show = false };
+        public LayerSettings layerSettings = new LayerSettings { show = false };
 
         // Components 
 
