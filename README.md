@@ -178,6 +178,13 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
  </p>
 </details>
 
+### Collapsing branches
+
+Click the fold button at the top of the Hierarchy to show the selected object and its immediate children.
+The path to the object stays open, while its child branches and other branches in the scene or prefab stage
+fold. **Shift+E** does the same for the object under the pointer in the focused Hierarchy. Double-click the
+button to fold all object branches and show only the roots of loaded scenes.
+
   ### Icons
 
  Click the icon next to a GameObject's name or **Alt**-click its row in the classic Hierarchy to open its
@@ -192,6 +199,7 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
  Confirming clears all uses of that color in the project, including in closed scenes and prefabs.
  Use **+** in Object Icon to open Unity's texture picker. Selecting a texture applies it to the current object
  and closes the palette. Project textures are available through the picker whenever you need them.
+
  The first tile in each group restores the original color or icon independently.
  The icon presets omit Unity's automatic GameObject, Prefab, and scene icons.
 
@@ -202,6 +210,11 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
 
  Component icons appear on the right and represent components attached to the GameObject. Use the
  Icons settings tab to choose which components appear or show all eligible components.
+
+ **Alt**-click a component icon to open a compact inspector beside the Hierarchy without changing the selection.
+ For a stacked icon, choose the component from the menu. The popup closes when you click away or open another
+ component unless it is pinned. Click the pin or drag the title bar to pin the popup. Click the pin again
+ to let it close when it loses focus.
 
  VRChat Avatar Descriptor uses a gray humanoid icon; PhysBone and PhysBone Collider share a diagonal blue bone icon, and Mirror has its own icon. Each icon represents a component attached to that GameObject; it does not indicate referenced roots, affected bones or components generated during an avatar build. These icons use the existing component icon settings and do not require the VRChat SDK to use the rest of the plugin.
 
