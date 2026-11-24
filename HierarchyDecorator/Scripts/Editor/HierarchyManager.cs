@@ -149,8 +149,6 @@ namespace HierarchyDecorator.Editor
 #endif
             try
             {
-                GameObjectIconWindow.HandleRowInput(rect, item.GameObject);
-
                 for (int i = 0; i < Drawers.Length; i++)
                 {
                     Drawers[i].Draw(rect, item, s_Settings);
@@ -160,6 +158,8 @@ namespace HierarchyDecorator.Editor
                 {
                     Info[i].Draw(rect, item, s_Settings);
                 }
+
+                GameObjectIconWindow.HandleRowInput(rect, item.GameObject);
 
                 for (int i = 0; i < OverlayDrawers.Length; i++)
                 {

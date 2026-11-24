@@ -177,6 +177,15 @@ namespace HierarchyDecorator.Editor
 
         private void DrawStackedComponentIcon(Rect rect, GUIContent content, List<ComponentItem> components, Settings settings)
         {
+            if (IsInspectClick(rect))
+            {
+                Event.current.Use();
+                if (components.Count == 1)
+                    ComponentInspectorWindow.Open(components[0].Component, ComponentInspectorWindow.GetAnchor(rect));
+                else
+                    ShowInspectorMenu(rect, components);
+            }
+
             ComponentItem firstToggleable = null;
             if (settings.Components.ClickToToggleComponent)
             {
@@ -205,6 +214,12 @@ namespace HierarchyDecorator.Editor
 
         private void DrawComponentIcon(Rect rect, ComponentItem item, Settings settings)
         {
+            if (IsInspectClick(rect))
+            {
+                Event.current.Use();
+                ComponentInspectorWindow.Open(item.Component, ComponentInspectorWindow.GetAnchor(rect));
+            }
+
             DrawContextMenu(rect, item);
             
             if (item.HasToggle && settings.Components.ClickToToggleComponent)
@@ -247,6 +262,29 @@ namespace HierarchyDecorator.Editor
         private void DrawIcon(Rect rect, GUIContent content)
         {
             GUI.Label(rect, content, Style.ComponentIconStyle);
+        }
+
+        private static bool IsInspectClick(Rect rect)
+        {
+            Event evt = Event.current;
+            return evt.type == EventType.MouseDown && evt.button == 0 && evt.alt &&
+                !evt.shift && !evt.control && !evt.command && rect.Contains(evt.mousePosition);
+        }
+
+        private static void ShowInspectorMenu(Rect rect, List<ComponentItem> items)
+        {
+            Vector2 anchor = ComponentInspectorWindow.GetAnchor(rect);
+            var menu = new GenericMenu();
+            for (int i = 0; i < items.Count; i++)
+            {
+                ComponentItem item = items[i];
+                Component component = item.Component;
+                string name = item.DisplayName.Replace('/', '／');
+                if (items.Count(other => other.DisplayName == item.DisplayName) > 1)
+                    name += $" ({i + 1})";
+                menu.AddItem(new GUIContent(name), false, () => ComponentInspectorWindow.Open(component, anchor));
+            }
+            menu.DropDown(rect);
         }
 
         private void DrawContextMenu(Rect rect, ComponentItem item)

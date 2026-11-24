@@ -189,7 +189,7 @@ namespace HierarchyDecorator.Editor
             position = FitPopupToDesktop(hierarchyRightEdge, size);
         }
 
-        private static Rect FitPopupToDesktop(Vector2 anchor, Vector2 size)
+        internal static Rect FitPopupToDesktop(Vector2 anchor, Vector2 size)
         {
             Rect desktop = InternalEditorUtility.GetBoundsOfDesktopAtPoint(anchor);
             float x = Mathf.Clamp(anchor.x, desktop.xMin, Mathf.Max(desktop.xMin, desktop.xMax - size.x));
