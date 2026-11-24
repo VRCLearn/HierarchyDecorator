@@ -1,3 +1,21 @@
+## [1.5.0] - 2026-11-24
+
+### Added
+
+- Alt-click a component icon to open a quick inspector. Click the pin or drag the title bar to keep the window open while working elsewhere.
+- Use the Hierarchy toolbar button to fold other branches around the selection, or press Shift+E over a row. Double-click the toolbar button to fold all object branches and show the loaded scene roots.
+- Set a per-row component icon limit. Hover over the overflow indicator to see which components are hidden.
+
+### Changed
+
+- Redraw Hierarchy guides as continuous branches. Direct links and ancestor guides have independent styles and default to solid and dashed lines respectively.
+- Use one default layout with Hierarchy guides enabled and Tag, Layer, and alternating backgrounds hidden.
+- Import compatible Wooshii settings automatically when detected and keep the Hierarchy guide toggle.
+
+### Fixed
+
+- Inset left-aligned Hierarchy headings so their position still shows the object's nesting level.
+
 ## [1.4.0] - 2026-11-24
 
 ### Added
