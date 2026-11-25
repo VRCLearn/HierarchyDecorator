@@ -63,18 +63,12 @@ namespace HierarchyDecorator.Editor
 
             EditorGUILayout.BeginVertical(Style.InspectorPadding);
             SettingsLocalization.DrawLanguageSelector();
-            DrawTitle();
+            bool restoreDefaults = DrawTitle();
             EditorGUI.BeginChangeCheck();
             DrawContent();
             if (EditorGUI.EndChangeCheck())
                 EditorUtility.SetDirty(settings);
 
-            bool restoreDefaults;
-            using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning))
-            {
-                EditorGUILayout.Space();
-                restoreDefaults = GUILayout.Button(SettingsLocalization.Text("Restore Default Settings"));
-            }
             EditorGUILayout.EndVertical();
 
             if (restoreDefaults)
@@ -103,8 +97,9 @@ namespace HierarchyDecorator.Editor
             }
         }
 
-        private void DrawTitle()
+        private bool DrawTitle()
         {
+            bool restoreDefaults;
             // Draw Header
             
 #if UNITY_2019_1_OR_NEWER
@@ -120,9 +115,14 @@ namespace HierarchyDecorator.Editor
 
                 // Link to repo for convenience
 
-                if (GUILayout.Button (SettingsLocalization.Text("GitHub Repository"), EditorStyles.miniButtonMid))
+                if (GUILayout.Button (SettingsLocalization.Text("GitHub Repository"), EditorStyles.miniButtonLeft))
                 {
                     Application.OpenURL ("https://github.com/VRCLearn/HierarchyDecorator/");
+                }
+
+                using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning))
+                {
+                    restoreDefaults = GUILayout.Button(SettingsLocalization.Text("Restore Default Settings"), EditorStyles.miniButtonRight);
                 }
             }
             EditorGUILayout.EndHorizontal ();
@@ -142,6 +142,7 @@ namespace HierarchyDecorator.Editor
             }
 
             EditorGUILayout.EndVertical ();
+            return restoreDefaults;
         }
         
         private void OnSettingsChanged()

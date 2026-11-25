@@ -197,6 +197,9 @@ scene makes it active without closing other scenes. Scene switching is available
 Use **General > Hierarchy Toolbar** in HierarchyDecorator settings to show or hide the fold button and the
 scene selector independently. Both are enabled by default.
 
+To reset the plugin's settings, use **Restore Default Settings** beside the GitHub button at the top of
+the settings page. Unity asks for confirmation before applying the defaults.
+
   ### Icons
 
  Click the icon next to a GameObject's name or **Alt**-click its row in the classic Hierarchy to open its
