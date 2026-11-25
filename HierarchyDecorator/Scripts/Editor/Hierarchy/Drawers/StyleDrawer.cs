@@ -25,15 +25,15 @@ namespace HierarchyDecorator.Editor
             // Draw the style if one is to be applied
             // Have to make sure selection colours are drawn on top when required too
 
-            string displayName = item.DisplayName;
-            if (settings.styleData.TryGetStyleFromPrefix(displayName, out HierarchyStyle prefix))
+            HierarchyStyle prefix = item.GetRowStyle(settings.styleData);
+            if (prefix != null)
             {
                 Rect styleRect = (item.HasParent)
                     ? rect
                     : GetActualHierarchyWidth(rect);
 
                 Rect labelRect = prefix.GetLabelRect(rect, visibleIcon != null);
-                HierarchyGUI.DrawHierarchyStyle(prefix, styleRect, labelRect, displayName);
+                HierarchyGUI.DrawHierarchyStyle(prefix, styleRect, labelRect, item.RowName);
                 hasStyle = true;
             }
 
@@ -53,7 +53,7 @@ namespace HierarchyDecorator.Editor
                 GameObjectIconInfo.Draw(rect, item.GameObject, visibleIcon, settings.styleData, prefix, rowTint);
             }
 
-            if (!item.HasChildren || !hasStyle)
+            if (!hasStyle || !item.HasChildren)
             {
                 return;
             }

@@ -21,7 +21,7 @@ namespace HierarchyDecorator.Editor
         public string DisplayName => Type.DisplayName;
         public bool IsBuiltIn => Type.IsBuiltIn;
         // Use the same component eligibility as Unity's Inspector titlebar.
-        public bool HasToggle => !IsNullComponent && Component != null && EditorUtility.GetObjectEnabled(Component) != -1;
+        public bool HasToggle => GetEnabledState() != -1;
 
         public bool Active { get; private set; }
 
@@ -61,26 +61,18 @@ namespace HierarchyDecorator.Editor
                 return c;
             }
 
-            if (!settings.Components.TryGetCustomComponent(type, out c))
+            if (!settings.Components.TryGetCustomComponent(type, out c) && settings.Components.RegisterCustomComponent(Component))
             {
-                settings.Components.RegisterCustomComponent(Component);
+                EditorUtility.SetDirty(settings);
                 settings.Components.TryGetCustomComponent(type, out c);
             }
 
             return c;
         }
 
-        private bool GetActiveState()
-        {
-            // Default as enabled 
+        internal int GetEnabledState() => IsNullComponent || Component == null ? -1 : EditorUtility.GetObjectEnabled(Component);
 
-            if (IsNullComponent || Component == null)
-            {
-                return true;
-            }
-
-            return EditorUtility.GetObjectEnabled(Component) != 0;
-        }
+        private bool GetActiveState() => GetEnabledState() != 0;
 
         public void ToggleActive()
         {

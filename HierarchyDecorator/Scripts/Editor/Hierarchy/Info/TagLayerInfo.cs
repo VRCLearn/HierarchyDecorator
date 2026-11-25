@@ -37,7 +37,7 @@ namespace HierarchyDecorator.Editor
             tagEnabled = settings.globalData.tagSettings.show;
             layerEnabled = settings.globalData.layerSettings.show;
 
-            if (settings.styleData.HasStyle(item.DisplayName))
+            if ((tagEnabled || layerEnabled) && item.GetRowStyle(settings.styleData) != null)
             {
                 tagEnabled &= settings.styleData.displayTags;
                 layerEnabled &= settings.styleData.displayLayers;

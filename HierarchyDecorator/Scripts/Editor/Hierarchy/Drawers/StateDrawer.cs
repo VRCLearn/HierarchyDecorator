@@ -11,12 +11,12 @@ namespace HierarchyDecorator.Editor
 
         protected override bool DrawerIsEnabled(HierarchyItem item, Settings settings)
         {
-            return settings.styleData.Count > 0 || settings.styleData.twoToneBackground;
+            return Event.current.type == EventType.Repaint && (settings.styleData.Count > 0 || settings.styleData.twoToneBackground);
         }
 
         protected override void DrawInternal(Rect rect, HierarchyItem item, Settings settings)
         {
-            if (settings.styleData.twoToneBackground || settings.styleData.HasStyle(item.DisplayName))
+            if (settings.styleData.twoToneBackground || item.GetRowStyle(settings.styleData) != null)
             {
                 DrawSelection(rect, item.Transform);
             }

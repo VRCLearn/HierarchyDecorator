@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -34,82 +35,135 @@ namespace HierarchyDecorator.Editor
 
 #if UNITY_2019_1_OR_NEWER
         private const string ToolbarButtonName = "hierarchy-decorator-collapse-branches";
+        private const string ToolbarTooltip = "Click to collapse other branches. Double-click to collapse all.";
         private const float SearchToolbarWidth = 330f;
         private const float ButtonWidth = 22f;
         private const int IconSize = 16;
-        private static readonly MethodInfo GetHierarchyWindows = HierarchyWindowType?.GetMethod("GetAllSceneHierarchyWindows", BindingFlags.Static | BindingFlags.Public);
+        private static readonly Func<IList> GetHierarchyWindows = BindHierarchyWindowList();
         private static readonly MethodInfo CollapseAll = SceneHierarchy?.PropertyType.GetMethod("CollapseAll", InstanceMembers, null, Type.EmptyTypes, null);
+        private static readonly ConditionalWeakTable<VisualElement, ToolbarButton> ToolbarButtons = new ConditionalWeakTable<VisualElement, ToolbarButton>();
         private static double nextToolbarUpdate;
         private static Texture2D collapseIcon;
 
         static HierarchyBranchMenu()
         {
+            if (ExpandItem == null || GetHierarchyWindows == null)
+                return;
+
             EditorApplication.update += UpdateToolbars;
+            SettingsLocalization.LanguageChanged += UpdateToolbarTooltips;
+        }
+
+        private static Func<IList> BindHierarchyWindowList()
+        {
+            MethodInfo method = HierarchyWindowType?.GetMethod("GetAllSceneHierarchyWindows", BindingFlags.Static | BindingFlags.Public);
+            return method == null ? null : Delegate.CreateDelegate(typeof(Func<IList>), method, false) as Func<IList>;
         }
 
         private static void UpdateToolbars()
         {
-            if (EditorApplication.timeSinceStartup < nextToolbarUpdate || ExpandItem == null || GetHierarchyWindows == null)
+            double now = EditorApplication.timeSinceStartup;
+            if (now < nextToolbarUpdate)
                 return;
 
-            nextToolbarUpdate = EditorApplication.timeSinceStartup + 0.25;
-            foreach (EditorWindow window in (IEnumerable)GetHierarchyWindows.Invoke(null, null))
+            // Unity provides no public creation event for these windows. Discover them periodically;
+            // the controls already installed handle geometry and language changes independently.
+            nextToolbarUpdate = now + 0.25;
+            IList windows = GetHierarchyWindows();
+            bool enabled = CollapseAll != null || CanCollapse(Selection.activeGameObject);
+            for (int i = 0; i < windows.Count; i++)
             {
+                var window = (EditorWindow)windows[i];
                 VisualElement root = window.rootVisualElement;
                 if (root.panel == null)
                     continue;
 
-                ToolbarButton button = root.Q<ToolbarButton>(ToolbarButtonName);
-                if (button == null)
+                if (!ToolbarButtons.TryGetValue(root, out ToolbarButton button) || button.parent != root)
                 {
-                    int clickCount = 1;
-                    button = new ToolbarButton(() =>
-                    {
-                        if (clickCount == 2)
-                            CollapseToSceneRoots(window);
-                        else if (clickCount <= 1)
-                            CollapseOtherBranches(window, Selection.activeGameObject);
-                    })
-                    {
-                        name = ToolbarButtonName,
-                        focusable = false
-                    };
-                    button.RegisterCallback<MouseDownEvent>(evt =>
-                    {
-                        if (evt.button == 0)
-                            clickCount = evt.clickCount;
-                    }, TrickleDown.TrickleDown);
-                    button.style.position = Position.Absolute;
-                    button.style.width = ButtonWidth;
-                    button.style.height = 18f;
-                    button.style.marginLeft = button.style.marginRight = 0f;
-                    button.style.paddingLeft = button.style.paddingRight = 0f;
-                    button.style.borderLeftWidth = button.style.borderRightWidth = 0f;
-                    button.style.borderTopWidth = button.style.borderBottomWidth = 0f;
-                    button.style.backgroundColor = Color.clear;
-                    button.style.justifyContent = Justify.Center;
-                    button.style.alignItems = Align.Center;
-                    var icon = new Image
-                    {
-                        image = GetCollapseIcon(),
-                        tintColor = EditorGUIUtility.isProSkin ? new Color(0.70f, 0.70f, 0.70f) : new Color(0.30f, 0.30f, 0.30f),
-                        pickingMode = PickingMode.Ignore
-                    };
-                    icon.style.width = icon.style.height = IconSize;
-                    button.Add(icon);
-                    button.RegisterCallback<MouseEnterEvent>(_ => button.style.backgroundColor = new Color(0.5f, 0.5f, 0.5f, 0.16f));
-                    button.RegisterCallback<MouseLeaveEvent>(_ => button.style.backgroundColor = Color.clear);
-                    root.Add(button);
+                    if (button == null)
+                        root.RegisterCallback<GeometryChangedEvent>(OnToolbarGeometryChanged);
+                    else
+                        ToolbarButtons.Remove(root);
+
+                    button = root.Q<ToolbarButton>(ToolbarButtonName) ?? CreateToolbarButton(window, root);
+                    ToolbarButtons.Add(root, button);
+                    PositionToolbar(button, root.layout);
+                    button.tooltip = SettingsLocalization.Text(ToolbarTooltip);
                 }
 
-                // The classic search field can take the full toolbar width in a narrow dock.
-                // Use the tab strip there so the search field and Create menu both remain clickable.
-                bool useTabStrip = root.layout.width < 420f && root.layout.y >= 18f;
-                button.style.top = useTabStrip ? -18f : 1f;
-                float rightInset = useTabStrip ? 48f : SearchToolbarWidth;
-                button.style.left = Mathf.Max(37f, root.layout.width - rightInset - ButtonWidth);
-                button.tooltip = SettingsLocalization.Text("Click to collapse other branches. Double-click to collapse all.");
-                button.SetEnabled(CollapseAll != null || CanCollapse(Selection.activeGameObject));
+                if (button.enabledSelf != enabled)
+                    button.SetEnabled(enabled);
+            }
+        }
+
+        private static ToolbarButton CreateToolbarButton(EditorWindow window, VisualElement root)
+        {
+            int clickCount = 1;
+            var button = new ToolbarButton(() =>
+            {
+                if (clickCount == 2)
+                    CollapseToSceneRoots(window);
+                else if (clickCount <= 1)
+                    CollapseOtherBranches(window, Selection.activeGameObject);
+            })
+            {
+                name = ToolbarButtonName,
+                focusable = false
+            };
+            button.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                    clickCount = evt.clickCount;
+            }, TrickleDown.TrickleDown);
+            button.style.position = Position.Absolute;
+            button.style.width = ButtonWidth;
+            button.style.height = 18f;
+            button.style.marginLeft = button.style.marginRight = 0f;
+            button.style.paddingLeft = button.style.paddingRight = 0f;
+            button.style.borderLeftWidth = button.style.borderRightWidth = 0f;
+            button.style.borderTopWidth = button.style.borderBottomWidth = 0f;
+            button.style.backgroundColor = Color.clear;
+            button.style.justifyContent = Justify.Center;
+            button.style.alignItems = Align.Center;
+            var icon = new Image
+            {
+                image = GetCollapseIcon(),
+                tintColor = EditorGUIUtility.isProSkin ? new Color(0.70f, 0.70f, 0.70f) : new Color(0.30f, 0.30f, 0.30f),
+                pickingMode = PickingMode.Ignore
+            };
+            icon.style.width = icon.style.height = IconSize;
+            button.Add(icon);
+            button.RegisterCallback<MouseEnterEvent>(_ => button.style.backgroundColor = new Color(0.5f, 0.5f, 0.5f, 0.16f));
+            button.RegisterCallback<MouseLeaveEvent>(_ => button.style.backgroundColor = Color.clear);
+            root.Add(button);
+            return button;
+        }
+
+        private static void OnToolbarGeometryChanged(GeometryChangedEvent evt)
+        {
+            var root = (VisualElement)evt.currentTarget;
+            if (ToolbarButtons.TryGetValue(root, out ToolbarButton button) && button.parent == root)
+                PositionToolbar(button, evt.newRect);
+        }
+
+        private static void PositionToolbar(ToolbarButton button, Rect layout)
+        {
+            // A narrow dock uses the tab strip to leave the search field and Create menu clickable.
+            bool useTabStrip = layout.width < 420f && layout.y >= 18f;
+            button.style.top = useTabStrip ? -18f : 1f;
+            float rightInset = useTabStrip ? 48f : SearchToolbarWidth;
+            button.style.left = Mathf.Max(37f, layout.width - rightInset - ButtonWidth);
+        }
+
+        private static void UpdateToolbarTooltips()
+        {
+            string tooltip = SettingsLocalization.Text(ToolbarTooltip);
+            IList windows = GetHierarchyWindows();
+            for (int i = 0; i < windows.Count; i++)
+            {
+                VisualElement root = ((EditorWindow)windows[i]).rootVisualElement;
+                if (ToolbarButtons.TryGetValue(root, out ToolbarButton button))
+                    button.tooltip = tooltip;
             }
         }
 

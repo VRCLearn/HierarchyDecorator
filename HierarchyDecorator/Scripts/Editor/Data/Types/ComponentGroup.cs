@@ -98,11 +98,8 @@ namespace HierarchyDecorator.Editor
 
             components.Add(component);
 
-            if (component.Type != null)
-            {
-                ValidateCache();
+            if (hasCached && component.IsValid() && !lookup.ContainsKey(component.Type))
                 lookup.Add(component.Type, component);
-            }
 
             return true;
         }
@@ -122,18 +119,14 @@ namespace HierarchyDecorator.Editor
                 return false;
             }
 
-            if (!components.Remove(component))
+            int index = components.IndexOf(component);
+            if (index < 0)
             {
                 Debug.LogError("Cannot remove a component that does not belong to the group.");
                 return false;
             }
 
-            if (component.Type != null)
-            {
-                lookup.Remove(component.Type);
-            }
-
-            return true;
+            return Remove(index);
         }
 
         /// <summary>
@@ -149,13 +142,17 @@ namespace HierarchyDecorator.Editor
                 return false;
             }
 
-            return Remove(components[index]);
+            ComponentType component = components[index];
+            components.RemoveAt(index);
+            if (hasCached && component?.Type != null)
+                InvalidateType(component.Type);
+            return true;
         }
 
         public void Clear()
         {
             components.Clear();
-            lookup.Clear();
+            lookup?.Clear();
 
             hasCached = false;
         }
@@ -167,21 +164,16 @@ namespace HierarchyDecorator.Editor
                 return;
             }
 
-            // Remove old component cached
-
-            if (Contains(component))
-            {
-                lookup.Remove(component.Type);
-            }
-
-            // Update type and recache 
-
+            Type previousType = component.Type;
             component.UpdateType(script);
 
-            if (!Contains(component.Type))
-            {
-                lookup.Add(component.Type, component);
-            }
+            if (!hasCached)
+                return;
+
+            if (previousType != null && previousType != component.Type)
+                InvalidateType(previousType);
+            if (component.Type != null)
+                InvalidateType(component.Type);
         }
 
         /// <summary>
@@ -206,6 +198,7 @@ namespace HierarchyDecorator.Editor
         public void Sort()
         {
             components.Sort();
+            hasCached = false;
         }
 
         /// <summary>
@@ -234,6 +227,7 @@ namespace HierarchyDecorator.Editor
 
         public void UpdateCache(bool updateContent = true)
         {
+            hasCached = false;
             ValidateCache();
 
             for (int i = 0; i < components.Count; i++)
@@ -246,16 +240,14 @@ namespace HierarchyDecorator.Editor
                     i--;
                     continue;
                 }
-                else if (component.IsValid()) // Ignore valid
+                bool isValid = component.IsValid();
+                if (!isValid)
                 {
-                    continue;
+                    isValid = component.IsBuiltIn
+                        ? UpdateBuiltIn(component, updateContent)
+                        : UpdateCustom(component, updateContent);
+                    isValid = isValid && component.IsValid();
                 }
-
-                // Update components if valid, return false if invalid
-
-                bool isValid = component.IsBuiltIn
-                    ? UpdateBuiltIn(component, updateContent)
-                    : UpdateCustom(component, updateContent);
 
                 if (component == null || component.Type == null)
                 {
@@ -264,10 +256,7 @@ namespace HierarchyDecorator.Editor
                     continue;
                 }
 
-                isValid &= !lookup.ContainsKey(component.Type);
-                isValid &= component.IsValid();
-
-                if (isValid)
+                if (isValid && !lookup.ContainsKey(component.Type))
                 {
                     lookup.Add(component.Type, component);
                 }
@@ -312,24 +301,39 @@ namespace HierarchyDecorator.Editor
         /// <returns>Returns a bool based on if a valid component is found or not.</returns>
         public bool TryGetComponent(Type type, out ComponentType component)
         {
-            if (hasCached && lookup.TryGetValue(type, out component))
+            if (type == null)
             {
-                return true;
+                component = null;
+                return false;
             }
 
+            if (hasCached)
+                return lookup.TryGetValue(type, out component);
+
+            component = FindValidComponent(type);
+            return component != null;
+        }
+
+        private ComponentType FindValidComponent(Type type)
+        {
             for (int i = 0; i < Count; i++)
             {
                 ComponentType componentType = components[i];
 
-                if (componentType.Type == type && componentType.IsValid())
-                {
-                    component = componentType;
-                    return true;
-                }
+                if (componentType != null && componentType.Type == type && componentType.IsValid())
+                    return componentType;
             }
 
-            component = null;
-            return false;
+            return null;
+        }
+
+        private void InvalidateType(Type type)
+        {
+            ComponentType component = FindValidComponent(type);
+            if (component != null)
+                lookup[type] = component;
+            else
+                lookup.Remove(type);
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ namespace HierarchyDecorator.Editor
     {
         protected const int INDENT_SIZE = 16;
         protected static int IndentIndex;
+        private static readonly GUIContent labelContent = new GUIContent();
 
         /// <summary>
         /// Full width rect for the current hierarchy instance
@@ -133,10 +134,12 @@ namespace HierarchyDecorator.Editor
 
         private Rect GetLabelRect(Rect rect, HierarchyItem item, Settings settings)
         {
-            string name = item.DisplayName;
-            if (!settings.styleData.TryGetStyleFromPrefix(name, out HierarchyStyle style))
+            string name = item.RowName;
+            HierarchyStyle style = item.GetRowStyle(settings.styleData);
+            if (style == null)
             {
-                rect.width = EditorStyles.label.CalcSize(new GUIContent(name)).x + 18f;
+                labelContent.text = name;
+                rect.width = EditorStyles.label.CalcSize(labelContent).x + 18f;
                 return rect;
             }
 
@@ -144,7 +147,8 @@ namespace HierarchyDecorator.Editor
             var preview = GameObjectIconWindow.GetRowPreview(item.GameObject);
             bool hasIcon = GameObjectIconInfo.GetVisibleIcon(item, preview) != null;
             Rect label = style.GetLabelRect(rect, hasIcon);
-            rect.width = labelStyle.CalcSize(new GUIContent(style.GetLabelText(name))).x + 2f;
+            labelContent.text = style.GetLabelText(name);
+            rect.width = labelStyle.CalcSize(labelContent).x + 2f;
             switch (labelStyle.alignment)
             {
                 case TextAnchor.UpperCenter:

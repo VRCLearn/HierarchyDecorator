@@ -126,10 +126,10 @@ namespace HierarchyDecorator.Editor
             Current = item;
             Current.OnGUIBegin();
 
-            DrawItem(rect, item);
+            DrawItem(rect, item, s_Settings);
         }
 
-        private static void DrawItem(Rect rect, HierarchyItem item)
+        private static void DrawItem(Rect rect, HierarchyItem item, Settings settings)
         {
             HierarchyBranchMenu.HandleRowShortcut(rect, item.GameObject);
 
@@ -151,19 +151,19 @@ namespace HierarchyDecorator.Editor
             {
                 for (int i = 0; i < Drawers.Length; i++)
                 {
-                    Drawers[i].Draw(rect, item, s_Settings);
+                    Drawers[i].Draw(rect, item, settings);
                 }
 
                 for (int i = 0; i < Info.Length; i++)
                 {
-                    Info[i].Draw(rect, item, s_Settings);
+                    Info[i].Draw(rect, item, settings);
                 }
 
                 GameObjectIconWindow.HandleRowInput(rect, item.GameObject);
 
                 for (int i = 0; i < OverlayDrawers.Length; i++)
                 {
-                    OverlayDrawers[i].Draw(rect, item, s_Settings);
+                    OverlayDrawers[i].Draw(rect, item, settings);
                 }
             }
             finally
@@ -177,6 +177,14 @@ namespace HierarchyDecorator.Editor
 
         private static bool TryGetValidInstance(HierarchyObjectId id, out HierarchyItem item)
         {
+            if (lookup.TryGetValue(id, out item) && item.IsValid())
+            {
+                // Adding uGUI components can replace the Transform.
+                if (item.Transform == null)
+                    item.Transform = item.GameObject.transform;
+                return true;
+            }
+
 #if UNITY_6000_3_OR_NEWER
             GameObject instance = EditorUtility.EntityIdToObject(id) as GameObject;
 #else
@@ -189,29 +197,14 @@ namespace HierarchyDecorator.Editor
                 return false;
             }
 
-            item = GetNext(id, instance);
+            item = new HierarchyItem(id, instance);
+            lookup[id] = item;
             return true;
-        }
-
-        private static HierarchyItem GetNext(HierarchyObjectId id, GameObject instance)
-        {
-            if (!lookup.TryGetValue(id, out HierarchyItem item))
-            {
-                item = new HierarchyItem(id, instance);
-                lookup.Add(id, item);
-            }
-            else
-            {
-                // Fix broken references caused by attaching uGUI components.
-                if (item.Transform == null)
-                    item.Transform = instance.transform;
-            }
-            return item;
         }
 
         private static void DrawSceneItemHighlight(Rect rect, HierarchyObjectId id)
         {
-            if (!s_Settings.styleData.showSceneItemHighlight)
+            if (Event.current.type != EventType.Repaint || !s_Settings.styleData.showSceneItemHighlight)
                 return;
             for (int i = 0; i < SceneManager.sceneCount; ++i)
             {
@@ -248,55 +241,79 @@ namespace HierarchyDecorator.Editor
 
     public class ComponentList
     {
-        private List<ComponentItem> items = new List<ComponentItem>();
+        private static readonly List<Component> currentComponents = new List<Component>();
+        private static readonly Dictionary<Component, ComponentItem> previousComponents = new Dictionary<Component, ComponentItem>();
+        private readonly List<ComponentItem> items = new List<ComponentItem>();
+
+        internal int Count => items.Count;
+        internal ComponentItem this[int index] => items[index];
 
         public ComponentList(GameObject instance)
         {
-            UpdateCache(GetComponents(instance));
+            Refresh(instance);
         }
 
         public void Validate(GameObject instance)
         {
-            UpdateCache(GetComponents(instance));
+            Refresh(instance);
+            RefreshActiveStates();
         }
 
-        private void UpdateCache(Component[] components)
+        internal void RefreshActiveStates()
         {
-            int length = components.Length;
-            if (length == 0)
+            for (int i = 0; i < items.Count; i++)
+                items[i].UpdateActiveState();
+        }
+
+        internal void Refresh(GameObject instance)
+        {
+            instance.GetComponents(currentComponents);
+            try
             {
-                items.Clear();
-                return;
+                int unchanged = 0;
+                int sharedCount = Mathf.Min(items.Count, currentComponents.Count);
+                for (; unchanged < sharedCount; unchanged++)
+                {
+                    ComponentItem item = items[unchanged];
+                    Component component = currentComponents[unchanged];
+                    if (!ReferenceEquals(item.Component, component) || (item.IsNullComponent && !ReferenceEquals(component, null)))
+                        break;
+                }
+
+                if (unchanged != items.Count || unchanged != currentComponents.Count)
+                    UpdateCache(unchanged);
+            }
+            finally
+            {
+                currentComponents.Clear();
+            }
+        }
+
+        private void UpdateCache(int unchanged)
+        {
+            for (int i = unchanged; i < items.Count; i++)
+            {
+                ComponentItem item = items[i];
+                if (item.Component != null && item.IsValid())
+                    previousComponents[item.Component] = item;
             }
 
-            List<ComponentItem> nextItems = new List<ComponentItem>();
-
-            for (int i = 0; i < length; i++)
+            items.RemoveRange(unchanged, items.Count - unchanged);
+            try
             {
-                ComponentItem item = Get(components[i]);
+                for (int i = unchanged; i < currentComponents.Count; i++)
+                {
+                    Component component = currentComponents[i];
+                    if (component == null || !previousComponents.TryGetValue(component, out ComponentItem item))
+                        item = new ComponentItem(component);
 
-                if (item == null || !item.IsValid())
-                {
-                    item = new ComponentItem(components[i]);
+                    items.Add(item);
                 }
-                else
-                {
-                    item.UpdateActiveState();
-                }
-                
-                nextItems.Add(item);
             }
-            items = nextItems;
-        }
-
-        private Component[] GetComponents(GameObject instance)
-        {
-            return instance.GetComponents<Component>();
-        }
-
-        private ComponentItem Get(Component component)
-        {
-            return items.Find(c => c.Component == component);
+            finally
+            {
+                previousComponents.Clear();
+            }
         }
 
         public IEnumerable<ComponentItem> GetItems()

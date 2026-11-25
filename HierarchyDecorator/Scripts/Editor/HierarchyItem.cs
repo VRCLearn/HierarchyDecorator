@@ -39,7 +39,22 @@ namespace HierarchyDecorator.Editor
         /// <summary>
         /// Collection of components for this hierarchy item. 
         /// </summary>
-        public ComponentList Components { get; private set; }
+        public ComponentList Components
+        {
+            get
+            {
+                ComponentList current = GetComponentsForDrawing();
+                current.RefreshActiveStates();
+                return current;
+            }
+        }
+
+        private ComponentList components;
+        private PrefabInfo prefabInfo;
+        private bool hasPrefabInfo;
+        private string rowName;
+        private HierarchyStyle rowStyle;
+        private bool hasResolvedRowStyle;
         
         /// <summary>
         /// Does this item have any children?
@@ -54,12 +69,24 @@ namespace HierarchyDecorator.Editor
         /// <summary>
         /// The type of prefab asset.
         /// </summary>
-        public PrefabAssetType PrefabTypeInfo { get; private set; }
+        public PrefabAssetType PrefabTypeInfo => PrefabInfo == PrefabInfo.None
+            ? PrefabAssetType.NotAPrefab : PrefabUtility.GetPrefabAssetType(GameObject);
 
         /// <summary>
         /// The prefab state.
         /// </summary>
-        public PrefabInfo PrefabInfo { get; private set; }
+        public PrefabInfo PrefabInfo
+        {
+            get
+            {
+                if (!hasPrefabInfo)
+                {
+                    prefabInfo = GetPrefabInfo();
+                    hasPrefabInfo = true;
+                }
+                return prefabInfo;
+            }
+        }
 
         /// <summary>
         /// Is this item part of a prefab?
@@ -70,6 +97,18 @@ namespace HierarchyDecorator.Editor
         /// The display string for the item.
         /// </summary>
         public string DisplayName => GameObject.name;
+
+        internal string RowName => rowName ?? (rowName = DisplayName);
+
+        internal HierarchyStyle GetRowStyle(HierarchyStyleData styles)
+        {
+            if (!hasResolvedRowStyle)
+            {
+                styles.TryGetStyleFromPrefix(RowName, out rowStyle);
+                hasResolvedRowStyle = true;
+            }
+            return rowStyle;
+        }
 
         /// <summary>
         /// Create a new HierachyItem instance.
@@ -82,8 +121,6 @@ namespace HierarchyDecorator.Editor
 
             GameObject = instance;
             Transform = instance.transform;
-
-            Components = new ComponentList(instance);
         }
 
         // --- Methods
@@ -105,10 +142,18 @@ namespace HierarchyDecorator.Editor
         /// </summary>
         public void OnGUIBegin()
         {
-            PrefabInfo = GetPrefabInfo();
-            PrefabTypeInfo = PrefabInfo == PrefabInfo.None ?
-                PrefabAssetType.NotAPrefab : PrefabTypeInfo = PrefabUtility.GetPrefabAssetType(GameObject);
-            Components.Validate(GameObject);
+            hasPrefabInfo = false;
+            rowName = null;
+            hasResolvedRowStyle = false;
+        }
+
+        internal ComponentList GetComponentsForDrawing()
+        {
+            if (components == null)
+                components = new ComponentList(GameObject);
+            else
+                components.Refresh(GameObject);
+            return components;
         }
 
         /// <summary>

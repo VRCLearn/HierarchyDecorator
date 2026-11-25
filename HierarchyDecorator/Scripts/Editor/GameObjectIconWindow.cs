@@ -105,18 +105,24 @@ namespace HierarchyDecorator.Editor
 
         internal static void HandleRowInput(Rect row, GameObject target)
         {
+            Event evt = Event.current;
+            bool repaint = evt.type == EventType.Repaint;
+            if (!repaint && evt.type != EventType.MouseDown && evt.rawType != EventType.MouseUp)
+                return;
+
             if (!IsEditable(target))
             {
                 return;
             }
 
-            Event evt = Event.current;
             Rect icon = GameObjectIconInfo.GetSlot(row);
             Rect clickArea = evt.alt ? row : icon;
             bool selectionModifier = evt.shift || evt.control || evt.command;
-            if (!selectionModifier)
+            if (repaint)
             {
-                EditorGUIUtility.AddCursorRect(clickArea, MouseCursor.Link);
+                if (!selectionModifier)
+                    EditorGUIUtility.AddCursorRect(clickArea, MouseCursor.Link);
+                return;
             }
 
             bool insideClickArea = clickArea.Contains(evt.mousePosition);

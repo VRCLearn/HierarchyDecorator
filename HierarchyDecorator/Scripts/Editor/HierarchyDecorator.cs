@@ -277,10 +277,24 @@ namespace HierarchyDecorator.Editor
         {
             static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
             {
-                if (importedAssets.Length > 0)
-                {
+                // Initial settings loading already rebuilds the component cache.
+                if (s_Settings == null)
+                    return;
+
+                if (didDomainReload || ContainsScriptAssets(importedAssets) || ContainsScriptAssets(deletedAssets) ||
+                    ContainsScriptAssets(movedAssets) || ContainsScriptAssets(movedFromAssetPaths))
                     UpdateComponentData();
+            }
+
+            private static bool ContainsScriptAssets(string[] paths)
+            {
+                foreach (string path in paths)
+                {
+                    if (path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                        path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                        return true;
                 }
+                return false;
             }
         }
     }

@@ -131,12 +131,12 @@ namespace HierarchyDecorator.Editor
         /// <summary>
         /// 
         /// </summary>
-        public bool DisplayBuiltIn => showAll.HasFlag(DisplayMode.Unity);
+        public bool DisplayBuiltIn => (showAll & DisplayMode.Unity) != 0;
 
         /// <summary>
         /// 
         /// </summary>
-        public bool DisplayMonoScripts => showAll.HasFlag(DisplayMode.Custom);
+        public bool DisplayMonoScripts => (showAll & DisplayMode.Custom) != 0;
 
         /// <summary>
         /// Component groups regarding built-in Unity types.
