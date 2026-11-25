@@ -35,7 +35,6 @@ namespace HierarchyDecorator.Editor
         private const string ToolbarTooltip = "Click to collapse other branches. Double-click to collapse all.";
         private const float SearchToolbarWidth = 330f;
         private const float ButtonWidth = 22f;
-        private const float SceneButtonWidth = HierarchySceneMenu.ButtonWidth;
         private const int IconSize = 16;
         private static readonly Func<IList> GetHierarchyWindows = BindHierarchyWindowList();
         private static readonly MethodInfo CollapseAll = SceneHierarchy?.PropertyType.GetMethod("CollapseAll", InstanceMembers, null, Type.EmptyTypes, null);
@@ -46,7 +45,6 @@ namespace HierarchyDecorator.Editor
         private sealed class ToolbarControls
         {
             public ToolbarButton Collapse;
-            public ToolbarButton Scene;
             public IMGUIContainer NativeToolbar;
             public StyleLength NativeMarginTop;
         }
@@ -80,9 +78,7 @@ namespace HierarchyDecorator.Editor
 
             GlobalData settings = HierarchyDecorator.Settings.globalData;
             bool showCollapse = settings.showCollapseBranchesButton && ExpandItem != null;
-            bool showScene = settings.showSceneSwitchButton;
             bool canCollapse = showCollapse && (CollapseAll != null || CanCollapse(Selection.activeGameObject));
-            bool canSwitch = showScene && HierarchySceneMenu.CanSwitch;
             for (int i = 0; i < windows.Count; i++)
             {
                 var window = (EditorWindow)windows[i];
@@ -92,7 +88,7 @@ namespace HierarchyDecorator.Editor
 
                 if (!Toolbars.TryGetValue(root, out ToolbarControls controls))
                 {
-                    if (!showCollapse && !showScene)
+                    if (!showCollapse)
                         continue;
 
                     controls = new ToolbarControls();
@@ -108,15 +104,7 @@ namespace HierarchyDecorator.Editor
                     reposition = true;
                 }
 
-                if (showScene && controls.Scene?.parent != root)
-                {
-                    controls.Scene = HierarchySceneMenu.CreateButton();
-                    root.Add(controls.Scene);
-                    reposition = true;
-                }
-
                 reposition |= UpdateToolbarButton(controls.Collapse, showCollapse, canCollapse);
-                reposition |= UpdateToolbarButton(controls.Scene, showScene, canSwitch);
                 if (reposition)
                     PositionToolbar(root, controls, root.layout);
             }
@@ -190,28 +178,14 @@ namespace HierarchyDecorator.Editor
 
         private static void PositionToolbar(VisualElement root, ToolbarControls controls, Rect layout)
         {
-            const float buttonGap = 2f;
-            bool showScene = IsVisible(controls.Scene, root);
             bool showCollapse = IsVisible(controls.Collapse, root);
             bool narrow = layout.width < 420f;
             bool useTabStrip = narrow && layout.y >= 18f;
-            SetNativeToolbarInset(root, controls, (showScene || showCollapse) && narrow && !useTabStrip);
-
-            float width = (showScene ? SceneButtonWidth : 0f) + (showCollapse ? ButtonWidth : 0f);
-            if (showScene && showCollapse)
-                width += buttonGap;
+            SetNativeToolbarInset(root, controls, showCollapse && narrow && !useTabStrip);
 
             float top = useTabStrip ? -18f : 1f;
             float rightInset = useTabStrip ? 48f : SearchToolbarWidth;
-            float right = Mathf.Max(39f + SceneButtonWidth + buttonGap + ButtonWidth, layout.width - rightInset);
-            float left = right - width;
-            if (showScene)
-            {
-                controls.Scene.style.top = top;
-                controls.Scene.style.left = left;
-                left += SceneButtonWidth + buttonGap;
-            }
-
+            float left = Mathf.Max(39f, layout.width - rightInset - ButtonWidth);
             if (showCollapse)
             {
                 controls.Collapse.style.top = top;
@@ -250,7 +224,6 @@ namespace HierarchyDecorator.Editor
         private static void UpdateToolbarTooltips()
         {
             string collapseTooltip = SettingsLocalization.Text(ToolbarTooltip);
-            string sceneTooltip = SettingsLocalization.Text("Switch Scene");
             IList windows = GetHierarchyWindows();
             for (int i = 0; i < windows.Count; i++)
             {
@@ -259,8 +232,6 @@ namespace HierarchyDecorator.Editor
                 {
                     if (controls.Collapse != null)
                         controls.Collapse.tooltip = collapseTooltip;
-                    if (controls.Scene != null)
-                        controls.Scene.tooltip = sceneTooltip;
                 }
             }
         }

@@ -16,7 +16,8 @@ namespace HierarchyDecorator.Editor
 
 #if UNITY_2019_1_OR_NEWER
             CreateDrawableGroup("Hierarchy Toolbar")
-                .RegisterSerializedProperty(serializedTab, nameof(GlobalData.showCollapseBranchesButton), nameof(GlobalData.showSceneSwitchButton));
+                .RegisterSerializedProperty(serializedTab, nameof(GlobalData.showCollapseBranchesButton))
+                .RegisterDrawer(new SerializedPropertyElement(serializedTab.FindPropertyRelative(nameof(GlobalData.showSceneSwitchButton)), "Show Scene Selector"));
 #endif
 
             // --- Layers

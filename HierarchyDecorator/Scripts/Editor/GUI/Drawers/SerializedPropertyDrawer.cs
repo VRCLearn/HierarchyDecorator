@@ -7,9 +7,13 @@ namespace HierarchyDecorator.Editor
     {
         private GUIContent content;
 
-        public SerializedPropertyElement(SerializedProperty target) : base (target) 
+        public SerializedPropertyElement(SerializedProperty target) : this(target, target.displayName)
         {
-            content = SettingsLocalization.Content(target.displayName, target.tooltip);
+        }
+
+        public SerializedPropertyElement(SerializedProperty target, string label) : base (target)
+        {
+            content = SettingsLocalization.Content(label, target.tooltip);
         }
 
         protected override void OnGUI()

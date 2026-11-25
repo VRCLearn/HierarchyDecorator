@@ -21,6 +21,9 @@ namespace HierarchyDecorator.Editor
         private static Dictionary<HierarchyObjectId, HierarchyItem> lookup = new Dictionary<HierarchyObjectId, HierarchyItem>();
         public static IReadOnlyDictionary<HierarchyObjectId, HierarchyItem> Items => lookup;
         public static int Count => lookup.Count;
+        private static readonly Dictionary<HierarchyObjectId, Scene> scenes = new Dictionary<HierarchyObjectId, Scene>();
+        private static readonly GUIContent sceneNameContent = new GUIContent();
+        private static readonly GUIContent sceneArrowContent = new GUIContent("▾");
         private static Settings s_Settings => HierarchyDecorator.Settings;
 
         public static HierarchyItem Current { get; private set; }
@@ -51,7 +54,7 @@ namespace HierarchyDecorator.Editor
         public static void Initialize()
         {
             lookup.Clear();
-
+            RefreshScenes();
 
 #if UNITY_6000_4_OR_NEWER
             EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= OnGUI;
@@ -72,6 +75,7 @@ namespace HierarchyDecorator.Editor
 
         private static void OnHierarchyChange()
         {
+            RefreshScenes();
             if (lookup.Count < 100)
             {
                 return;
@@ -92,6 +96,7 @@ namespace HierarchyDecorator.Editor
 
         private static void ResetLookup()
         {
+            RefreshScenes();
             lookup.Clear();
             Current = null;
         }
@@ -200,30 +205,74 @@ namespace HierarchyDecorator.Editor
             return true;
         }
 
+        private static void RefreshScenes()
+        {
+            scenes.Clear();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+#if UNITY_6000_4_OR_NEWER
+                scenes[EntityId.FromULong(scene.handle.GetRawData())] = scene;
+#else
+                scenes[scene.handle] = scene;
+#endif
+            }
+        }
+
         private static void DrawSceneItemHighlight(Rect rect, HierarchyObjectId id)
         {
-            if (Event.current.type != EventType.Repaint || !s_Settings.styleData.showSceneItemHighlight)
+            Event evt = Event.current;
+            if ((evt.type != EventType.Repaint && evt.type != EventType.MouseDown) ||
+                !scenes.TryGetValue(id, out Scene scene) || !scene.IsValid())
                 return;
-            for (int i = 0; i < SceneManager.sceneCount; ++i)
+
+#if UNITY_2019_1_OR_NEWER
+            if (s_Settings.globalData.showSceneSwitchButton && HierarchySceneMenu.CanSwitch)
             {
-                var scene = SceneManager.GetSceneAt(i);
-#if UNITY_6000_4_OR_NEWER
-                if (scene.handle.GetRawData() == EntityId.ToULong(id))
-#else
-                if (scene.handle == id)
-#endif
+                sceneNameContent.text = string.IsNullOrEmpty(scene.name) ? "Untitled" : scene.name;
+                GUIStyle nameStyle = scene == SceneManager.GetActiveScene() ? EditorStyles.boldLabel : EditorStyles.label;
+                float nameWidth = nameStyle.CalcSize(sceneNameContent).x;
+                if (scene.isDirty)
                 {
-                    var max_height = rect.height;
-                    var center_y = max_height * 0.5f;
-                    var thickness = s_Settings.styleData.sceneItemHighlight.lineThickness;
-                    rect.x -= 48;
-                    rect.y += center_y - thickness * 0.5f;
-                    rect.width = 34;
-                    rect.height = thickness;
-                    EditorGUI.DrawRect(rect, s_Settings.styleData.sceneItemHighlight.color);
-                    break;
+                    sceneNameContent.text = "*";
+                    nameWidth += nameStyle.CalcSize(sceneNameContent).x - nameStyle.padding.horizontal;
+                }
+                if (!scene.isLoaded)
+                {
+                    sceneNameContent.text = " (not loaded)";
+                    nameWidth += nameStyle.CalcSize(sceneNameContent).x - nameStyle.padding.horizontal;
+                }
+                Rect nameRect = rect;
+                nameRect.xMin += 18f;
+                nameRect.width = Mathf.Min(nameWidth + 16f, rect.xMax - 20f - nameRect.x);
+                if (nameRect.width > 0f)
+                {
+                    Rect arrowRect = nameRect;
+                    arrowRect.xMin += nameWidth;
+                    if (evt.type == EventType.Repaint)
+                    {
+                        sceneArrowContent.tooltip = SettingsLocalization.Text("Switch Scene");
+                        GUI.Label(arrowRect, sceneArrowContent, EditorStyles.label);
+                        EditorGUIUtility.AddCursorRect(nameRect, MouseCursor.Link);
+                    }
+                    if (evt.type == EventType.MouseDown && evt.button == 0 && evt.clickCount == 1 &&
+                        evt.modifiers == EventModifiers.None && nameRect.Contains(evt.mousePosition))
+                    {
+                        Rect anchor = new Rect(GUIUtility.GUIToScreenPoint(rect.position), rect.size);
+                        evt.Use();
+                        HierarchySceneMenu.Show(anchor, scene);
+                    }
                 }
             }
+#endif
+            if (evt.type != EventType.Repaint || !s_Settings.styleData.showSceneItemHighlight)
+                return;
+            float thickness = s_Settings.styleData.sceneItemHighlight.lineThickness;
+            rect.x -= 48f;
+            rect.y += rect.height * 0.5f - thickness * 0.5f;
+            rect.width = 34f;
+            rect.height = thickness;
+            EditorGUI.DrawRect(rect, s_Settings.styleData.sceneItemHighlight.color);
         }
 
         public static bool IsPreviousParent()
