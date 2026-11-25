@@ -25,6 +25,8 @@ namespace HierarchyDecorator.Editor
         private static readonly Dictionary<string, string[]> Translations = new Dictionary<string, string[]>
         {
             { "Language", new[] { "言語", "언어", "語言", "语言" } },
+            { "Switch Scene", new[] { "シーンを切り替え", "씬 전환", "切換場景", "切换场景" } },
+            { "No scenes found", new[] { "シーンが見つかりません", "씬을 찾을 수 없습니다", "找不到場景", "未找到场景" } },
             { "Restore Default Settings", new[] { "既定の設定に戻す", "기본 설정 복원", "恢復預設設定", "恢复默认设置" } },
             { "Restore the default Hierarchy settings?", new[] { "ヒエラルキーの設定を既定値に戻しますか？", "계층 기본 설정을 복원할까요?", "要恢復階層的預設設定嗎？", "要恢复层级的默认设置吗？" } },
             { "Restore", new[] { "元に戻す", "복원", "恢復", "恢复" } },

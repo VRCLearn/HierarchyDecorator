@@ -184,6 +184,12 @@ Click the fold button at the top of the Hierarchy to show the selected object an
 The path to the object stays open, while its child branches and other branches in the scene or prefab stage
 fold. Double-click the button to fold all object branches and show only the roots of loaded scenes.
 
+### Switching scenes
+
+Click the scene dropdown beside the fold button in the Hierarchy toolbar to browse or search scenes
+under `Assets`. Each entry includes its folder path. Selecting a scene opens it on its own, with Unity's
+save prompt for unsaved scene changes. Scene switching is available in Edit Mode.
+
   ### Icons
 
  Click the icon next to a GameObject's name or **Alt**-click its row in the classic Hierarchy to open its
