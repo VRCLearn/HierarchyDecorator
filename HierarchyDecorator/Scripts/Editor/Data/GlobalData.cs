@@ -86,6 +86,10 @@ namespace HierarchyDecorator.Editor
         [Tooltip ("The accepted criteria for selecting instances when swiping.")]
         public DepthMode depthMode;
 
+        // Hierarchy Toolbar
+        public bool showCollapseBranchesButton = true;
+        public bool showSceneSwitchButton = true;
+
         // Tags & Layers
         public TagLayerLayout tagLayerLayout;
         public TagSettings tagSettings = new TagSettings { show = false };

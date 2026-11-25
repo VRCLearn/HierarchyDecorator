@@ -14,6 +14,11 @@ namespace HierarchyDecorator.Editor
             CreateDrawableGroup("Toggles")
                 .RegisterSerializedProperty(serializedTab, "showActiveToggles", "activeToggleType", "activeSwiping", "swipeSameState", "swipeSelectionOnly", "depthMode");
 
+#if UNITY_2019_1_OR_NEWER
+            CreateDrawableGroup("Hierarchy Toolbar")
+                .RegisterSerializedProperty(serializedTab, nameof(GlobalData.showCollapseBranchesButton), nameof(GlobalData.showSceneSwitchButton));
+#endif
+
             // --- Layers
             void SetupColorSettings(SerializedProperty tagLayerSettings, out SerializedProperty show, out SerializedProperty colorSettings, out SerializedProperty useSolid, out SerializedProperty useRandom, out SerializedProperty h, out SerializedProperty s, out SerializedProperty v)
             {

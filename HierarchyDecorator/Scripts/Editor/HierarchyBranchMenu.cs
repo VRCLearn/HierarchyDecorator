@@ -39,10 +39,17 @@ namespace HierarchyDecorator.Editor
         private const int IconSize = 16;
         private static readonly Func<IList> GetHierarchyWindows = BindHierarchyWindowList();
         private static readonly MethodInfo CollapseAll = SceneHierarchy?.PropertyType.GetMethod("CollapseAll", InstanceMembers, null, Type.EmptyTypes, null);
-        private static readonly ConditionalWeakTable<VisualElement, ToolbarButton> ToolbarButtons = new ConditionalWeakTable<VisualElement, ToolbarButton>();
-        private static readonly ConditionalWeakTable<VisualElement, ToolbarButton> SceneButtons = new ConditionalWeakTable<VisualElement, ToolbarButton>();
+        private static readonly ConditionalWeakTable<VisualElement, ToolbarControls> Toolbars = new ConditionalWeakTable<VisualElement, ToolbarControls>();
         private static double nextToolbarUpdate;
         private static Texture2D collapseIcon;
+
+        private sealed class ToolbarControls
+        {
+            public ToolbarButton Collapse;
+            public ToolbarButton Scene;
+            public IMGUIContainer NativeToolbar;
+            public StyleLength NativeMarginTop;
+        }
 
         static HierarchyBranchMenu()
         {
@@ -65,12 +72,17 @@ namespace HierarchyDecorator.Editor
             if (now < nextToolbarUpdate)
                 return;
 
-            // Unity provides no public creation event for these windows. Discover them periodically;
-            // the controls already installed handle geometry and language changes independently.
+            // Unity provides no public creation event for these windows.
             nextToolbarUpdate = now + 0.25;
             IList windows = GetHierarchyWindows();
-            bool enabled = ExpandItem != null && (CollapseAll != null || CanCollapse(Selection.activeGameObject));
-            bool canSwitch = HierarchySceneMenu.CanSwitch;
+            if (windows.Count == 0)
+                return;
+
+            GlobalData settings = HierarchyDecorator.Settings.globalData;
+            bool showCollapse = settings.showCollapseBranchesButton && ExpandItem != null;
+            bool showScene = settings.showSceneSwitchButton;
+            bool canCollapse = showCollapse && (CollapseAll != null || CanCollapse(Selection.activeGameObject));
+            bool canSwitch = showScene && HierarchySceneMenu.CanSwitch;
             for (int i = 0; i < windows.Count; i++)
             {
                 var window = (EditorWindow)windows[i];
@@ -78,36 +90,52 @@ namespace HierarchyDecorator.Editor
                 if (root.panel == null)
                     continue;
 
-                if (!ToolbarButtons.TryGetValue(root, out ToolbarButton button) || button.parent != root)
+                if (!Toolbars.TryGetValue(root, out ToolbarControls controls))
                 {
-                    if (button == null)
-                        root.RegisterCallback<GeometryChangedEvent>(OnToolbarGeometryChanged);
-                    else
-                        ToolbarButtons.Remove(root);
+                    if (!showCollapse && !showScene)
+                        continue;
 
-                    button = root.Q<ToolbarButton>(ToolbarButtonName) ?? CreateToolbarButton(window, root);
-                    ToolbarButtons.Add(root, button);
-                    PositionToolbar(button, root.layout);
-                    if (SceneButtons.TryGetValue(root, out ToolbarButton existingSceneButton))
-                        PositionSceneButton(existingSceneButton, button);
-                    button.tooltip = SettingsLocalization.Text(ToolbarTooltip);
+                    controls = new ToolbarControls();
+                    Toolbars.Add(root, controls);
+                    root.RegisterCallback<GeometryChangedEvent>(OnToolbarGeometryChanged);
                 }
 
-                if (button.enabledSelf != enabled)
-                    button.SetEnabled(enabled);
-
-                if (!SceneButtons.TryGetValue(root, out ToolbarButton sceneButton) || sceneButton.parent != root)
+                bool reposition = false;
+                if (showCollapse && controls.Collapse?.parent != root)
                 {
-                    SceneButtons.Remove(root);
-                    sceneButton = HierarchySceneMenu.CreateButton();
-                    root.Add(sceneButton);
-                    SceneButtons.Add(root, sceneButton);
-                    PositionSceneButton(sceneButton, button);
+                    controls.Collapse = root.Q<ToolbarButton>(ToolbarButtonName) ?? CreateToolbarButton(window, root);
+                    controls.Collapse.tooltip = SettingsLocalization.Text(ToolbarTooltip);
+                    reposition = true;
                 }
 
-                if (sceneButton.enabledSelf != canSwitch)
-                    sceneButton.SetEnabled(canSwitch);
+                if (showScene && controls.Scene?.parent != root)
+                {
+                    controls.Scene = HierarchySceneMenu.CreateButton();
+                    root.Add(controls.Scene);
+                    reposition = true;
+                }
+
+                reposition |= UpdateToolbarButton(controls.Collapse, showCollapse, canCollapse);
+                reposition |= UpdateToolbarButton(controls.Scene, showScene, canSwitch);
+                if (reposition)
+                    PositionToolbar(root, controls, root.layout);
             }
+        }
+
+        private static bool UpdateToolbarButton(ToolbarButton button, bool show, bool enabled)
+        {
+            if (button == null)
+                return false;
+
+            if (button.enabledSelf != enabled)
+                button.SetEnabled(enabled);
+
+            DisplayStyle display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (button.style.display.value == display)
+                return false;
+
+            button.style.display = display;
+            return true;
         }
 
         private static ToolbarButton CreateToolbarButton(EditorWindow window, VisualElement root)
@@ -156,52 +184,84 @@ namespace HierarchyDecorator.Editor
         private static void OnToolbarGeometryChanged(GeometryChangedEvent evt)
         {
             var root = (VisualElement)evt.currentTarget;
-            if (ToolbarButtons.TryGetValue(root, out ToolbarButton button) && button.parent == root)
-            {
-                PositionToolbar(button, evt.newRect);
-                if (SceneButtons.TryGetValue(root, out ToolbarButton sceneButton))
-                    PositionSceneButton(sceneButton, button);
-            }
+            if (Toolbars.TryGetValue(root, out ToolbarControls controls))
+                PositionToolbar(root, controls, evt.newRect);
         }
 
-        private static void PositionToolbar(ToolbarButton button, Rect layout)
+        private static void PositionToolbar(VisualElement root, ToolbarControls controls, Rect layout)
         {
-            // A narrow dock uses the tab strip to leave the search field and Create menu clickable.
-            VisualElement root = button.parent;
+            const float buttonGap = 2f;
+            bool showScene = IsVisible(controls.Scene, root);
+            bool showCollapse = IsVisible(controls.Collapse, root);
             bool narrow = layout.width < 420f;
             bool useTabStrip = narrow && layout.y >= 18f;
-            // The native IMGUI container is a sibling of the extension root in floating windows.
-            if (root?.parent != null)
-            {
-                foreach (VisualElement sibling in root.parent.Children())
-                {
-                    if (sibling is IMGUIContainer nativeGUI)
-                        nativeGUI.style.marginTop = narrow && !useTabStrip ? 20f : 0f;
-                }
-            }
-            button.style.top = useTabStrip ? -18f : 1f;
+            SetNativeToolbarInset(root, controls, (showScene || showCollapse) && narrow && !useTabStrip);
+
+            float width = (showScene ? SceneButtonWidth : 0f) + (showCollapse ? ButtonWidth : 0f);
+            if (showScene && showCollapse)
+                width += buttonGap;
+
+            float top = useTabStrip ? -18f : 1f;
             float rightInset = useTabStrip ? 48f : SearchToolbarWidth;
-            button.style.left = Mathf.Max(39f + SceneButtonWidth + 2f, layout.width - rightInset - ButtonWidth);
+            float right = Mathf.Max(39f + SceneButtonWidth + buttonGap + ButtonWidth, layout.width - rightInset);
+            float left = right - width;
+            if (showScene)
+            {
+                controls.Scene.style.top = top;
+                controls.Scene.style.left = left;
+                left += SceneButtonWidth + buttonGap;
+            }
+
+            if (showCollapse)
+            {
+                controls.Collapse.style.top = top;
+                controls.Collapse.style.left = left;
+            }
         }
 
-        private static void PositionSceneButton(ToolbarButton sceneButton, ToolbarButton collapseButton)
+        private static bool IsVisible(ToolbarButton button, VisualElement root) =>
+            button?.parent == root && button.style.display.value != DisplayStyle.None;
+
+        private static void SetNativeToolbarInset(VisualElement root, ToolbarControls controls, bool reserveSpace)
         {
-            sceneButton.style.top = collapseButton.style.top;
-            sceneButton.style.left = collapseButton.style.left.value.value - SceneButtonWidth - 2f;
-            sceneButton.style.width = SceneButtonWidth;
+            // A narrow floating window has no tab strip, so reserve a row above its native controls.
+            if (controls.NativeToolbar != null && (!reserveSpace || controls.NativeToolbar.parent != root.parent))
+            {
+                controls.NativeToolbar.style.marginTop = controls.NativeMarginTop;
+                controls.NativeToolbar = null;
+            }
+
+            if (!reserveSpace || controls.NativeToolbar != null || root.parent == null)
+                return;
+
+            foreach (VisualElement sibling in root.parent.Children())
+            {
+                if (sibling is IMGUIContainer nativeToolbar)
+                {
+                    controls.NativeToolbar = nativeToolbar;
+                    controls.NativeMarginTop = nativeToolbar.style.marginTop;
+                    float baseMargin = nativeToolbar.resolvedStyle.marginTop;
+                    nativeToolbar.style.marginTop = float.IsNaN(baseMargin) ? 20f : baseMargin + 20f;
+                    break;
+                }
+            }
         }
 
         private static void UpdateToolbarTooltips()
         {
-            string tooltip = SettingsLocalization.Text(ToolbarTooltip);
+            string collapseTooltip = SettingsLocalization.Text(ToolbarTooltip);
+            string sceneTooltip = SettingsLocalization.Text("Switch Scene");
             IList windows = GetHierarchyWindows();
             for (int i = 0; i < windows.Count; i++)
             {
                 VisualElement root = ((EditorWindow)windows[i]).rootVisualElement;
-                if (ToolbarButtons.TryGetValue(root, out ToolbarButton button))
-                    button.tooltip = tooltip;
-                if (SceneButtons.TryGetValue(root, out ToolbarButton sceneButton))
-                    sceneButton.tooltip = SettingsLocalization.Text("Switch Scene");
+                if (Toolbars.TryGetValue(root, out ToolbarControls controls))
+                {
+                    if (controls.Collapse != null)
+                        controls.Collapse.tooltip = collapseTooltip;
+                    if (controls.Scene != null)
+                        controls.Scene.tooltip = sceneTooltip;
+                }
             }
         }
 
