@@ -29,7 +29,7 @@ namespace HierarchyDecorator.Editor
         }
 
         [MenuItem (RestoreDefaultsMenu)]
-        private static void RestoreDefaults()
+        internal static void RestoreDefaults()
         {
             if (EditorUtility.DisplayDialog(SettingsLocalization.Text("Restore Default Settings"),
                 SettingsLocalization.Text("Restore the default Hierarchy settings?"),

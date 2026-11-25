@@ -68,7 +68,21 @@ namespace HierarchyDecorator.Editor
             DrawContent();
             if (EditorGUI.EndChangeCheck())
                 EditorUtility.SetDirty(settings);
+
+            bool restoreDefaults;
+            using (new EditorGUI.DisabledScope(UpstreamMigration.IsRunning))
+            {
+                EditorGUILayout.Space();
+                restoreDefaults = GUILayout.Button(SettingsLocalization.Text("Restore Default Settings"));
+            }
             EditorGUILayout.EndVertical();
+
+            if (restoreDefaults)
+            {
+                HierarchyDecoratorProvider.RestoreDefaults();
+                // Resetting settings replaces serialized tab data. Rebuild on the next Layout.
+                GUIUtility.ExitGUI();
+            }
         }
 
         private void Initialize()
