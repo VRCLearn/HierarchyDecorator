@@ -182,8 +182,7 @@ only that object. Both click paths support Undo/Redo and prefab overrides.
 
 Click the fold button at the top of the Hierarchy to show the selected object and its immediate children.
 The path to the object stays open, while its child branches and other branches in the scene or prefab stage
-fold. **Shift+E** does the same for the object under the pointer in the focused Hierarchy. Double-click the
-button to fold all object branches and show only the roots of loaded scenes.
+fold. Double-click the button to fold all object branches and show only the roots of loaded scenes.
 
   ### Icons
 

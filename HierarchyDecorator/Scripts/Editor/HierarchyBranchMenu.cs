@@ -24,12 +24,9 @@ namespace HierarchyDecorator.Editor
 #endif
     internal static class HierarchyBranchMenu
     {
-        private const string ActionName = "Collapse Other Branches";
-        private const string MenuPath = "Tools/HierarchyDecorator/" + ActionName;
         private const BindingFlags InstanceMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private static readonly Type HierarchyWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.SceneHierarchyWindow");
         private static readonly PropertyInfo SceneHierarchy = HierarchyWindowType?.GetProperty("sceneHierarchy", InstanceMembers);
-        private static readonly PropertyInfo LastHierarchy = HierarchyWindowType?.GetProperty("lastInteractedHierarchyWindow", BindingFlags.Static | BindingFlags.Public);
         private static readonly MethodInfo ExpandItem = SceneHierarchy?.PropertyType.GetMethod("ExpandTreeViewItem", InstanceMembers, null,
             new[] { typeof(HierarchyObjectId), typeof(bool) }, null);
 
@@ -241,40 +238,7 @@ namespace HierarchyDecorator.Editor
         }
 #endif
 
-        [MenuItem(MenuPath)]
-        private static void CollapseSelectedBranch() => CollapseOtherBranches(GetHierarchyWindow(), Selection.activeGameObject);
-
-        [MenuItem(MenuPath, true)]
-        private static bool ValidateCollapseSelectedBranch() => CanCollapse(Selection.activeGameObject) && GetHierarchyWindow() != null;
-
         private static bool CanCollapse(GameObject target) => ExpandItem != null && target != null && target.scene.isLoaded;
-
-        internal static void HandleRowShortcut(Rect row, GameObject target)
-        {
-            Event evt = Event.current;
-            if (evt.type != EventType.KeyDown || evt.keyCode != KeyCode.E || !evt.shift ||
-                evt.alt || evt.control || evt.command || EditorGUIUtility.editingTextField)
-                return;
-
-            row.xMin = 0f;
-            if (!row.Contains(evt.mousePosition) || !CanCollapse(target))
-                return;
-
-            EditorWindow window = EditorWindow.focusedWindow;
-            if (window == null || HierarchyWindowType?.IsInstanceOfType(window) != true)
-                return;
-
-            evt.Use();
-            // Updating Unity's tree while it draws the rows can interrupt iteration.
-            EditorApplication.delayCall += () => CollapseOtherBranches(window, target);
-        }
-
-        private static EditorWindow GetHierarchyWindow()
-        {
-            EditorWindow focused = EditorWindow.focusedWindow;
-            return focused != null && HierarchyWindowType?.IsInstanceOfType(focused) == true
-                ? focused : LastHierarchy?.GetValue(null) as EditorWindow;
-        }
 
         private static void CollapseOtherBranches(EditorWindow window, GameObject target)
         {

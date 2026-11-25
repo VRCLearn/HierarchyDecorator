@@ -131,8 +131,6 @@ namespace HierarchyDecorator.Editor
 
         private static void DrawItem(Rect rect, HierarchyItem item, Settings settings)
         {
-            HierarchyBranchMenu.HandleRowShortcut(rect, item.GameObject);
-
 #if UNITY_2019_1_OR_NEWER
             rect.height = 16f;
 
