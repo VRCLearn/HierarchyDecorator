@@ -213,6 +213,8 @@ namespace HierarchyDecorator.Editor
                 Scene scene = SceneManager.GetSceneAt(i);
 #if UNITY_6000_4_OR_NEWER
                 scenes[EntityId.FromULong(scene.handle.GetRawData())] = scene;
+#elif UNITY_6000_3_OR_NEWER
+                scenes[(int)scene.handle] = scene;
 #else
                 scenes[scene.handle] = scene;
 #endif
