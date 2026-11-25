@@ -273,7 +273,7 @@ namespace HierarchyDecoratorCI
                 if (StackItems != null)
                     DrawStacked.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), StackItems[0].Content, StackItems, Settings });
                 else
-                    Draw.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), Item, Settings });
+                    Draw.Invoke(drawer, new object[] { new Rect(16, 16, 16, 16), Item, Item.Content, Settings });
                 if (click)
                 {
                     ClickConsumed = Event.current.type == EventType.Used;

@@ -15,13 +15,27 @@ namespace HierarchyDecorator.Editor
         private static readonly Color s_DisabledColor = new Color(1f, 1f, 1f, 0.4f);
         private readonly Dictionary<Texture, List<ComponentItem>> stackedComponents = new Dictionary<Texture, List<ComponentItem>>();
         private readonly List<List<ComponentItem>> stackGroups = new List<List<ComponentItem>>();
-        private readonly List<ComponentItem> items = new List<ComponentItem>();
+        private readonly List<RowIcon> items = new List<RowIcon>();
+        private readonly Dictionary<int, string> overflowLabels = new Dictionary<int, string>();
         private readonly GUIContent iconContent = new GUIContent();
         private readonly StringBuilder tooltip = new StringBuilder();
 
         private bool requireWarning;
         private int iconLimit;
-        private bool stackIcons;
+
+        private readonly struct RowIcon
+        {
+            internal readonly ComponentItem Item;
+            internal readonly GUIContent Content;
+            internal readonly List<ComponentItem> Stack;
+
+            internal RowIcon(ComponentItem item, GUIContent content, List<ComponentItem> stack)
+            {
+                Item = item;
+                Content = content;
+                Stack = stack;
+            }
+        }
 
 #if UNITY_2019_1_OR_NEWER
         private readonly GUIContent warningGUI = EditorGUIUtility.IconContent("warning");
@@ -31,8 +45,10 @@ namespace HierarchyDecorator.Editor
         protected override void OnDrawInit(HierarchyItem item, Settings settings)
         {
             requireWarning = false;
-            iconLimit = settings.Components.ComponentIconLimit;
-            stackIcons = settings.Components.StackScripts;
+            ComponentData componentSettings = settings.Components;
+            iconLimit = componentSettings.ComponentIconLimit;
+            bool stackIcons = componentSettings.StackScripts;
+            bool showMissingScriptWarning = componentSettings.ShowMissingScriptWarning;
             items.Clear();
             foreach (List<ComponentItem> group in stackedComponents.Values)
                 group.Clear();
@@ -42,22 +58,24 @@ namespace HierarchyDecorator.Editor
             for (int i = 0; i < components.Count; i++)
             {
                 ComponentItem component = components[i];
-                if (component.IsNullComponent && settings.Components.ShowMissingScriptWarning)
+                if (component.IsNullComponent && showMissingScriptWarning)
                 {
                     requireWarning = true;
                     continue;
                 }
 
                 ComponentType type = component.Type;
-                if (type == null || type.Excluded || !CanShow(type, settings.Components))
+                if (type == null || type.Excluded || !CanShow(type, componentSettings))
                 {
                     continue;
                 }
 
-                Texture texture = stackIcons ? type.Content.image : null;
+                GUIContent content = type.Content;
+                Texture texture = stackIcons ? content.image : null;
+                List<ComponentItem> group = null;
                 if (texture != null)
                 {
-                    if (stackedComponents.TryGetValue(texture, out List<ComponentItem> group))
+                    if (stackedComponents.TryGetValue(texture, out group))
                     {
                         group.Add(component);
                         continue;
@@ -70,7 +88,7 @@ namespace HierarchyDecorator.Editor
                     group.Add(component);
                     stackedComponents.Add(texture, group);
                 }
-                items.Add(component);
+                items.Add(new RowIcon(component, content, group));
             }
         }
 
@@ -101,21 +119,26 @@ namespace HierarchyDecorator.Editor
             int available = GridCount - (requireWarning ? 1 : 0);
             int visible = GetVisibleIconCount(available);
             rect = GetIconPosition(rect);
+            Event evt = Event.current;
+            bool repaint = evt.type == EventType.Repaint;
+            Vector2 mousePosition = evt.mousePosition;
 
             for (int i = 0; i < visible; i++)
             {
-                ComponentItem component = items[i];
-                List<ComponentItem> group = GetStack(component);
-                if (group != null)
+                if (repaint || rect.Contains(mousePosition))
                 {
-                    iconContent.image = component.Content.image;
-                    iconContent.text = string.Empty;
-                    iconContent.tooltip = GetStackTooltip(rect, group);
-                    DrawStackedComponentIcon(rect, iconContent, group, settings);
-                }
-                else
-                {
-                    DrawComponentIcon(rect, component, settings);
+                    RowIcon icon = items[i];
+                    if (icon.Stack != null)
+                    {
+                        iconContent.image = icon.Content.image;
+                        iconContent.text = string.Empty;
+                        iconContent.tooltip = GetStackTooltip(rect, icon.Stack);
+                        DrawStackedComponentIcon(rect, iconContent, icon.Stack, settings);
+                    }
+                    else
+                    {
+                        DrawComponentIcon(rect, icon.Item, icon.Content, settings);
+                    }
                 }
                 rect.x -= INDENT_SIZE;
             }
@@ -154,13 +177,6 @@ namespace HierarchyDecorator.Editor
 
         private static int OverflowSlots(int hidden) => hidden > 9 ? 2 : 1;
 
-        private List<ComponentItem> GetStack(ComponentItem component)
-        {
-            Texture texture = stackIcons ? component.Content.image : null;
-            return texture != null && stackedComponents.TryGetValue(texture, out List<ComponentItem> group)
-                ? group : null;
-        }
-
         private string GetStackTooltip(Rect rect, List<ComponentItem> group)
         {
             Event evt = Event.current;
@@ -179,7 +195,11 @@ namespace HierarchyDecorator.Editor
             if (Event.current.type != EventType.Repaint)
                 return;
 
-            string count = "+" + hidden;
+            if (!overflowLabels.TryGetValue(hidden, out string count))
+            {
+                count = "+" + hidden;
+                overflowLabels.Add(hidden, count);
+            }
             string label = slots < OverflowSlots(hidden) ? "…" : count;
             if (!rect.Contains(Event.current.mousePosition))
             {
@@ -191,15 +211,14 @@ namespace HierarchyDecorator.Editor
             tooltip.Append(count);
             for (int i = visible; i < items.Count; i++)
             {
-                ComponentItem component = items[i];
-                List<ComponentItem> group = GetStack(component);
-                if (group == null)
+                RowIcon icon = items[i];
+                if (icon.Stack == null)
                 {
-                    tooltip.Append('\n').Append(component.DisplayName);
+                    tooltip.Append('\n').Append(icon.Item.DisplayName);
                     continue;
                 }
 
-                foreach (ComponentItem member in group)
+                foreach (ComponentItem member in icon.Stack)
                 {
                     tooltip.Append('\n').Append(member.DisplayName);
                 }
@@ -260,7 +279,7 @@ namespace HierarchyDecorator.Editor
             DrawActiveIcon(rect, content, active);
         }
 
-        private void DrawComponentIcon(Rect rect, ComponentItem item, Settings settings)
+        private void DrawComponentIcon(Rect rect, ComponentItem item, GUIContent content, Settings settings)
         {
             if (IsInspectClick(rect))
             {
@@ -273,15 +292,15 @@ namespace HierarchyDecorator.Editor
             int enabledState = settings.Components.ClickToToggleComponent ? item.GetEnabledState() : -1;
             if (enabledState != -1)
             {
-                DrawComponentToggle(rect, item, enabledState != 0);
+                DrawComponentToggle(rect, item, content, enabledState != 0);
             }
             else
             {
-                DrawIcon(rect, item.Content);
+                DrawIcon(rect, content);
             }
         }
 
-        private void DrawComponentToggle(Rect rect, ComponentItem item, bool active)
+        private void DrawComponentToggle(Rect rect, ComponentItem item, GUIContent content, bool active)
         {
             Event ev = Event.current;
 
@@ -292,7 +311,7 @@ namespace HierarchyDecorator.Editor
                 ev.Use();
             }
 
-            DrawActiveIcon(rect, item.Content, active);
+            DrawActiveIcon(rect, content, active);
         }
 
         private void DrawActiveIcon(Rect rect, GUIContent content, bool active)
