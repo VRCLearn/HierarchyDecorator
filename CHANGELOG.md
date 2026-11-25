@@ -1,3 +1,21 @@
+## [1.6.0] - 2026-11-26
+
+### Added
+
+- Click a scene name in the Hierarchy to open a searchable scene selector. Bookmark frequently used scenes, see the source and other loaded scenes, and search by name or folder path.
+- Replace one scene while preserving other open scenes and their order. Selecting an already loaded scene activates it. Unsaved changes in the scene being replaced use Unity's save prompt.
+- Show or hide the branch-collapse button and scene selector independently in General settings.
+- Restore default settings from the settings header beside the GitHub button, with confirmation before applying.
+
+### Changed
+
+- Match scene selector rows to the native Hierarchy row height and fit the popup height to the scene list.
+- Reuse resolved component icon and stack data within each row and cache overflow labels to reduce repeated drawing work.
+
+### Removed
+
+- Remove the redundant Tools command and Shift+E shortcut for collapsing other branches. The Hierarchy toolbar button remains available.
+
 ## [1.5.1] - 2026-11-25
 
 ### Changed
