@@ -29,6 +29,8 @@ namespace HierarchyDecorator.Editor
             { "Hierarchy Toolbar", new[] { "ヒエラルキーのツールバー", "하이어라키 도구 모음", "Hierarchy 工具列", "Hierarchy 工具栏" } },
             { "Show Collapse Branches Button", new[] { "折りたたみボタンを表示", "브랜치 접기 버튼 표시", "顯示摺疊分支按鈕", "显示折叠分支按钮" } },
             { "Show Scene Switch Button", new[] { "シーン切り替えボタンを表示", "씬 전환 버튼 표시", "顯示切換場景按鈕", "显示切换场景按钮" } },
+            { "Current", new[] { "現在", "현재", "目前", "当前" } },
+            { "Loaded", new[] { "読み込み済み", "로드됨", "已載入", "已加载" } },
             { "No scenes found", new[] { "シーンが見つかりません", "씬을 찾을 수 없습니다", "找不到場景", "未找到场景" } },
             { "Restore Default Settings", new[] { "既定の設定に戻す", "기본 설정 복원", "恢復預設設定", "恢复默认设置" } },
             { "Restore the default Hierarchy settings?", new[] { "ヒエラルキーの設定を既定値に戻しますか？", "계층 기본 설정을 복원할까요?", "要恢復階層的預設設定嗎？", "要恢复层级的默认设置吗？" } },

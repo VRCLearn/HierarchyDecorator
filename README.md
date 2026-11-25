@@ -187,7 +187,7 @@ fold. Double-click the button to fold all object branches and show only the root
 ### Switching scenes
 
 Click the scene dropdown in the Hierarchy toolbar to browse or search scenes under `Assets`. Each entry
-includes its folder path. Selecting a scene
+includes its folder path. The list marks the current scene and any other loaded scenes. Selecting a scene
 opens it on its own, with Unity's save prompt for unsaved scene changes. Scene switching is available in Edit Mode.
 
 Use **General > Hierarchy Toolbar** in HierarchyDecorator settings to show or hide the fold button and the

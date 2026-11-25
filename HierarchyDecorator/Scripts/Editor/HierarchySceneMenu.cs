@@ -128,6 +128,17 @@ namespace HierarchyDecorator.Editor
             {
                 var root = new AdvancedDropdownItem(SettingsLocalization.Text(MenuTitle)) { id = 0 };
                 var scenes = new List<SceneItem>();
+                string currentPath = SceneManager.GetActiveScene().path;
+                var loadedPaths = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < SceneManager.sceneCount; i++)
+                {
+                    Scene scene = SceneManager.GetSceneAt(i);
+                    if (scene.isLoaded && !string.IsNullOrEmpty(scene.path))
+                        loadedPaths.Add(scene.path);
+                }
+
+                string current = SettingsLocalization.Text("Current");
+                string loaded = SettingsLocalization.Text("Loaded");
                 foreach (string guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets" }))
                 {
                     string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -135,6 +146,11 @@ namespace HierarchyDecorator.Editor
                     {
                         string folder = path.Substring(0, path.LastIndexOf('/'));
                         string label = Path.GetFileNameWithoutExtension(path) + " — " + folder;
+                        if (string.Equals(currentPath, path, StringComparison.Ordinal))
+                            label += " (" + current + ")";
+                        else if (loadedPaths.Contains(path))
+                            label += " (" + loaded + ")";
+
                         scenes.Add(new SceneItem(guid, label, icon));
                     }
                 }
