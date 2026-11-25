@@ -1,3 +1,11 @@
+## [1.5.1] - 2026-11-25
+
+### Changed
+
+- Reduce Hierarchy repaint work by reusing component lists and icon data, avoiding repeated ancestor checks, and batching pixel-aligned dashed and dotted guides.
+- Update the branch-collapse button's layout and tooltip when they change. Skip component cache rebuilds for unrelated asset imports.
+- In Unity 2022.3.22f1 tests with 40 visible rows, median Hierarchy repaint time fell by 32–58% and managed allocations in the plugin's row callbacks fell by 92–94% compared with 1.5.0.
+
 ## [1.5.0] - 2026-11-24
 
 ### Added
