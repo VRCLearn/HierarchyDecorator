@@ -27,9 +27,12 @@ namespace HierarchyDecoratorCI
         private static int originalSkin;
         private static object hierarchyView;
         private static Color nativeBackground;
+        private static Vector2 addedChildIconPosition;
+        private static RectInt nativeAddedBadge;
         private static EditorWindow hierarchy;
         private static EditorWindow otherWindow;
         private static Settings settings;
+        private static GameObject addedChild;
         private static double nextStep;
         private static int step;
         private static int mode;
@@ -72,12 +75,19 @@ namespace HierarchyDecoratorCI
                 if (!AssetDatabase.IsValidFolder(FixtureFolder))
                     AssetDatabase.CreateFolder("Assets", "PrefabOverrideProbe");
 
+                GameObject missingPrefab = CreateMissingPrefabFixture();
                 CreateFixture("01 Unmodified", null);
                 CreateFixture("02 Property", go => SetProperty(go.GetComponent<BoxCollider>()));
                 CreateFixture("03 Child property", go => SetProperty(go.transform.GetChild(0).GetComponent<BoxCollider>()));
                 CreateFixture("04 Added component", go => go.AddComponent<Rigidbody>());
                 CreateFixture("05 Removed component", go => Object.DestroyImmediate(go.GetComponent<BoxCollider>()));
-                CreateFixture("06 Added child", go => new GameObject("Added child").transform.SetParent(go.transform));
+                CreateFixture("06 Added child", go =>
+                {
+                    addedChild = new GameObject("Added child");
+                    addedChild.transform.SetParent(go.transform);
+                });
+                if (!PrefabUtility.IsAddedGameObjectOverride(addedChild))
+                    throw new InvalidOperationException("The added child must be a prefab override.");
                 CreateFixture("07 Removed child", go => Object.DestroyImmediate(go.transform.GetChild(0).gameObject));
                 CreateFixture("08 Inactive", go => { go.SetActive(false); PrefabUtility.RecordPrefabInstancePropertyModifications(go); });
                 CreateFixture("= Styled prefab", go => SetProperty(go.GetComponent<BoxCollider>()));
@@ -90,6 +100,7 @@ namespace HierarchyDecoratorCI
                 var nestedInstance = (GameObject)PrefabUtility.InstantiatePrefab(nestedAsset);
                 Roots.Add(nestedInstance);
                 SetProperty(nestedInstance.transform.GetChild(0).GetComponent<BoxCollider>());
+                Roots.Add(missingPrefab);
                 new GameObject("10 Ordinary object");
 
                 hierarchy = ScriptableObject.CreateInstance(typeof(EditorWindow).Assembly.GetType("UnityEditor.SceneHierarchyWindow", true)) as EditorWindow;
@@ -113,6 +124,26 @@ namespace HierarchyDecoratorCI
             catch (Exception error) { Finish(error); }
         }
 
+        private static GameObject CreateMissingPrefabFixture()
+        {
+            const string name = "11 Missing prefab";
+            const string scenePath = FixtureFolder + "/MissingSource.unity";
+            CreateFixture(name, null);
+            Roots.Clear();
+            if (!EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), scenePath))
+                throw new InvalidOperationException("Could not save the missing prefab fixture scene.");
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (!AssetDatabase.DeleteAsset(FixtureFolder + "/" + name + ".prefab"))
+                throw new InvalidOperationException("Could not delete the disposable prefab source.");
+
+            var scene = EditorSceneManager.OpenScene(scenePath);
+            var instance = scene.GetRootGameObjects().Single();
+            if (PrefabUtility.GetPrefabInstanceStatus(instance) != PrefabInstanceStatus.MissingAsset)
+                throw new InvalidOperationException("The reopened instance must have a missing prefab source.");
+            return instance;
+        }
+
         private static void CreateFixture(string name, Action<GameObject> modify)
         {
             var source = new GameObject(name, typeof(BoxCollider));
@@ -134,7 +165,11 @@ namespace HierarchyDecoratorCI
         {
             if (Event.current.type == EventType.Repaint &&
                 ViewType.GetProperty("current", BindingFlags.Static | BindingFlags.Public).GetValue(null) == hierarchyView)
+            {
                 Rows[id] = GUIUtility.GUIToScreenPoint(new Vector2(32, rect.y + 2)) - hierarchy.position.position;
+                if (id == addedChild.GetInstanceID())
+                    addedChildIconPosition = GUIUtility.GUIToScreenPoint(rect.position) - hierarchy.position.position;
+            }
         }
 
         private static void Tick()
@@ -166,6 +201,7 @@ namespace HierarchyDecoratorCI
                     foreach (var row in Rows)
                         NativeMargins.Add(row.Key, ReadMargin(reference, row.Value));
                     nativeBackground = ReadBackground(reference);
+                    nativeAddedBadge = ReadAddedBadge(reference);
                     if (mode == 0)
                     {
                         foreach (var root in Roots)
@@ -175,7 +211,7 @@ namespace HierarchyDecoratorCI
                             if (blueMarker != (root.name != "01 Unmodified"))
                                 throw new InvalidOperationException("Native reference marker missing or unexpected: " + root.name + " " + pixel);
                         }
-                        Checks.Add("native reference distinguishes unmodified instances from property, structural and nested overrides");
+                        Checks.Add("native reference distinguishes unmodified instances from property, structural and nested overrides and a missing prefab source");
                     }
                     Object.DestroyImmediate(reference);
                     EditorApplication.hierarchyWindowItemOnGUI -= TrackRow;
@@ -198,7 +234,19 @@ namespace HierarchyDecoratorCI
                         throw new InvalidOperationException("Native margin changed in mode " + mode + " for: " + string.Join(", ", changedRows));
                     if (mode != 3 && ReadBackground(actualWindow) == nativeBackground)
                         throw new InvalidOperationException("Plugin background was not drawn in mode " + mode);
-                    Checks.Add("native margin unchanged for " + NativeMargins.Count + " rows: " + new[] { "unselected", "selected and focused", "selected and unfocused", "header styles without alternating background", "dot active toggles", "large header font", "toggle input" }[mode]);
+                    RectInt addedBadge = ReadAddedBadge(actualWindow);
+                    int tolerance = Mathf.CeilToInt(EditorGUIUtility.pixelsPerPoint);
+                    if (Mathf.Abs(nativeAddedBadge.xMin - addedBadge.xMin) > tolerance ||
+                        Mathf.Abs(nativeAddedBadge.yMin - addedBadge.yMin) > tolerance ||
+                        Mathf.Abs(nativeAddedBadge.xMax - addedBadge.xMax) > tolerance ||
+                        Mathf.Abs(nativeAddedBadge.yMax - addedBadge.yMax) > tolerance)
+                    {
+                        throw new InvalidOperationException("The added child badge differs from the native footprint in mode " +
+                            mode + ": native " + nativeAddedBadge + ", decorated " + addedBadge);
+                    }
+                    Checks.Add("native margin unchanged for " + NativeMargins.Count +
+                        " rows, including the missing prefab, and a single added child badge: " +
+                        new[] { "unselected", "selected and focused", "selected and unfocused", "header styles without alternating background", "dot active toggles", "large header font", "toggle input" }[mode]);
                     Object.DestroyImmediate(actualWindow);
                     if (mode == 6)
                     {
@@ -216,6 +264,40 @@ namespace HierarchyDecoratorCI
                 step++;
             }
             catch (Exception error) { Finish(error); }
+        }
+
+        private static RectInt ReadAddedBadge(Texture2D texture)
+        {
+            if (!Rows.ContainsKey(addedChild.GetInstanceID()))
+                throw new InvalidOperationException("The added child row is missing.");
+
+            float scale = EditorGUIUtility.pixelsPerPoint;
+            int originX = Mathf.RoundToInt((addedChildIconPosition.x - 6f) * scale);
+            int top = Mathf.RoundToInt(addedChildIconPosition.y * scale);
+            int width = Mathf.RoundToInt(28f * scale);
+            int height = Mathf.RoundToInt(16f * scale);
+            Color[] pixels = texture.GetPixels(originX, texture.height - top - height, width, height);
+            int left = width;
+            int bottom = height;
+            int right = 0;
+            int upper = 0;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    Color pixel = pixels[y * width + x];
+                    if (pixel.g - pixel.r <= 25f / 255f || pixel.g - pixel.b <= 12f / 255f)
+                        continue;
+                    left = Mathf.Min(left, x);
+                    bottom = Mathf.Min(bottom, y);
+                    right = Mathf.Max(right, x + 1);
+                    upper = Mathf.Max(upper, y + 1);
+                }
+            }
+
+            if (left >= right || bottom >= upper)
+                throw new InvalidOperationException("The added child row has no green prefab badge.");
+            return new RectInt(left, bottom, right - left, upper - bottom);
         }
 
         private static void FocusWindow()

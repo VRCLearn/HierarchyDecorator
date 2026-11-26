@@ -39,9 +39,11 @@ python .github/unity-ci/prepare_project.py --unity-version 2022.3.22f1 --project
 
 Launch that project with the matching Unity executable and
 `-executeMethod HierarchyDecoratorCI.PrefabOverrideProbe.Run` (add
-`-prefabProbeLight` to check the light skin). The probe compares
-the real Hierarchy's native marker pixels with and without decoration, checks
-active-toggle input, and saves its report and window screenshots under
+`-prefabProbeLight` to check the light skin). The probe compares the real
+Hierarchy's native marker pixels with and without decoration, including an
+instance whose prefab source was deleted. It also compares the added-child
+badge with its native footprint, checks active-toggle input, and saves its
+report and window screenshots under
 `Logs/PrefabOverrideProbe` before exiting. It creates fixtures only in that
 disposable project and does not require editing a user's scene.
 
