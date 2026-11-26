@@ -40,8 +40,8 @@ namespace HierarchyDecorator.Editor
                 return;
             }
 
-            // Only the scene being replaced needs a save prompt. Other open scenes stay untouched.
-            if (!EditorSceneManager.SaveModifiedScenesIfUserWantsTo(new[] { sourceScene }) ||
+            // Unity also asks to save clean untitled scenes, so only prompt for actual changes.
+            if ((sourceScene.isDirty && !EditorSceneManager.SaveModifiedScenesIfUserWantsTo(new[] { sourceScene })) ||
                 !CanSwitch || !sourceScene.IsValid() || !TryResolveScene(guid, out path))
                 return;
 
