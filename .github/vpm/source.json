@@ -4,7 +4,8 @@
     "url": "https://vrclearn.github.io/HierarchyDecorator/index.json",
     "author": {
         "url": "https://github.com/VRCLearn",
-        "name": "VRCLearn"
+        "name": "VRCLearn",
+        "email": "vpm@vrclearn.com"
     },
     "description": "Customize the Unity Hierarchy with headers, component icons, tags, layers and multilingual settings. Independently maintained by VRCLearn.",
     "bannerUrl": "vrclearn-banner.png",
